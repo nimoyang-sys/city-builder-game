@@ -167,6 +167,7 @@ function initSocket() {
 
   socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
   socket.on('minigame:songGuessRoundEnded', handleSongGuessRoundEnded);
+  socket.on('minigame:songGuessGameEnded', handleSongGuessGameEnded);
   socket.on('player:songAnswerResult', handleSongAnswerResult);
 
   // 抽獎事件
@@ -1427,8 +1428,8 @@ function handleSongGuessRoundStarted(data) {
 }
 
 function handleSongGuessRoundEnded(data) {
-  songGuessState.active = false;
-  closeSongGuessModal();
+  songGuessState.submitted = false;
+  // 不關閉彈窗，等待新一局或遊戲結束
 
   // 查找玩家結果
   const playerResult = data.results.find(r => r.playerId === playerState.id);
@@ -1443,6 +1444,13 @@ function handleSongGuessRoundEnded(data) {
     // 玩家未參與
     showToast(`正確答案：${data.correctAnswer}`, 'info');
   }
+}
+
+function handleSongGuessGameEnded() {
+  songGuessState.active = false;
+  songGuessState.submitted = false;
+  closeSongGuessModal();
+  showToast('🎵 猜歌曲前奏遊戲已結束！', 'info');
 }
 
 function handleSongAnswerResult(result) {
