@@ -1389,6 +1389,170 @@
     .effect-text.positive { color: #4CAF50; }
     .effect-text.negative { color: #EF5350; }
 
+    /* 結算明細面板 */
+    .settlement-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      cursor: pointer;
+    }
+
+    .settlement-panel.show {
+      display: flex;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .settlement-content {
+      background: var(--bg-card);
+      border-radius: 25px;
+      border: 4px solid #FFD93D;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+      padding: 30px;
+      max-width: 90%;
+      max-height: 85%;
+      overflow-y: auto;
+      cursor: default;
+      animation: settlementPopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @keyframes settlementPopIn {
+      0% { transform: scale(0.5) translateY(100px); opacity: 0; }
+      60% { transform: scale(1.05) translateY(-10px); }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .settlement-header {
+      text-align: center;
+      margin-bottom: 25px;
+      border-bottom: 3px dashed #FFB6C1;
+      padding-bottom: 20px;
+    }
+
+    .settlement-title {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #FF6B9D;
+      margin-bottom: 10px;
+    }
+
+    .settlement-event-name {
+      font-size: 1.3rem;
+      color: #5D4037;
+      font-weight: 600;
+    }
+
+    .settlement-hint {
+      font-size: 0.9rem;
+      color: #8D6E63;
+      margin-top: 10px;
+    }
+
+    .settlement-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .settlement-player-card {
+      background: linear-gradient(135deg, #FFF5F8 0%, #FFE4EC 100%);
+      border-radius: 15px;
+      border: 2px solid #FFB6C1;
+      padding: 15px;
+      transition: all 0.3s ease;
+      animation: cardSlideIn 0.5s ease backwards;
+    }
+
+    @keyframes cardSlideIn {
+      from {
+        transform: translateY(30px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .settlement-player-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(255, 107, 157, 0.3);
+    }
+
+    .settlement-player-rank {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #FF6B9D;
+      margin-right: 10px;
+    }
+
+    .settlement-player-rank.top-3 {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .settlement-player-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #5D4037;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settlement-player-income {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: #4CAF50;
+      margin: 8px 0;
+    }
+
+    .settlement-player-income.negative {
+      color: #EF5350;
+    }
+
+    .settlement-player-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.9rem;
+      color: #8D6E63;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px dashed #FFB6C1;
+    }
+
+    .settlement-total {
+      background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-top: 20px;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(0.98); }
+    }
+
     /* 建築統計欄 - 卡通可愛風格 */
     .stats-panel {
       position: absolute;
@@ -2446,7 +2610,7 @@
       </div>
 
       <!-- 事件公告 -->
-      <div class="event-panel" id="event-panel" onclick="hideEvent()" style="cursor: pointer;">
+      <div class="event-panel" id="event-panel" onclick="showSettlement()" style="cursor: pointer;">
         <div class="event-header">
           <span class="event-icon" id="event-icon">📢</span>
           <div>
@@ -2459,7 +2623,26 @@
           <div class="effect-title">營收加成（金幣＋貢獻分）</div>
           <div class="effect-text" id="event-effects">--</div>
         </div>
-        <div style="margin-top: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.6);">點擊關閉</div>
+        <div style="margin-top: 10px; font-size: 0.9rem; color: #FF6B9D; font-weight: 700; animation: pulse 1.5s ease-in-out infinite;">
+          👆 點擊查看本次結算明細
+        </div>
+      </div>
+
+      <!-- 結算明細面板 -->
+      <div class="settlement-panel" id="settlement-panel" onclick="hideSettlement()">
+        <div class="settlement-content" onclick="event.stopPropagation()">
+          <div class="settlement-header">
+            <div class="settlement-title">📊 本次事件結算明細</div>
+            <div class="settlement-event-name" id="settlement-event-name">--</div>
+            <div class="settlement-hint">點擊外部區域關閉</div>
+          </div>
+          <div class="settlement-grid" id="settlement-grid">
+            <!-- 動態生成玩家結算卡片 -->
+          </div>
+          <div class="settlement-total" id="settlement-total-display">
+            <!-- 動態生成總計資訊 -->
+          </div>
+        </div>
       </div>
 
       <!-- 排行榜 -->
@@ -3032,6 +3215,75 @@
       }
     }
 
+    // 顯示結算明細
+    function showSettlement() {
+      if (!currentEventData) {
+        console.warn('沒有事件數據可顯示');
+        return;
+      }
+
+      const panel = document.getElementById('settlement-panel');
+      const eventNameEl = document.getElementById('settlement-event-name');
+      const gridEl = document.getElementById('settlement-grid');
+      const totalEl = document.getElementById('settlement-total-display');
+
+      // 設定事件名稱
+      eventNameEl.textContent = `${currentEventData.event.emoji || '📢'} ${currentEventData.event.title}`;
+
+      // 排序結果（依營收由高到低）
+      const sortedResults = [...currentEventData.results].sort((a, b) => b.income - a.income);
+
+      // 生成玩家卡片
+      gridEl.innerHTML = sortedResults.map((result, index) => {
+        const incomeClass = result.income > 0 ? '' : (result.income < 0 ? 'negative' : '');
+        const incomeSign = result.income >= 0 ? '+' : '';
+        const rankClass = index < 3 ? 'top-3' : '';
+
+        let badges = '';
+        if (result.luckyTriggered) badges += '<span style="font-size: 1.2rem;" title="幸運觸發">🍀</span>';
+        if (result.itemIncomeBonus) badges += '<span style="font-size: 1.2rem;" title="道具加成">📦</span>';
+
+        const stagger = index * 0.05;
+
+        return `
+          <div class="settlement-player-card" style="animation-delay: ${stagger}s">
+            <div class="settlement-player-name">
+              <span class="settlement-player-rank ${rankClass}">#${index + 1}</span>
+              ${result.playerName}
+              ${badges}
+            </div>
+            <div class="settlement-player-income ${incomeClass}">
+              營收 ${incomeSign}${result.income}
+            </div>
+            <div class="settlement-player-stats">
+              <span>💰 金幣: ${result.newCoins}</span>
+              <span>⭐ 積分: ${result.newScore}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 計算總營收
+      const totalIncome = currentEventData.results.reduce((sum, r) => sum + r.income, 0);
+
+      // 顯示總計
+      totalEl.innerHTML = `
+        共 ${currentEventData.results.length} 位玩家參與 | 總營收: +${totalIncome}
+      `;
+
+      // 顯示面板
+      panel.classList.add('show');
+
+      // 隱藏事件公告
+      hideEvent();
+    }
+
+    // 隱藏結算明細
+    function hideSettlement() {
+      const panel = document.getElementById('settlement-panel');
+      panel.classList.remove('show');
+    }
+
     // 事件處理
     function handleGameStarted(data) {
       document.getElementById('waiting-overlay').classList.add('hidden');
@@ -3068,8 +3320,11 @@
       console.log(`✨ ${data.playerName} 升級了 ${data.mergeCount} 棟 ${data.fromBuilding.name} → ${data.toBuilding.name}！`);
     }
 
+    let currentEventData = null;  // 保存當前事件數據
+
     function handleEventTriggered(data) {
       updateStatusBadge('EVENT');
+      currentEventData = data;  // 保存事件數據供結算明細使用
       showEvent(data.event);
       // 重新取得完整狀態（包含建築列表）
       fetchGameState();

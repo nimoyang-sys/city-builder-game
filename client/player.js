@@ -261,6 +261,11 @@ function handleRoleAssigned(data) {
   playerState.role = data.role;
   updateRoleDisplay();
   showToast(`你的角色是 ${data.role.emoji} ${data.role.name}！`, 'success');
+
+  // 玩家第一次登入時顯示角色彈窗
+  setTimeout(() => {
+    openRoleModal();
+  }, 1000);
 }
 
 function handleRolesAssigned(data) {
@@ -497,34 +502,30 @@ function updatePlayerNameDisplay() {
 }
 
 function updateRoleDisplay() {
-  const roleContainer = document.getElementById('role-display');
-  if (!roleContainer) return;
+  const headerBadge = document.getElementById('header-role-badge');
+  const headerEmoji = document.getElementById('header-role-emoji');
+  const headerName = document.getElementById('header-role-name');
+
+  if (!headerBadge) return;
 
   if (playerState.role) {
-    roleContainer.innerHTML = `
-      <div class="role-badge" style="background-color: ${playerState.role.color}20; border-color: ${playerState.role.color}">
-        <span class="role-emoji">${playerState.role.emoji}</span>
-        <span class="role-name">${playerState.role.name}</span>
-      </div>
-      <div class="role-skill">${playerState.role.description}</div>
-    `;
-    roleContainer.style.display = 'block';
+    headerEmoji.textContent = playerState.role.emoji;
+    headerName.textContent = playerState.role.name;
+    headerBadge.style.backgroundColor = `${playerState.role.color}20`;
+    headerBadge.style.borderColor = playerState.role.color;
+    headerBadge.style.color = playerState.role.color;
+    headerBadge.style.display = 'inline-flex';
   } else {
-    roleContainer.style.display = 'none';
+    headerBadge.style.display = 'none';
   }
 }
 
 function updateGameStateDisplay() {
+  // 移除遊戲狀態顯示，改由角色顯示取代
   const stateEl = document.getElementById('game-state');
-  const stateNames = {
-    'WAITING': '等待開始',
-    'BUILDING': '建設中',
-    'EVENT': '事件結算',
-    'ENDED': '遊戲結束'
-  };
-
-  stateEl.textContent = stateNames[gameState.state] || gameState.state;
-  stateEl.className = `game-state ${gameState.state}`;
+  if (stateEl) {
+    stateEl.style.display = 'none';
+  }
 }
 
 function updatePlayerCount() {
@@ -1602,6 +1603,36 @@ function buyFlashSale() {
 
 window.buyFlashSale = buyFlashSale;
 
+// ===== 角色 Modal =====
+
+function openRoleModal() {
+  const modal = document.getElementById('role-modal');
+  const modalBody = document.getElementById('role-modal-body');
+
+  if (!playerState.role) {
+    return;
+  }
+
+  const role = playerState.role;
+  modalBody.innerHTML = `
+    <div class="role-badge" style="background-color: ${role.color}20; border-color: ${role.color}; color: ${role.color}">
+      <span class="role-emoji">${role.emoji}</span>
+      <span class="role-name">${role.name}</span>
+    </div>
+    <div class="role-skill">${role.description}</div>
+  `;
+
+  modal.classList.add('show');
+}
+
+function closeRoleModal() {
+  const modal = document.getElementById('role-modal');
+  modal.classList.remove('show');
+}
+
+window.openRoleModal = openRoleModal;
+window.closeRoleModal = closeRoleModal;
+
 // ===== 事件綁定 =====
 
 function bindEvents() {
@@ -1629,6 +1660,12 @@ function bindEvents() {
   document.getElementById('buy-modal').addEventListener('click', (e) => {
     if (e.target.id === 'buy-modal') {
       closeBuyModal();
+    }
+  });
+
+  document.getElementById('role-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'role-modal') {
+      closeRoleModal();
     }
   });
 }

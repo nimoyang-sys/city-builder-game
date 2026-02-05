@@ -210,6 +210,34 @@
       color: var(--text);
     }
 
+    /* 右上角角色顯示 */
+    .header-role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 2px solid;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .header-role-badge:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .header-role-emoji {
+      font-size: 1.2rem;
+    }
+
+    .header-role-name {
+      font-size: 0.9rem;
+    }
+
     .game-state {
       display: inline-block;
       padding: 5px 12px;
@@ -595,42 +623,79 @@
       font-weight: 500;
     }
 
-    /* 角色顯示 */
-    .role-display {
-      background: var(--bg-card);
-      border-radius: 16px;
-      padding: 15px;
-      margin-bottom: 20px;
+    /* 角色顯示 Modal */
+    #role-modal {
       display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      padding: 20px;
+      overflow-y: auto;
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+    }
+
+    #role-modal.show {
+      display: flex;
+    }
+
+    .role-modal-content {
+      background: var(--bg-card);
+      border-radius: 24px;
+      max-width: 400px;
+      width: 100%;
+      padding: 25px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .role-modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
     }
 
     .role-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 2px solid;
-      margin-bottom: 10px;
+      gap: 10px;
+      padding: 12px 24px;
+      border-radius: 24px;
+      border: 3px solid;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
 
     .role-emoji {
-      font-size: 1.5rem;
+      font-size: 2.5rem;
     }
 
     .role-name {
       font-weight: bold;
-      font-size: 1.1rem;
+      font-size: 1.3rem;
     }
 
     .role-skill {
-      font-size: 0.9rem;
+      font-size: 1rem;
       color: var(--text-muted);
-      line-height: 1.4;
+      line-height: 1.6;
+      text-align: left;
+      padding: 15px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 12px;
+      border: 2px solid var(--border);
     }
 
-    /* 排行榜 */
+    /* 排行榜 - 隱藏 */
     .leaderboard {
+      display: none;
       background: var(--bg-card);
       border-radius: 20px;
       padding: 15px;
@@ -2026,7 +2091,10 @@
     <div class="game-header">
       <div class="header-top">
         <div class="player-name-display" id="player-name-display">玩家</div>
-        <div class="game-state WAITING" id="game-state">等待開始</div>
+        <div class="header-role-badge" id="header-role-badge" onclick="openRoleModal()" style="display: none;">
+          <span class="header-role-emoji" id="header-role-emoji"></span>
+          <span class="header-role-name" id="header-role-name"></span>
+        </div>
       </div>
       <div class="resources">
         <div class="resource-item">
@@ -2058,11 +2126,6 @@
 
     <!-- 遊戲內容 -->
     <div class="game-content" id="game-content" style="display: none;">
-      <!-- 角色顯示 -->
-      <div class="role-display" id="role-display">
-        <!-- 動態生成 -->
-      </div>
-
       <!-- 事件顯示 -->
       <div class="event-display" id="event-display" onclick="hideEventDisplay()">
         <button class="event-close-btn" onclick="event.stopPropagation(); hideEventDisplay();">✕</button>
@@ -2201,6 +2264,19 @@
         <div class="no-upgrades">
           <div class="no-upgrades-icon">🏗️</div>
           <div class="no-upgrades-text">載入中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 角色 Modal -->
+  <div id="role-modal">
+    <div class="role-modal-content" style="position: relative;">
+      <button class="role-modal-close" onclick="closeRoleModal()">&times;</button>
+      <div id="role-modal-body">
+        <!-- 動態生成 -->
+        <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+          載入中...
         </div>
       </div>
     </div>
