@@ -254,12 +254,7 @@ function handleBuyResult(result) {
       }, 500);
     }
 
-    // 顯示小事件
-    if (result.miniEvent) {
-      setTimeout(() => {
-        showMiniEventPopup(result.miniEvent.event, result.miniEvent.effectResult);
-      }, result.droppedItem ? 3000 : 500);
-    }
+    // 小事件由服務器通過 player:miniEvent 事件發送，不在這裡處理
   } else {
     showToast(result.error, 'error');
   }
