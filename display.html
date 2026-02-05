@@ -2086,7 +2086,7 @@
       <div class="waiting-right-section">
         <div class="qr-hint">
           <p>掃描 QR Code 或輸入網址加入遊戲</p>
-          <div id="qr-code" style="margin: 20px auto; background: white; padding: 15px; border-radius: 8px; width: fit-content;"></div>
+          <div id="qr-code" style="margin: 20px auto; background: white; padding: 15px; border-radius: 8px; display: inline-block;"></div>
           <div class="qr-url" id="game-url">--</div>
         </div>
       </div>
@@ -2150,7 +2150,7 @@
   </div>
 
   <!-- QR Code Library -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
     // 遊戲設定
@@ -2175,25 +2175,26 @@
           return;
         }
 
-        QRCode.toCanvas(document.createElement('canvas'), url, {
-          width: 200,
-          margin: 0,
-          color: {
-            dark: '#FF6B9D',  // 粉紅色，符合 UI 主題
-            light: '#ffffff'
-          }
-        }, function (error, canvas) {
-          if (error) {
-            console.error('QR Code generation failed:', error);
-            return;
-          }
+        try {
           const qrContainer = document.getElementById('qr-code');
           if (qrContainer) {
             qrContainer.innerHTML = ''; // 清空容器
-            qrContainer.appendChild(canvas);
+
+            // 使用 qrcodejs 庫
+            new QRCode(qrContainer, {
+              text: url,
+              width: 200,
+              height: 200,
+              colorDark: '#FF6B9D',  // 粉紅色，符合 UI 主題
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.H
+            });
+
             console.log('QR Code generated successfully');
           }
-        });
+        } catch (error) {
+          console.error('QR Code generation failed:', error);
+        }
       };
 
       generateQRCode();
