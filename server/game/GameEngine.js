@@ -614,8 +614,8 @@ export class GameEngine extends EventEmitter {
     let luckyTriggered = false;
     let itemIncomeBonus = false;
 
-    // 取得角色資訊
-    const role = player.role ? ROLES[player.role] : null;
+    // 取得角色資訊（player.role 可能是角色物件或角色ID）
+    const role = player.roleId ? ROLES[player.roleId] : (player.role || null);
 
     for (const [buildingId, count] of Object.entries(player.buildings)) {
       const building = GAME_CONFIG.buildings[buildingId];
@@ -1156,7 +1156,10 @@ export class GameEngine extends EventEmitter {
    * 玩家搶購
    */
   buyFlashSale(socketId) {
+    console.log('🛒 buyFlashSale called, socketId:', socketId);
+    console.log('📋 socketToPlayer map:', Array.from(this.socketToPlayer.entries()));
     const player = this.getPlayerBySocketId(socketId);
+    console.log('👤 Found player:', player ? player.name : 'null');
     if (!player) {
       return { success: false, error: '玩家不存在' };
     }

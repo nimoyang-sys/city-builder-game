@@ -288,6 +288,20 @@ io.on('connection', (socket) => {
     if (result.success) {
       const player = gameEngine.getPlayerBySocketId(socket.id);
       socket.emit('player:stateUpdate', gameEngine.getPlayerState(player));
+
+      // 如果道具效果產生了建築，通知投影畫面和主持人更新
+      if (result.buildingGained || result.buildingCopied) {
+        const gameState = gameEngine.getGameState();
+
+        // 通知投影畫面更新城市建築
+        io.emit('game:cityBuildingsUpdate', {
+          cityBuildings: gameEngine.getCityBuildingStats(),
+          leaderboard: gameEngine.getLeaderboard()
+        });
+
+        // 通知主持人更新
+        io.to('host').emit('game:stateUpdate', gameState);
+      }
     }
   });
 

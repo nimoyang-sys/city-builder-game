@@ -1260,16 +1260,17 @@ function handleQuizQuestion(data) {
   quizState.answered = false; // 重置作答狀態
   showQuizModal(data);
 
-  // 3秒後自動進入等待狀態
+  // 5秒後自動進入等待狀態
   if (quizState.timer) clearTimeout(quizState.timer);
   quizState.timer = setTimeout(() => {
     if (!quizState.answered) {
       showQuizWaiting(); // 未作答，顯示等待狀態
     }
-  }, 3000);
+  }, 5000);
 }
 
 function handleQuizEnded(data) {
+  console.log('🏁 Quiz ended, data:', data);
   quizState.active = false;
   closeQuizModal();
 
@@ -1458,16 +1459,27 @@ function closeQuizModal() {
 }
 
 function showQuizResultModal(data) {
+  console.log('📊 Showing quiz result modal');
+  console.log('Player ID:', playerState.id);
+  console.log('Results:', data.results);
+  console.log('Questions:', data.questions);
+
   const modal = document.getElementById('quiz-result-modal');
-  if (!modal) return;
+  if (!modal) {
+    console.error('❌ Quiz result modal not found!');
+    return;
+  }
 
   // 找到當前玩家的結果
   const myResult = data.results.find(r => r.playerId === playerState.id);
 
   if (!myResult) {
+    console.error('❌ My result not found for player:', playerState.id);
     showToast('未找到您的答題記錄', 'error');
     return;
   }
+
+  console.log('✅ My result:', myResult);
 
   // 更新統計數據
   document.getElementById('quiz-result-correct').textContent = myResult.correct;
