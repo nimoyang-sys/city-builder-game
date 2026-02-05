@@ -148,8 +148,10 @@ function initSocket() {
   socket.on('minigame:beerGameStarted', handleBeerGameStarted);
   socket.on('player:joinBeerResult', handleJoinBeerResult);
 
-  socket.on('minigame:pokerStarted', handlePokerStarted);
-  socket.on('minigame:pokerEnded', handlePokerEnded);
+  socket.on('minigame:pokerGameStarted', handlePokerGameStarted);
+  socket.on('minigame:pokerRoundStarted', handlePokerRoundStarted);
+  socket.on('minigame:pokerRoundEnded', handlePokerRoundEnded);
+  socket.on('minigame:pokerGameEnded', handlePokerGameEnded);
   socket.on('player:placeBetResult', handlePlaceBetResult);
 
   socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
@@ -1329,39 +1331,53 @@ function joinBeerGame() {
 }
 
 // 比大小事件處理
-function handlePokerStarted(data) {
+function handlePokerGameStarted() {
   pokerState = {
     active: true,
+    roundActive: false,
     bet: null,
-    endTime: data.endTime,
-    timer: null
+    endTime: null,
+    timer: null,
+    result: null
   };
+  showToast('🃏 比大小遊戲開始！', 'info');
+}
+
+function handlePokerRoundStarted(data) {
+  pokerState.roundActive = true;
+  pokerState.bet = null;
+  pokerState.endTime = data.endTime;
+  pokerState.result = null;
   showPokerBetModal(data);
 }
 
-function handlePokerEnded(data) {
-  pokerState.active = false;
-  closePokerBetModal();
+function handlePokerRoundEnded(data) {
+  pokerState.roundActive = false;
+  pokerState.result = data;
 
   const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   const cardDisplay = cardNames[data.card - 1] || data.card;
-  const resultText = data.result === 'big' ? '大' : '小';
+  const resultText = data.result === 'big' ? '大' : (data.result === 'small' ? '小' : '和局(7)');
 
   const isWinner = data.winners.some(w => w.playerId === playerState.id);
   const isLoser = data.losers.some(l => l.playerId === playerState.id);
+  const isTied = data.tied && data.tied.some(t => t.playerId === playerState.id);
 
-  if (isWinner) {
-    showToast(`🎉 ${cardDisplay} = ${resultText}，你猜對了！+100分`, 'success');
-  } else if (isLoser) {
-    showToast(`😅 ${cardDisplay} = ${resultText}，你猜錯了！喝酒！`, 'error');
-  } else {
-    showToast(`結果：${cardDisplay} = ${resultText}`, 'info');
-  }
+  // 更新彈窗顯示結果（不關閉彈窗）
+  showPokerResultInModal(data, cardDisplay, resultText, isWinner, isLoser, isTied);
+}
+
+function handlePokerGameEnded(data) {
+  pokerState.active = false;
+  pokerState.roundActive = false;
+  closePokerBetModal();
+  showToast(`🃏 比大小遊戲結束！共進行 ${data.totalRounds} 局`, 'info');
 }
 
 function handlePlaceBetResult(result) {
   if (result.success) {
-    showToast('下注成功！', 'success');
+    // 下注成功，更新彈窗顯示等待狀態
+    showPokerWaitingInModal();
   } else {
     showToast(result.error || '下注失敗', 'error');
   }
@@ -1370,7 +1386,7 @@ function handlePlaceBetResult(result) {
 function placeBet(bet) {
   pokerState.bet = bet;
   socket.emit('player:placeBet', { bet });
-  closePokerBetModal();
+  // 不關閉彈窗，顯示等待狀態
 }
 
 // 猜歌曲前奏事件處理
@@ -1732,6 +1748,29 @@ function showPokerBetModal(data) {
 
   const endTime = data.endTime;
 
+  // 重置彈窗內容為下注狀態
+  const modalContent = modal.querySelector('.modal');
+  modalContent.innerHTML = `
+    <div class="modal-emoji">🃏</div>
+    <div class="modal-title">比大小 - 第 ${data.roundNumber} 局</div>
+    <div class="modal-info" style="text-align: center;">
+      <p style="margin-bottom: 10px;">猜測撲克牌是大還是小？</p>
+      <p style="font-size: 0.85rem; color: var(--text-muted);">8~K = 大 | A~6 = 小 | 7 = 和局</p>
+      <p style="font-size: 0.85rem; color: var(--success); margin-top: 5px;">猜對 +100分 | 猜錯要喝酒 🍺</p>
+    </div>
+    <div style="text-align: center; margin: 15px 0; font-size: 0.9rem; color: var(--warning);">
+      倒數：<span id="poker-countdown" style="font-weight: bold; font-size: 1.2rem;">20s</span>
+    </div>
+    <div class="modal-buttons" id="poker-bet-buttons">
+      <button class="modal-btn" style="flex: 1; background: var(--danger); color: white;" onclick="placeBet('small')">
+        📉 壓小 (A~6)
+      </button>
+      <button class="modal-btn" style="flex: 1; background: var(--success); color: white;" onclick="placeBet('big')">
+        📈 壓大 (8~K)
+      </button>
+    </div>
+  `;
+
   const updateCountdown = () => {
     const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
     const countdownEl = document.getElementById('poker-countdown');
@@ -1746,13 +1785,88 @@ function showPokerBetModal(data) {
       }
     }
 
-    if (remaining > 0) {
+    if (remaining > 0 && pokerState.roundActive) {
       pokerState.timer = setTimeout(updateCountdown, 100);
     }
   };
 
   updateCountdown();
   modal.classList.add('show');
+}
+
+function showPokerWaitingInModal() {
+  const buttonsContainer = document.getElementById('poker-bet-buttons');
+  if (buttonsContainer) {
+    const betText = pokerState.bet === 'big' ? '📈 大' : '📉 小';
+    buttonsContainer.innerHTML = `
+      <div style="width: 100%; text-align: center; padding: 20px;">
+        <div style="font-size: 1.5rem; margin-bottom: 10px;">🎲</div>
+        <div style="color: var(--text); font-weight: bold;">已下注：${betText}</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 8px;">
+          <span class="waiting-dots">等待開獎中</span>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function showPokerResultInModal(data, cardDisplay, resultText, isWinner, isLoser, isTied) {
+  const modal = document.getElementById('poker-bet-modal');
+  if (!modal) return;
+
+  // 清除倒數計時器
+  if (pokerState.timer) {
+    clearTimeout(pokerState.timer);
+    pokerState.timer = null;
+  }
+
+  // 撲克牌花色（隨機選一個）
+  const suits = ['♠', '♥', '♦', '♣'];
+  const suit = suits[Math.floor(Math.random() * 4)];
+  const isRed = suit === '♥' || suit === '♦';
+
+  let resultEmoji, resultMessage, resultColor;
+  if (data.result === 'tie') {
+    resultEmoji = '🤝';
+    resultMessage = '和局！不輸不贏';
+    resultColor = '#95a5a6';
+  } else if (isWinner) {
+    resultEmoji = '🎉';
+    resultMessage = '恭喜猜對！+100分';
+    resultColor = 'var(--success)';
+  } else if (isLoser) {
+    resultEmoji = '🍺';
+    resultMessage = '猜錯了！喝一杯吧~';
+    resultColor = 'var(--danger)';
+  } else {
+    resultEmoji = '👀';
+    resultMessage = '你沒有下注';
+    resultColor = 'var(--text-muted)';
+  }
+
+  const modalContent = modal.querySelector('.modal');
+  modalContent.innerHTML = `
+    <div class="modal-emoji">${resultEmoji}</div>
+    <div class="modal-title">第 ${data.roundNumber} 局結果</div>
+    <div style="display: flex; justify-content: center; margin: 20px 0;">
+      <div class="poker-card-display ${isRed ? 'red' : 'black'}">
+        <div class="card-value">${cardDisplay}</div>
+        <div class="card-suit">${suit}</div>
+      </div>
+    </div>
+    <div style="text-align: center; margin-bottom: 15px;">
+      <div style="font-size: 1.3rem; font-weight: bold; color: ${resultColor};">
+        ${resultText === '和局(7)' ? '🎴 7 = 和局' : `${data.result === 'big' ? '📈' : '📉'} ${cardDisplay} = ${resultText}`}
+      </div>
+    </div>
+    <div style="text-align: center; padding: 15px; background: rgba(0,0,0,0.1); border-radius: 12px; margin-bottom: 15px;">
+      <div style="font-size: 1.5rem; margin-bottom: 5px;">${resultEmoji}</div>
+      <div style="font-size: 1.1rem; font-weight: bold; color: ${resultColor};">${resultMessage}</div>
+    </div>
+    <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+      等待主持人開始下一局...
+    </div>
+  `;
 }
 
 function closePokerBetModal() {

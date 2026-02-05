@@ -31,15 +31,18 @@ export class MiniGameManager extends EventEmitter {
 
     // 比大小狀態
     this.pokerState = {
-      active: false,
+      active: false,        // 整個遊戲是否進行中
+      roundActive: false,   // 當前局是否進行中（下注階段）
       card: null, // 1-13
       betTime: MINI_GAMES.POKER_GAME.betTime,
-      playerBets: new Map(), // playerId -> 'big' | 'small'
-      result: null, // 'big' | 'small'
+      playerBets: new Map(), // playerId -> { playerId, playerName, bet }
+      result: null, // 'big' | 'small' | 'tie'
       winners: [],
       losers: [],
+      tied: [],
       timer: null,
-      endTime: null
+      endTime: null,
+      roundNumber: 0       // 當前局數
     };
 
     // 猜歌曲前奏狀態
@@ -376,61 +379,107 @@ export class MiniGameManager extends EventEmitter {
 
   // ========== 比大小 ==========
 
+  // 開始比大小遊戲（整個遊戲，不是單局）
   startPokerGame() {
     if (this.pokerState.active) {
       return { success: false, error: '比大小遊戲已在進行中' };
+    }
+
+    this.pokerState = {
+      active: true,
+      roundActive: false,
+      card: null,
+      betTime: MINI_GAMES.POKER_GAME.betTime,
+      playerBets: new Map(),
+      result: null,
+      winners: [],
+      losers: [],
+      tied: [],
+      endTime: null,
+      timer: null,
+      roundNumber: 0
+    };
+
+    // 通知遊戲開始
+    this.emit('poker:gameStarted');
+
+    // 自動開始第一局
+    return this.startPokerRound();
+  }
+
+  // 開始新的一局
+  startPokerRound() {
+    if (!this.pokerState.active) {
+      return { success: false, error: '比大小遊戲尚未開始' };
+    }
+
+    if (this.pokerState.roundActive) {
+      return { success: false, error: '當前局還在進行中' };
     }
 
     // 抽一張牌 (1-13)
     const card = Math.floor(Math.random() * 13) + 1;
     const endTime = Date.now() + (MINI_GAMES.POKER_GAME.betTime * 1000);
 
-    this.pokerState = {
-      active: true,
-      card,
-      betTime: MINI_GAMES.POKER_GAME.betTime,
-      playerBets: new Map(),
-      result: null,
-      winners: [],
-      losers: [],
-      endTime,
-      timer: null
-    };
+    this.pokerState.roundNumber++;
+    this.pokerState.roundActive = true;
+    this.pokerState.card = card;
+    this.pokerState.playerBets = new Map();
+    this.pokerState.result = null;
+    this.pokerState.winners = [];
+    this.pokerState.losers = [];
+    this.pokerState.tied = [];
+    this.pokerState.endTime = endTime;
 
-    this.emit('poker:started', {
+    this.emit('poker:roundStarted', {
+      roundNumber: this.pokerState.roundNumber,
       betTime: this.pokerState.betTime,
       endTime: this.pokerState.endTime
     });
 
     // 時間到自動結算
+    if (this.pokerState.timer) {
+      clearTimeout(this.pokerState.timer);
+    }
     this.pokerState.timer = setTimeout(() => {
-      this.endPokerGame();
+      this.endPokerRound();
     }, this.pokerState.betTime * 1000);
 
-    return { success: true };
+    return { success: true, roundNumber: this.pokerState.roundNumber };
   }
 
   placeBet(playerId, playerName, bet) {
-    if (!this.pokerState.active) {
-      return { success: false, error: '比大小遊戲未開始' };
+    if (!this.pokerState.active || !this.pokerState.roundActive) {
+      return { success: false, error: '目前不在下注階段' };
     }
 
     if (bet !== 'big' && bet !== 'small') {
       return { success: false, error: '無效的選擇' };
     }
 
+    // 如果已經下注過，允許改變選擇
     this.pokerState.playerBets.set(playerId, { playerId, playerName, bet });
+
+    // 發送下注事件（用於投影畫面顯示）
+    this.emit('poker:betPlaced', {
+      playerId,
+      playerName,
+      bet,
+      totalBets: this.pokerState.playerBets.size
+    });
 
     return { success: true };
   }
 
-  endPokerGame() {
-    if (!this.pokerState.active) {
-      return { success: false };
+  // 結束當前局（結算）
+  endPokerRound() {
+    if (!this.pokerState.active || !this.pokerState.roundActive) {
+      return { success: false, error: '沒有進行中的局' };
     }
 
     if (this.pokerState.timer) {
       clearTimeout(this.pokerState.timer);
+      this.pokerState.timer = null;
     }
 
     const card = this.pokerState.card;
@@ -445,6 +494,7 @@ export class MiniGameManager extends EventEmitter {
     }
 
     this.pokerState.result = result;
+    this.pokerState.roundActive = false; // 結束下注階段
 
     // 計算贏家和輸家
     const winners = [];
@@ -478,9 +528,9 @@ export class MiniGameManager extends EventEmitter {
     this.pokerState.winners = winners;
     this.pokerState.losers = losers;
     this.pokerState.tied = tied;
-    this.pokerState.active = false; // 重要：设置为非活动状态
 
-    this.emit('poker:ended', {
+    this.emit('poker:roundEnded', {
+      roundNumber: this.pokerState.roundNumber,
       card,
       result,
       winners,
@@ -491,20 +541,52 @@ export class MiniGameManager extends EventEmitter {
     return { success: true, card, result, winners, losers, tied };
   }
 
+  // 下一局
   nextPokerRound() {
+    if (!this.pokerState.active) {
+      return { success: false, error: '比大小遊戲尚未開始' };
+    }
+
+    if (this.pokerState.roundActive) {
+      return { success: false, error: '當前局還在進行中' };
+    }
+
+    return this.startPokerRound();
+  }
+
+  // 結束整個比大小遊戲
+  endPokerGame() {
+    if (!this.pokerState.active) {
+      return { success: false, error: '比大小遊戲尚未開始' };
+    }
+
+    if (this.pokerState.timer) {
+      clearTimeout(this.pokerState.timer);
+      this.pokerState.timer = null;
+    }
+
+    this.pokerState.active = false;
+    this.pokerState.roundActive = false;
+
+    this.emit('poker:gameEnded', {
+      totalRounds: this.pokerState.roundNumber
+    });
+
+    // 重置狀態
     this.pokerState = {
       active: false,
+      roundActive: false,
       card: null,
       betTime: MINI_GAMES.POKER_GAME.betTime,
       playerBets: new Map(),
       result: null,
       winners: [],
       losers: [],
+      tied: [],
       timer: null,
-      endTime: null
+      endTime: null,
+      roundNumber: 0
     };
-
-    this.emit('poker:roundEnd');
 
     return { success: true };
   }
@@ -538,11 +620,16 @@ export class MiniGameManager extends EventEmitter {
   getPokerState() {
     return {
       active: this.pokerState.active,
+      roundActive: this.pokerState.roundActive,
+      roundNumber: this.pokerState.roundNumber,
       betTime: this.pokerState.betTime,
       endTime: this.pokerState.endTime,
       result: this.pokerState.result,
       card: this.pokerState.card,
-      hasResult: this.pokerState.result !== null
+      hasResult: this.pokerState.result !== null,
+      winners: this.pokerState.winners,
+      losers: this.pokerState.losers,
+      tied: this.pokerState.tied
     };
   }
 
@@ -585,11 +672,16 @@ export class MiniGameManager extends EventEmitter {
       activeGames.push({
         type: 'poker',
         data: {
+          roundActive: this.pokerState.roundActive,
+          roundNumber: this.pokerState.roundNumber,
           betTime: this.pokerState.betTime,
           endTime: this.pokerState.endTime,
           hasResult: this.pokerState.result !== null,
           result: this.pokerState.result,
-          card: this.pokerState.card
+          card: this.pokerState.card,
+          winners: this.pokerState.winners,
+          losers: this.pokerState.losers,
+          tied: this.pokerState.tied
         }
       });
     }

@@ -1992,105 +1992,138 @@
     .beer-rank.rank-2 { color: #c0c0c0; }
     .beer-rank.rank-3 { color: #cd7f32; }
 
-    /* 比大小樣式 */
-    .poker-betting {
-      font-size: 1.5rem;
-      margin-bottom: 15px;
-      color: var(--text);
-      animation: pulseText 2s ease-in-out infinite;
+    /* 比大小樣式 - 左右佈局 */
+    .poker-game-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 30px;
+      height: calc(100vh - 100px);
     }
 
-    .poker-timer {
-      font-size: 2.5rem;
-      font-weight: 900;
-      color: var(--warning);
-      margin-bottom: 15px;
-    }
-
-    .poker-card-back {
-      width: 150px;
-      height: 210px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 4.5rem;
-      margin: 15px auto;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-      border: 3px solid rgba(255,255,255,0.3);
-      animation: cardFloat 3s ease-in-out infinite;
-    }
-
-    @keyframes cardFloat {
-      0%, 100% { transform: translateY(0) rotate(-3deg); }
-      50% { transform: translateY(-15px) rotate(3deg); }
-    }
-
-    .poker-card {
-      width: 300px;
-      height: 420px;
-      background: white;
-      border-radius: 20px;
+    /* 左側：標題+撲克牌 */
+    .poker-left-section {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: 30px auto;
+      background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+      border-radius: 24px;
+      padding: 40px;
+      border: 3px solid rgba(102, 126, 234, 0.3);
+    }
+
+    .poker-game-title {
+      font-size: 2.8rem;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .poker-round-info {
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      margin-bottom: 15px;
+    }
+
+    .poker-timer {
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--warning);
+      margin-bottom: 20px;
+      animation: timerPulse 1s ease-in-out infinite;
+    }
+
+    @keyframes timerPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .poker-timer.urgent {
+      color: var(--danger);
+      animation: timerUrgent 0.5s ease-in-out infinite;
+    }
+
+    @keyframes timerUrgent {
+      0%, 100% { transform: scale(1); color: var(--danger); }
+      50% { transform: scale(1.1); color: #ff0000; }
+    }
+
+    .poker-card-back {
+      width: 180px;
+      height: 250px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      margin: 20px auto;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+      border: 4px solid rgba(255,255,255,0.3);
+      animation: cardFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-12px) rotate(2deg); }
+    }
+
+    .poker-card {
+      width: 200px;
+      height: 280px;
+      background: white;
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 20px auto;
       box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-      border: 6px solid #333;
+      border: 5px solid #333;
       position: relative;
-      animation: cardFlip 0.8s ease-out;
+      animation: cardReveal 0.8s ease-out;
     }
 
-    .poker-card.red {
-      color: #e74c3c;
+    @keyframes cardReveal {
+      0% { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+      50% { transform: rotateY(45deg) scale(1); }
+      100% { transform: rotateY(0deg) scale(1); opacity: 1; }
     }
 
-    .poker-card.black {
-      color: #2c3e50;
-    }
+    .poker-card.red { color: #e74c3c; }
+    .poker-card.black { color: #2c3e50; }
 
     .poker-card-value {
-      font-size: 8rem;
+      font-size: 5rem;
       font-weight: 900;
       line-height: 1;
     }
 
     .poker-card-suit {
-      font-size: 4rem;
-      margin-top: 10px;
+      font-size: 2.5rem;
+      margin-top: 8px;
     }
 
     .poker-card-corner {
       position: absolute;
-      font-size: 2rem;
+      font-size: 1.3rem;
       font-weight: bold;
+      line-height: 1.2;
     }
 
-    .poker-card-corner.top-left {
-      top: 15px;
-      left: 15px;
-    }
+    .poker-card-corner.top-left { top: 10px; left: 10px; }
+    .poker-card-corner.bottom-right { bottom: 10px; right: 10px; transform: rotate(180deg); }
 
-    .poker-card-corner.bottom-right {
-      bottom: 15px;
-      right: 15px;
-      transform: rotate(180deg);
-    }
-
-    @keyframes cardFlip {
-      0% { transform: rotateY(0deg) scale(0.8); opacity: 0; }
-      50% { transform: rotateY(90deg) scale(1); }
-      100% { transform: rotateY(0deg) scale(1); opacity: 1; }
-    }
-
-    .poker-result {
-      font-size: 3rem;
+    .poker-result-badge {
+      font-size: 2.2rem;
       font-weight: 900;
-      margin-bottom: 30px;
       padding: 15px 40px;
       border-radius: 16px;
+      margin-top: 20px;
       animation: resultPop 0.5s ease-out;
     }
 
@@ -2100,81 +2133,128 @@
       100% { transform: scale(1); }
     }
 
-    .poker-result.big {
+    .poker-result-badge.big {
       color: var(--success);
       background: linear-gradient(135deg, rgba(46, 213, 115, 0.2) 0%, rgba(72, 219, 251, 0.2) 100%);
       border: 3px solid var(--success);
     }
 
-    .poker-result.small {
+    .poker-result-badge.small {
       color: var(--danger);
       background: linear-gradient(135deg, rgba(250, 130, 49, 0.2) 0%, rgba(247, 183, 51, 0.2) 100%);
       border: 3px solid var(--danger);
     }
 
-    .poker-result.tie {
+    .poker-result-badge.tie {
       color: #95a5a6;
       background: linear-gradient(135deg, rgba(149, 165, 166, 0.2) 0%, rgba(127, 140, 141, 0.2) 100%);
       border: 3px solid #95a5a6;
     }
 
-    .poker-bets-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin-top: 20px;
-      max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
+    .poker-rule-hint {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      margin-top: 15px;
+    }
+
+    /* 右側：下注區 */
+    .poker-right-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
 
     .poker-bet-section {
+      flex: 1;
       background: var(--bg);
-      padding: 20px;
-      border-radius: 16px;
-      border: 3px solid transparent;
+      padding: 25px;
+      border-radius: 20px;
+      border: 4px solid transparent;
       transition: all 0.3s ease;
-      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
     }
 
     .poker-bet-section.big {
       border-color: var(--success);
-      background: linear-gradient(135deg, rgba(46, 213, 115, 0.1) 0%, rgba(72, 219, 251, 0.1) 100%);
+      background: linear-gradient(135deg, rgba(46, 213, 115, 0.15) 0%, rgba(72, 219, 251, 0.15) 100%);
     }
 
     .poker-bet-section.small {
       border-color: var(--danger);
-      background: linear-gradient(135deg, rgba(250, 130, 49, 0.1) 0%, rgba(247, 183, 51, 0.1) 100%);
+      background: linear-gradient(135deg, rgba(250, 130, 49, 0.15) 0%, rgba(247, 183, 51, 0.15) 100%);
+    }
+
+    .poker-bet-section.winner {
+      animation: winnerGlow 1s ease-in-out infinite;
+    }
+
+    @keyframes winnerGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(46, 213, 115, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(46, 213, 115, 0.8); }
+    }
+
+    .poker-bet-section.loser {
+      opacity: 0.7;
+      position: relative;
+    }
+
+    .poker-bet-section.loser::after {
+      content: '🍺';
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      font-size: 2.5rem;
+      animation: drinkBounce 1s ease-in-out infinite;
+    }
+
+    @keyframes drinkBounce {
+      0%, 100% { transform: translateY(0) rotate(-10deg); }
+      50% { transform: translateY(-10px) rotate(10deg); }
     }
 
     .poker-bet-title {
-      font-size: 1.8rem;
+      font-size: 2rem;
       font-weight: 900;
       margin-bottom: 15px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
+      gap: 12px;
     }
 
     .poker-bet-title.big { color: var(--success); }
     .poker-bet-title.small { color: var(--danger); }
 
+    .poker-bet-count {
+      font-size: 1rem;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-left: auto;
+    }
+
     .poker-bet-players {
+      flex: 1;
       display: flex;
-      flex-direction: column;
-      gap: 8px;
-      align-items: stretch;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-content: flex-start;
+      overflow-y: auto;
+      max-height: 250px;
     }
 
     .poker-bet-player {
-      background: rgba(255, 255, 255, 0.1);
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-size: 1.2rem;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 18px;
+      border-radius: 25px;
+      font-size: 1.1rem;
       font-weight: 600;
       animation: playerJoin 0.4s ease-out;
-      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     @keyframes playerJoin {
@@ -2183,86 +2263,34 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
-    .poker-winners-losers {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin-top: 30px;
-      max-width: 1000px;
-      margin-left: auto;
-      margin-right: auto;
+    .poker-bet-player.winner {
+      background: linear-gradient(135deg, rgba(46, 213, 115, 0.3) 0%, rgba(72, 219, 251, 0.3) 100%);
+      border: 2px solid var(--success);
     }
 
-    .poker-list {
-      background: var(--bg);
-      padding: 25px;
-      border-radius: 20px;
-      border: 3px solid;
-    }
-
-    .poker-list.winners {
-      border-color: var(--success);
-      background: linear-gradient(135deg, rgba(46, 213, 115, 0.1) 0%, rgba(72, 219, 251, 0.1) 100%);
-    }
-
-    .poker-list.losers {
-      border-color: var(--danger);
-      background: linear-gradient(135deg, rgba(250, 130, 49, 0.1) 0%, rgba(247, 183, 51, 0.1) 100%);
-    }
-
-    .poker-list.tied {
-      border-color: #95a5a6;
-      background: linear-gradient(135deg, rgba(149, 165, 166, 0.1) 0%, rgba(127, 140, 141, 0.1) 100%);
-    }
-
-    .poker-list-title {
-      font-size: 1.8rem;
+    .poker-bet-player.winner::after {
+      content: ' 🏆 +100';
+      color: var(--warning);
       font-weight: bold;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
-    .poker-list-title.winners { color: var(--success); }
-    .poker-list-title.losers { color: var(--danger); }
-    .poker-list-title.tied { color: #95a5a6; }
+    .poker-bet-player.loser::after {
+      content: ' 🍻';
+    }
 
-    .poker-list-items {
+    .poker-no-bets {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      text-align: center;
+      padding: 30px;
+    }
+
+    /* 等待下一局狀態 */
+    .poker-waiting-next {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
       font-size: 1.3rem;
-      line-height: 2;
-      font-weight: 600;
-    }
-
-    .poker-player-item {
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .poker-player-item:last-child {
-      border-bottom: none;
-    }
-
-    .poker-close-btn {
-      margin-top: 40px;
-      padding: 15px 50px;
-      font-size: 1.5rem;
-      font-weight: bold;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 16px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-    }
-
-    .poker-close-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 30px rgba(102, 126, 234, 0.6);
     }
 
     /* 猜歌曲前奏樣式 */
@@ -2608,39 +2636,49 @@
       flex: 1;
       text-align: center;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .end-slogan-logo {
+      width: 280px;
+      height: auto;
+      margin-bottom: 30px;
+      opacity: 0;
+      animation: fadeInUp 0.8s ease-out forwards;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
     }
 
     .end-slogan p {
-      font-size: 2.4rem;
-      font-weight: 700;
-      color: #2D3436;
-      margin: 20px 0;
-      text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+      font-size: 2rem;
+      font-weight: 600;
+      color: #2C3E50;
+      margin: 12px 0;
+      letter-spacing: 1px;
       opacity: 0;
       animation: fadeInUp 0.8s ease-out forwards;
     }
 
-    .end-slogan p:nth-child(1) {
-      animation-delay: 0.2s;
-    }
-
     .end-slogan p:nth-child(2) {
-      animation-delay: 0.5s;
+      animation-delay: 0.3s;
     }
 
     .end-slogan p:nth-child(3) {
-      animation-delay: 0.8s;
+      animation-delay: 0.6s;
     }
 
     .end-slogan .highlight {
-      font-size: 2.8rem;
-      font-weight: 900;
-      background: linear-gradient(90deg, #E91E63, #9C27B0, #3F51B5);
+      font-size: 3.2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      animation: shimmer 2s ease-in-out infinite;
-      text-shadow: none;
+      letter-spacing: 2px;
+      line-height: 1.4;
+      padding: 10px 0;
     }
 
     @keyframes fadeInUp {
@@ -3279,6 +3317,9 @@
         </video>
       </div>
       <div class="end-slogan">
+        <img src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/logo%2F%E8%B3%87%E7%94%A2%2071.png?alt=media&token=dd82561c-60dc-4ffb-b478-5c5621bfa2a0"
+             alt="創智動能 Logo"
+             class="end-slogan-logo">
         <p>🌟 未來，大家各自扮演不同角色發揮所長</p>
         <p class="highlight">2026 齊心協力，創造創智動能亞太企業版圖！</p>
       </div>

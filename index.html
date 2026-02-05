@@ -962,6 +962,68 @@
       box-shadow: 0 6px 16px rgba(107, 203, 119, 0.4);
     }
 
+    /* ===== 比大小撲克牌樣式 ===== */
+    .poker-card-display {
+      width: 80px;
+      height: 110px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
+      border-radius: 8px;
+      border: 2px solid #DDD;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      position: relative;
+      animation: cardFlip 0.6s ease-out;
+    }
+
+    @keyframes cardFlip {
+      0% {
+        transform: rotateY(90deg) scale(0.8);
+        opacity: 0;
+      }
+      50% {
+        transform: rotateY(45deg) scale(1.1);
+      }
+      100% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+      }
+    }
+
+    .poker-card-display .card-value {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .poker-card-display .card-suit {
+      font-size: 1.5rem;
+      margin-top: 5px;
+    }
+
+    .poker-card-display.red {
+      color: #E53935;
+    }
+
+    .poker-card-display.black {
+      color: #212121;
+    }
+
+    /* 等待動畫 */
+    .waiting-dots::after {
+      content: '';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+
     /* ===== 成就系統 ===== */
 
     /* 成就按鈕 */

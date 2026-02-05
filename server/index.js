@@ -790,13 +790,33 @@ io.on('connection', (socket) => {
     socket.emit('host:result', result);
   });
 
-  // 比大小 - 主持人開始
+  // 比大小 - 主持人開始遊戲
   socket.on('host:startPoker', () => {
     if (socket.id !== hostSocketId) {
       socket.emit('host:error', { error: '無權限' });
       return;
     }
     const result = miniGameManager.startPokerGame();
+    socket.emit('host:result', result);
+  });
+
+  // 比大小 - 主持人下一局
+  socket.on('host:nextPokerRound', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.nextPokerRound();
+    socket.emit('host:result', result);
+  });
+
+  // 比大小 - 主持人結束整個遊戲
+  socket.on('host:endPokerGame', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.endPokerGame();
     socket.emit('host:result', result);
   });
 
@@ -810,15 +830,6 @@ io.on('connection', (socket) => {
 
     const result = miniGameManager.placeBet(player.id, player.name, bet);
     socket.emit('player:placeBetResult', result);
-
-    // 广播玩家下注到所有客户端（投影界面和主持人界面）
-    if (result.success) {
-      io.emit('minigame:pokerBetPlaced', {
-        playerId: player.id,
-        playerName: player.name,
-        bet: bet
-      });
-    }
   });
 
   // 猜歌曲前奏 - 主持人開始遊戲
@@ -885,32 +896,6 @@ io.on('connection', (socket) => {
     socket.emit('host:result', result);
   });
 
-  // 比大小 - 主持人結束（提前結算）
-  socket.on('host:endPoker', () => {
-    if (socket.id !== hostSocketId) {
-      socket.emit('host:error', { error: '無權限' });
-      return;
-    }
-    const result = miniGameManager.endPokerGame();
-    socket.emit('host:result', result);
-
-    // 發放獎勵給贏家
-    if (result.success) {
-      result.winners.forEach(w => {
-        gameEngine.addScore(w.playerId, w.reward, '比大小獲勝');
-      });
-    }
-  });
-
-  // 比大小 - 主持人下一局
-  socket.on('host:nextPokerRound', () => {
-    if (socket.id !== hostSocketId) {
-      socket.emit('host:error', { error: '無權限' });
-      return;
-    }
-    const result = miniGameManager.nextPokerRound();
-    socket.emit('host:result', result);
-  });
 
   // 重置遊戲
   socket.on('host:reset', () => {
@@ -1219,16 +1204,30 @@ miniGameManager.on('beer:ended', (data) => {
 });
 
 // 比大小事件
-miniGameManager.on('poker:started', (data) => {
-  io.emit('minigame:pokerStarted', data);
+miniGameManager.on('poker:gameStarted', () => {
+  io.emit('minigame:pokerGameStarted');
 });
 
-miniGameManager.on('poker:ended', (data) => {
-  io.emit('minigame:pokerEnded', data);
+miniGameManager.on('poker:roundStarted', (data) => {
+  io.emit('minigame:pokerRoundStarted', data);
 });
 
-miniGameManager.on('poker:roundEnd', () => {
-  io.emit('minigame:pokerRoundEnd');
+miniGameManager.on('poker:betPlaced', (data) => {
+  io.emit('minigame:pokerBetPlaced', data);
+});
+
+miniGameManager.on('poker:roundEnded', (data) => {
+  // 發放獎勵給贏家
+  if (data.winners && data.winners.length > 0) {
+    data.winners.forEach(w => {
+      gameEngine.addScore(w.playerId, w.reward, '比大小獲勝');
+    });
+  }
+  io.emit('minigame:pokerRoundEnded', data);
+});
+
+miniGameManager.on('poker:gameEnded', (data) => {
+  io.emit('minigame:pokerGameEnded', data);
 });
 
 // 猜歌曲前奏事件
