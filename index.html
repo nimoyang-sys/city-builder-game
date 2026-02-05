@@ -870,6 +870,18 @@
       }
     }
 
+    @keyframes loadingBar {
+      0% {
+        transform: translateX(-100%);
+      }
+      50% {
+        transform: translateX(0);
+      }
+      100% {
+        transform: translateX(100%);
+      }
+    }
+
     /* 購買確認彈窗 */
     .modal-overlay {
       display: none;
@@ -2477,24 +2489,63 @@
 
   <!-- 猜歌曲前奏 Modal -->
   <div class="modal-overlay" id="song-guess-modal">
-    <div class="modal">
-      <div class="modal-emoji">🎵</div>
-      <div class="modal-title">猜歌曲前奏</div>
+    <div class="modal" style="max-width: 450px;">
+      <div class="modal-emoji" style="font-size: 4rem; margin-bottom: 10px;">🎵</div>
+      <div class="modal-title" style="font-size: 1.8rem; margin-bottom: 10px;">猜歌曲前奏</div>
       <div class="modal-info" style="text-align: center;">
-        <p style="margin-bottom: 15px;">請輸入你猜測的歌名</p>
+        <p style="font-size: 1rem; color: var(--text-muted); margin-bottom: 25px;">聆聽音樂，猜猜這首歌是什麼？</p>
       </div>
-      <input type="text" id="song-guess-input" class="form-control" placeholder="輸入歌名..." style="margin-bottom: 15px; padding: 12px; font-size: 1rem; border: 2px solid var(--primary); border-radius: 8px; text-align: center;">
-      <div class="modal-buttons">
-        <button class="modal-btn" style="background: var(--success); color: white;" onclick="submitSongGuess()">
+      <div style="position: relative; margin-bottom: 20px;">
+        <input
+          type="text"
+          id="song-guess-input"
+          class="form-control"
+          placeholder="輸入歌名..."
+          style="
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            border: 3px solid var(--primary);
+            border-radius: 12px;
+            text-align: center;
+            background: rgba(155, 89, 182, 0.05);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(155, 89, 182, 0.15);
+          "
+          onfocus="this.style.borderColor='var(--success)'; this.style.boxShadow='0 6px 20px rgba(46, 213, 115, 0.3)';"
+          onblur="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 4px 12px rgba(155, 89, 182, 0.15)';"
+        >
+      </div>
+      <div class="modal-buttons" style="gap: 10px;">
+        <button
+          class="modal-btn"
+          style="
+            background: linear-gradient(135deg, var(--success) 0%, #48dbfb 100%);
+            color: white;
+            padding: 14px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+            transition: all 0.3s ease;
+          "
+          onclick="submitSongGuess()"
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(46, 213, 115, 0.5)';"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(46, 213, 115, 0.4)';"
+        >
           ✓ 確認送出
         </button>
       </div>
-      <div id="song-identifying" style="display: none; text-align: center; margin-top: 15px;">
-        <div style="font-size: 1.1rem; color: var(--warning); font-weight: bold; animation: pulse 1.5s infinite;">
-          識別中...
+      <div id="song-identifying" style="display: none; text-align: center; margin-top: 20px; padding: 20px; background: rgba(241, 196, 15, 0.1); border-radius: 12px; border: 2px dashed var(--warning);">
+        <div style="font-size: 1.3rem; color: var(--warning); font-weight: bold; animation: pulse 1.5s infinite; margin-bottom: 10px;">
+          🎤 識別中...
         </div>
-        <div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">
+        <div style="font-size: 0.95rem; color: var(--text-muted);">
           等待主持人公布結果
+        </div>
+        <div style="margin-top: 15px;">
+          <div style="width: 100%; height: 4px; background: rgba(241, 196, 15, 0.2); border-radius: 2px; overflow: hidden;">
+            <div style="width: 100%; height: 100%; background: var(--warning); animation: loadingBar 1.5s ease-in-out infinite;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -2502,15 +2553,33 @@
 
   <!-- 猜歌結果 Modal -->
   <div class="modal-overlay" id="song-result-modal">
-    <div class="modal">
-      <div class="modal-emoji" id="song-result-emoji">🎉</div>
-      <div class="modal-title" id="song-result-title">結果</div>
-      <div class="modal-info" style="text-align: center;">
-        <p id="song-result-message" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;"></p>
-        <p id="song-result-detail" style="font-size: 0.9rem; color: var(--text-muted);"></p>
+    <div class="modal" style="max-width: 450px;">
+      <div class="modal-emoji" id="song-result-emoji" style="font-size: 5rem; margin-bottom: 15px; animation: bounce 0.6s ease-out;">🎉</div>
+      <div class="modal-title" id="song-result-title" style="font-size: 2rem; margin-bottom: 15px;">結果</div>
+      <div class="modal-info" style="text-align: center; padding: 20px; border-radius: 12px; background: rgba(155, 89, 182, 0.05); margin-bottom: 20px;">
+        <p id="song-result-message" style="font-size: 1.4rem; font-weight: bold; margin-bottom: 15px;"></p>
+        <div style="width: 60px; height: 3px; background: var(--primary); margin: 15px auto; border-radius: 2px; opacity: 0.3;"></div>
+        <p id="song-result-detail" style="font-size: 1.1rem; color: var(--text); margin-top: 15px;">
+          <span style="font-weight: 600;">正確答案：</span><span id="song-result-answer" style="color: var(--primary);"></span>
+        </p>
       </div>
       <div class="modal-buttons">
-        <button class="modal-btn" style="background: var(--primary); color: white;" onclick="closeSongResult()">
+        <button
+          class="modal-btn"
+          style="
+            background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(155, 89, 182, 0.4);
+            transition: all 0.3s ease;
+          "
+          onclick="closeSongResult()"
+          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(155, 89, 182, 0.5)';"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 6px 20px rgba(155, 89, 182, 0.4)';"
+        >
           確定
         </button>
       </div>

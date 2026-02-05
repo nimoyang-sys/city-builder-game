@@ -1491,7 +1491,7 @@ function showSongResult(isCorrect, correctAnswer, reward) {
   const emoji = document.getElementById('song-result-emoji');
   const title = document.getElementById('song-result-title');
   const message = document.getElementById('song-result-message');
-  const detail = document.getElementById('song-result-detail');
+  const answer = document.getElementById('song-result-answer');
 
   if (isCorrect) {
     emoji.textContent = '🎉';
@@ -1499,14 +1499,16 @@ function showSongResult(isCorrect, correctAnswer, reward) {
     title.style.color = 'var(--success)';
     message.textContent = `+${reward}元`;
     message.style.color = 'var(--success)';
-    detail.textContent = `正確答案：${correctAnswer}`;
+    answer.textContent = correctAnswer;
+    answer.style.color = 'var(--success)';
   } else {
     emoji.textContent = '😅';
     title.textContent = '喔喔~喝一杯吧~';
     title.style.color = 'var(--danger)';
     message.textContent = '答錯了';
     message.style.color = 'var(--danger)';
-    detail.textContent = `正確答案：${correctAnswer}`;
+    answer.textContent = correctAnswer;
+    answer.style.color = 'var(--danger)';
   }
 
   if (modal) {
