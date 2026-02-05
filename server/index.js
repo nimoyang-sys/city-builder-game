@@ -815,7 +815,24 @@ gameEngine.on('scoreBatchAdded', (data) => {
 });
 
 gameEngine.on('coinsBatchAdded', (data) => {
+  // 廣播給所有客戶端
   io.emit('game:coinsBatchAdded', data);
+
+  // 通知每個受影響的玩家金幣更新
+  if (data.results) {
+    data.results.forEach(result => {
+      if (result.success) {
+        const player = gameEngine.players.get(result.playerId);
+        if (player && player.socketId) {
+          io.to(player.socketId).emit('player:coinsUpdated', {
+            coins: result.newCoins,
+            amount: data.amount,
+            reason: data.reason
+          });
+        }
+      }
+    });
+  }
 });
 
 gameEngine.on('gameEnded', (data) => {

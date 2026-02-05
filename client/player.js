@@ -94,6 +94,7 @@ function initSocket() {
   });
   socket.on('player:buyResult', handleBuyResult);
   socket.on('player:stateUpdate', handlePlayerStateUpdate);
+  socket.on('player:coinsUpdated', handleCoinsUpdated);
 
   // 遊戲事件
   socket.on('game:started', handleGameStarted);
@@ -185,19 +186,28 @@ function handlePlayerJoined(data) {
   updateAchievementsDisplay();
   showGameScreen();
 
-  // 如果遊戲已經開始（中途加入），且有角色，自動彈出角色彈窗
-  if (gameState.state !== 'WAITING' && playerState.role && !roleModalShown) {
-    setTimeout(() => {
-      openRoleModal();
-    }, 500); // 延遲 0.5 秒讓畫面轉換更流暢
-  }
-
   if (gameState.state === 'WAITING') {
     showWaitingScreen();
   } else if (gameState.state === 'ENDED') {
     showResultScreen(gameState);
   } else {
     showGameContent();
+
+    // 如果遊戲已經開始（中途加入），且有角色，自動彈出角色彈窗
+    console.log('🎮 中途加入檢查:', {
+      hasRole: !!playerState.role,
+      role: playerState.role,
+      roleModalShown: roleModalShown,
+      gameState: gameState.state
+    });
+
+    if (playerState.role && !roleModalShown) {
+      console.log('✅ 準備彈出角色彈窗（中途加入）');
+      setTimeout(() => {
+        console.log('🎯 執行彈出角色彈窗');
+        openRoleModal();
+      }, 800); // 延遲 0.8 秒讓畫面完全轉換後再彈出
+    }
   }
 
   // 更新排行榜
@@ -443,8 +453,16 @@ function handleGameStarted(data) {
   if (itemButtons) itemButtons.style.display = 'flex';
 
   // 如果玩家有角色且角色彈窗還沒顯示過，自動彈出角色彈窗
+  console.log('🎮 遊戲開始檢查:', {
+    hasRole: !!playerState.role,
+    role: playerState.role,
+    roleModalShown: roleModalShown
+  });
+
   if (playerState.role && !roleModalShown) {
+    console.log('✅ 準備彈出角色彈窗（遊戲開始）');
     setTimeout(() => {
+      console.log('🎯 執行彈出角色彈窗');
       openRoleModal();
     }, 500); // 延遲 0.5 秒讓畫面轉換更流暢
   }
@@ -505,6 +523,13 @@ function handleScoreAdded(data) {
     updateResourceDisplay();
     showToast(`獲得 +${data.amount} 分！（${data.reason}）`, 'success');
   }
+}
+
+function handleCoinsUpdated(data) {
+  // 更新玩家金幣
+  playerState.coins = data.coins;
+  updateResourceDisplay();
+  showToast(`💰 獲得 +${data.amount} 金幣！（${data.reason}）`, 'success');
 }
 
 // ===== UI 更新 =====
@@ -1624,10 +1649,16 @@ window.buyFlashSale = buyFlashSale;
 // ===== 角色 Modal =====
 
 function openRoleModal() {
+  console.log('📋 openRoleModal 被調用');
   const modal = document.getElementById('role-modal');
   const modalBody = document.getElementById('role-modal-body');
 
+  console.log('📋 modal 元素:', modal);
+  console.log('📋 modalBody 元素:', modalBody);
+  console.log('📋 playerState.role:', playerState.role);
+
   if (!playerState.role) {
+    console.log('❌ 沒有角色資料，取消彈出');
     return;
   }
 
@@ -1640,6 +1671,7 @@ function openRoleModal() {
     <div class="role-skill">${role.description}</div>
   `;
 
+  console.log('✅ 顯示角色彈窗');
   modal.classList.add('show');
 }
 

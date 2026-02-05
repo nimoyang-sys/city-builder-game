@@ -880,19 +880,13 @@ export class GameEngine extends EventEmitter {
         player.coins += amount;
         results.push({
           playerId,
+          playerName: player.name,
           success: true,
           newCoins: player.coins
         });
 
         // 儲存到資料庫
         this.savePlayerToDB(player);
-
-        // 通知該玩家
-        this.emitToPlayer(playerId, 'player:coinsUpdated', {
-          coins: player.coins,
-          amount: amount,
-          reason: reason
-        });
       } else {
         results.push({
           playerId,
@@ -902,10 +896,12 @@ export class GameEngine extends EventEmitter {
       }
     }
 
+    // 發送事件通知所有客戶端
     this.emit('coinsBatchAdded', {
       playerIds,
       amount,
-      reason
+      reason,
+      results
     });
 
     return results;
