@@ -1517,32 +1517,73 @@ function showQuizResultModal(data) {
   const detailsContainer = document.getElementById('quiz-result-details');
   detailsContainer.innerHTML = data.questions.map((question, index) => {
     const myAnswer = myResult.answers.find(a => a.questionIndex === index);
-    const correctOption = question.options[question.correct];
+    const myAnswerIndex = myAnswer ? myAnswer.answerIndex : -1;
+    const correctIndex = question.correct;
 
-    let answerDisplay = '';
     let resultClass = '';
-
-    if (myAnswer) {
-      const myOption = question.options[myAnswer.answerIndex];
-      if (myAnswer.isCorrect) {
-        answerDisplay = `<span style="color: var(--success);">✓ ${myOption}</span>`;
-        resultClass = 'correct';
-      } else {
-        answerDisplay = `<span style="color: var(--danger);">✗ ${myOption}</span> → 正確答案: <span style="color: var(--success);">${correctOption}</span>`;
-        resultClass = 'incorrect';
-      }
-    } else {
-      answerDisplay = `<span style="color: var(--text-muted);">未作答</span> → 正確答案: <span style="color: var(--success);">${correctOption}</span>`;
+    if (!myAnswer) {
       resultClass = 'unanswered';
+    } else if (myAnswer.isCorrect) {
+      resultClass = 'correct';
+    } else {
+      resultClass = 'incorrect';
     }
+
+    // 生成所有選項，標記玩家選的和正確答案
+    const optionsHTML = question.options.map((option, optIndex) => {
+      const isMyChoice = optIndex === myAnswerIndex;
+      const isCorrect = optIndex === correctIndex;
+
+      let borderStyle = '2px solid transparent';
+      let backgroundColor = 'rgba(255, 255, 255, 0.05)';
+      let icon = '';
+
+      if (isMyChoice && isCorrect) {
+        // 選對了
+        borderStyle = '3px solid var(--success)';
+        backgroundColor = 'rgba(34, 197, 94, 0.1)';
+        icon = '✓ ';
+      } else if (isMyChoice && !isCorrect) {
+        // 選錯了
+        borderStyle = '3px solid var(--danger)';
+        backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        icon = '✗ ';
+      } else if (!isMyChoice && isCorrect) {
+        // 正確答案（沒選）
+        borderStyle = '2px solid var(--success)';
+        backgroundColor = 'rgba(34, 197, 94, 0.05)';
+        icon = '✓ ';
+      }
+
+      return `
+        <div style="
+          padding: 10px 12px;
+          margin: 5px 0;
+          border-radius: 6px;
+          border: ${borderStyle};
+          background: ${backgroundColor};
+          font-size: 0.9rem;
+        ">
+          ${icon}${option}
+        </div>
+      `;
+    }).join('');
+
+    const statusText = !myAnswer ? '未作答' : myAnswer.isCorrect ? '答對 ✓' : '答錯 ✗';
+    const statusColor = !myAnswer ? 'var(--text-muted)' : myAnswer.isCorrect ? 'var(--success)' : 'var(--danger)';
 
     return `
       <div style="margin-bottom: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid ${resultClass === 'correct' ? 'var(--success)' : resultClass === 'incorrect' ? 'var(--danger)' : 'var(--text-muted)'};">
-        <div style="font-weight: bold; margin-bottom: 8px; color: var(--text-primary);">
-          第 ${index + 1} 題：${question.question}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <div style="font-weight: bold; color: var(--text-primary);">
+            第 ${index + 1} 題：${question.question}
+          </div>
+          <div style="font-size: 0.9rem; font-weight: bold; color: ${statusColor};">
+            ${statusText}
+          </div>
         </div>
-        <div style="font-size: 0.9rem; color: var(--text-secondary);">
-          ${answerDisplay}
+        <div>
+          ${optionsHTML}
         </div>
       </div>
     `;
