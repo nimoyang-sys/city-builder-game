@@ -262,31 +262,42 @@ export class MiniGameManager extends EventEmitter {
   }
 
   joinBeer(playerId, playerName) {
+    console.log(`[Beer] Player ${playerName} (${playerId}) attempting to join`);
+    console.log(`[Beer] Current state - waiting: ${this.beerState.waiting}, participants: ${this.beerState.participants.length}`);
+
     if (!this.beerState.waiting) {
+      console.log('[Beer] Join failed - not in waiting phase');
       return { success: false, error: '目前不在等待加入階段' };
     }
 
     if (this.beerState.participants.length >= MINI_GAMES.BEER_GAME.maxPlayers) {
+      console.log('[Beer] Join failed - max players reached');
       return { success: false, error: '人數已滿' };
     }
 
     if (this.beerState.participants.some(p => p.playerId === playerId)) {
+      console.log('[Beer] Join failed - player already joined');
       return { success: false, error: '已經加入了' };
     }
 
     this.beerState.participants.push({ playerId, playerName });
+    const currentCount = this.beerState.participants.length;
+    const canStart = currentCount >= MINI_GAMES.BEER_GAME.minPlayers;
+
+    console.log(`[Beer] Player joined successfully! Total: ${currentCount}/${MINI_GAMES.BEER_GAME.maxPlayers}, canStart: ${canStart}`);
+    console.log(`[Beer] Emitting beer:playerJoined event`);
 
     this.emit('beer:playerJoined', {
       playerId,
       playerName,
-      currentCount: this.beerState.participants.length,
+      currentCount,
       maxPlayers: MINI_GAMES.BEER_GAME.maxPlayers,
-      canStart: this.beerState.participants.length >= MINI_GAMES.BEER_GAME.minPlayers
+      canStart
     });
 
     return {
       success: true,
-      canStart: this.beerState.participants.length >= MINI_GAMES.BEER_GAME.minPlayers
+      canStart
     };
   }
 
@@ -682,6 +693,28 @@ export class MiniGameManager extends EventEmitter {
           winners: this.pokerState.winners,
           losers: this.pokerState.losers,
           tied: this.pokerState.tied
+        }
+      });
+    }
+
+    if (this.songGuessState.active) {
+      // 獲取所有玩家列表
+      const allPlayers = Array.from(this.gameEngine.players.values()).map(p => ({
+        id: p.id,
+        name: p.name
+      }));
+
+      // 獲取已提交答案的玩家列表
+      const submittedPlayers = Array.from(this.songGuessState.playerAnswers.keys());
+
+      activeGames.push({
+        type: 'songGuess',
+        data: {
+          roundActive: this.songGuessState.roundActive,
+          currentRound: this.songGuessState.currentRound,
+          allPlayers,
+          submittedPlayers,
+          totalSubmitted: this.songGuessState.playerAnswers.size
         }
       });
     }

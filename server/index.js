@@ -256,7 +256,21 @@ io.on('connection', (socket) => {
         socket.emit('minigame:beerGameStarted', game.data);
       } else if (game.type === 'poker') {
         socket.emit('minigame:pokerStarted', game.data);
+      } else if (game.type === 'songGuess') {
+        socket.emit('minigame:songGuessGameStarted');
+        if (game.data.roundActive) {
+          socket.emit('minigame:songGuessRoundStarted', {
+            round: game.data.currentRound,
+            allPlayers: game.data.allPlayers
+          });
+        }
       }
+    }
+
+    // 檢查是否有進行中的限時搶購
+    const flashSaleStatus = gameEngine.getFlashSaleStatus();
+    if (flashSaleStatus.active) {
+      socket.emit('game:flashSaleStarted', flashSaleStatus);
     }
 
     // 通知其他人
@@ -286,7 +300,21 @@ io.on('connection', (socket) => {
           socket.emit('minigame:beerGameStarted', game.data);
         } else if (game.type === 'poker') {
           socket.emit('minigame:pokerStarted', game.data);
+        } else if (game.type === 'songGuess') {
+          socket.emit('minigame:songGuessGameStarted');
+          if (game.data.roundActive) {
+            socket.emit('minigame:songGuessRoundStarted', {
+              round: game.data.currentRound,
+              allPlayers: game.data.allPlayers
+            });
+          }
         }
+      }
+
+      // 檢查是否有進行中的限時搶購
+      const flashSaleStatus = gameEngine.getFlashSaleStatus();
+      if (flashSaleStatus.active) {
+        socket.emit('game:flashSaleStarted', flashSaleStatus);
       }
     } else {
       socket.emit('player:notFound');
@@ -745,11 +773,14 @@ io.on('connection', (socket) => {
   socket.on('player:joinBeer', () => {
     const player = gameEngine.getPlayerBySocketId(socket.id);
     if (!player) {
+      console.log('[Server] Player:joinBeer failed - player not found for socket:', socket.id);
       socket.emit('player:error', { message: '玩家不存在' });
       return;
     }
 
+    console.log(`[Server] Player ${player.name} (${player.id}) requesting to join beer game`);
     const result = miniGameManager.joinBeer(player.id, player.name);
+    console.log('[Server] Join beer result:', result);
     socket.emit('player:joinBeerResult', result);
   });
 
@@ -1167,6 +1198,8 @@ miniGameManager.on('beer:waitingStart', () => {
 });
 
 miniGameManager.on('beer:playerJoined', (data) => {
+  console.log('[Server] Beer player joined event received:', data);
+  console.log(`[Server] Broadcasting to all clients - currentCount: ${data.currentCount}, canStart: ${data.canStart}`);
   io.emit('minigame:beerPlayerJoined', data);
 });
 
