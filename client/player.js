@@ -23,8 +23,19 @@ let playerState = {
   activeEffects: []
 };
 
-// 角色彈窗是否已經顯示過
-let roleModalShown = false;
+// 角色彈窗是否已經顯示過（使用 localStorage 記錄當前遊戲會話）
+function isRoleModalShown() {
+  const playerId = localStorage.getItem('playerId');
+  if (!playerId) return false;
+  return localStorage.getItem(`roleModalShown_${playerId}`) === 'true';
+}
+
+function setRoleModalShown() {
+  const playerId = localStorage.getItem('playerId');
+  if (playerId) {
+    localStorage.setItem(`roleModalShown_${playerId}`, 'true');
+  }
+}
 
 // 遊戲狀態
 let gameState = {
@@ -212,11 +223,11 @@ function handlePlayerJoined(data) {
     console.log('🎮 中途加入檢查:', {
       hasRole: !!playerState.role,
       role: playerState.role,
-      roleModalShown: roleModalShown,
+      roleModalShown: isRoleModalShown(),
       gameState: gameState.state
     });
 
-    if (playerState.role && !roleModalShown) {
+    if (playerState.role && !isRoleModalShown()) {
       console.log('✅ 準備彈出角色彈窗（中途加入）');
       setTimeout(() => {
         console.log('🎯 執行彈出角色彈窗');
@@ -463,10 +474,10 @@ function handleGameStarted(data) {
   console.log('🎮 遊戲開始檢查:', {
     hasRole: !!playerState.role,
     role: playerState.role,
-    roleModalShown: roleModalShown
+    roleModalShown: isRoleModalShown()
   });
 
-  if (playerState.role && !roleModalShown) {
+  if (playerState.role && !isRoleModalShown()) {
     console.log('✅ 準備彈出角色彈窗（遊戲開始）');
     setTimeout(() => {
       console.log('🎯 執行彈出角色彈窗');
@@ -515,6 +526,13 @@ function handlePlayerLeft(data) {
 
 function handleGameReset() {
   // 遊戲重置
+  const playerId = localStorage.getItem('playerId');
+
+  // 清除角色彈窗已顯示的記錄
+  if (playerId) {
+    localStorage.removeItem(`roleModalShown_${playerId}`);
+  }
+
   localStorage.removeItem('playerId');
   localStorage.removeItem('playerName');
   location.reload();
@@ -560,7 +578,7 @@ function updateRoleDisplay() {
   if (!headerBadge) return;
 
   // 只有在遊戲已開始且角色彈窗已顯示過後才顯示在右上角
-  if (playerState.role && gameState.state !== 'WAITING' && roleModalShown) {
+  if (playerState.role && gameState.state !== 'WAITING' && isRoleModalShown()) {
     headerEmoji.textContent = playerState.role.emoji;
     headerName.textContent = playerState.role.name;
     headerBadge.style.backgroundColor = `${playerState.role.color}20`;
@@ -2125,7 +2143,7 @@ function closeRoleModal() {
   modal.classList.remove('show');
 
   // 標記角色彈窗已顯示過，並更新右上角顯示
-  roleModalShown = true;
+  setRoleModalShown();
   updateRoleDisplay();
 }
 

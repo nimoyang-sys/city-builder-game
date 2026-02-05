@@ -1119,39 +1119,48 @@
             🃏 撲克牌比大小
           </button>
           <div id="poker-game-control" style="display: none;">
-            <div id="poker-betting-control" style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
-              <p style="font-size: 0.85rem; margin-bottom: 5px;">
-                遊戲進行中... <span id="poker-timer" style="color: var(--warning); font-weight: bold;">20s</span>
+            <!-- 下注中狀態 -->
+            <div id="poker-betting-control" style="background: var(--bg); padding: 15px; border-radius: 8px; margin-top: 10px;">
+              <p style="font-size: 1rem; font-weight: bold; margin-bottom: 8px; color: var(--info);">
+                第 <span id="poker-round-number">1</span> 局 - 下注中
               </p>
-              <p style="font-size: 0.8rem; color: var(--text-muted);">
-                已下注：<span id="poker-bet-count">0</span> 人
+              <p style="font-size: 0.9rem; margin-bottom: 5px;">
+                倒計時：<span id="poker-timer" style="color: var(--warning); font-weight: bold; font-size: 1.1rem;">20s</span>
               </p>
-              <button class="btn btn-danger btn-block btn-sm" onclick="endPokerGameNow()" style="margin-top: 10px;">
-                立即結算
-              </button>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+                押大：<span id="poker-bet-big-count" style="color: var(--success);">0</span> 人 |
+                押小：<span id="poker-bet-small-count" style="color: var(--danger);">0</span> 人
+              </p>
             </div>
+
+            <!-- 結果顯示狀態 -->
             <div id="poker-result-control" style="display: none; margin-top: 10px;">
-              <div style="background: var(--bg); padding: 10px; border-radius: 8px;">
-                <p style="font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;">
-                  結果：<span id="poker-card-display"></span> = <span id="poker-result-display"></span>
+              <div style="background: var(--bg); padding: 15px; border-radius: 8px;">
+                <p style="font-size: 1rem; font-weight: bold; margin-bottom: 8px;">
+                  第 <span id="poker-result-round">1</span> 局結果
                 </p>
-                <p style="font-size: 0.8rem; color: var(--success);">
-                  贏家（+100元）：<span id="poker-winners-count">0</span> 人
+                <p style="font-size: 1.1rem; font-weight: bold; margin-bottom: 8px;">
+                  🃏 <span id="poker-card-display"></span> = <span id="poker-result-display"></span>
                 </p>
-                <p style="font-size: 0.8rem; color: var(--danger);">
-                  輸家（喝酒）：<span id="poker-losers-count">0</span> 人
+                <p style="font-size: 0.85rem; color: var(--success); margin-bottom: 3px;">
+                  🏆 贏家：<span id="poker-winners-count">0</span> 人 (+100分)
                 </p>
-                <button class="btn btn-primary btn-block btn-sm" onclick="startPokerGame()" style="margin-top: 10px;">
-                  再開一局
-                </button>
-                <button class="btn btn-warning btn-block btn-sm" onclick="endPokerMinigame()" style="margin-top: 10px;">
-                  結束遊戲
-                </button>
+                <p style="font-size: 0.85rem; color: var(--danger); margin-bottom: 10px;">
+                  🍺 輸家：<span id="poker-losers-count">0</span> 人 (喝酒)
+                </p>
+                <div style="display: flex; gap: 10px;">
+                  <button class="btn btn-primary btn-sm" onclick="nextPokerRound()" style="flex: 1;">
+                    ▶️ 下一局
+                  </button>
+                  <button class="btn btn-danger btn-sm" onclick="endPokerMinigame()" style="flex: 1;">
+                    ⏹️ 結束遊戲
+                  </button>
+                </div>
               </div>
             </div>
           </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
-            全員參與，20秒下注，押對+100元，押錯喝酒。A~6=小，7=和局，8~K=大
+            全員參與，每局20秒下注，押對+100元，押錯喝酒。A~6=小，7=和局，8~K=大
           </p>
         </div>
 
@@ -2661,32 +2670,33 @@
       }
     }
 
-    // 比大小 - 開始
+    // 比大小 - 開始遊戲
     function startPokerGame() {
-      if (confirm('確定要開始比大小嗎？玩家有20秒時間下注')) {
+      if (confirm('確定要開始比大小嗎？')) {
         socket.emit('host:startPoker');
         document.getElementById('btn-poker-start').style.display = 'none';
         document.getElementById('poker-game-control').style.display = 'block';
         document.getElementById('poker-betting-control').style.display = 'block';
         document.getElementById('poker-result-control').style.display = 'none';
-        document.getElementById('poker-bet-count').textContent = '0';
         addLog('比大小遊戲開始', 'success');
       }
     }
 
-    // 比大小 - 立即結算
-    function endPokerGameNow() {
-      if (confirm('確定要立即結算嗎？')) {
-        socket.emit('host:endPoker');
-      }
+    // 比大小 - 下一局
+    function nextPokerRound() {
+      socket.emit('host:nextPokerRound');
+      document.getElementById('poker-betting-control').style.display = 'block';
+      document.getElementById('poker-result-control').style.display = 'none';
+      addLog('開始下一局比大小', 'info');
     }
 
-    // 比大小 - 結束小遊戲
+    // 比大小 - 結束整個遊戲
     function endPokerMinigame() {
-      if (confirm('確定要結束比大小遊戲嗎？')) {
-        socket.emit('host:nextPokerRound');
+      if (confirm('確定要結束比大小遊戲嗎？玩家彈窗將會關閉')) {
+        socket.emit('host:endPokerGame');
         document.getElementById('btn-poker-start').style.display = 'block';
         document.getElementById('poker-game-control').style.display = 'none';
+        document.getElementById('poker-betting-control').style.display = 'none';
         document.getElementById('poker-result-control').style.display = 'none';
         if (pokerTimerInterval) {
           clearInterval(pokerTimerInterval);
@@ -2809,32 +2819,55 @@
     });
 
     // 比大小事件
-    let pokerBetCount = 0;
+    let pokerBetBigCount = 0;
+    let pokerBetSmallCount = 0;
 
-    socket.on('minigame:pokerStarted', (data) => {
-      pokerBetCount = 0;
-      document.getElementById('poker-bet-count').textContent = '0';
+    socket.on('minigame:pokerGameStarted', () => {
+      addLog('比大小遊戲已開始', 'success');
+    });
+
+    socket.on('minigame:pokerRoundStarted', (data) => {
+      pokerBetBigCount = 0;
+      pokerBetSmallCount = 0;
+
+      document.getElementById('poker-round-number').textContent = data.roundNumber;
+      document.getElementById('poker-bet-big-count').textContent = '0';
+      document.getElementById('poker-bet-small-count').textContent = '0';
+      document.getElementById('poker-betting-control').style.display = 'block';
+      document.getElementById('poker-result-control').style.display = 'none';
 
       // 啟動倒計時
       const endTime = data.endTime;
+      if (pokerTimerInterval) clearInterval(pokerTimerInterval);
 
       pokerTimerInterval = setInterval(() => {
         const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-        document.getElementById('poker-timer').textContent = remaining + 's';
+        const timerEl = document.getElementById('poker-timer');
+        if (timerEl) {
+          timerEl.textContent = remaining + 's';
+          timerEl.style.color = remaining <= 5 ? 'var(--danger)' : 'var(--warning)';
+        }
 
         if (remaining <= 0) {
           clearInterval(pokerTimerInterval);
           pokerTimerInterval = null;
         }
       }, 100);
+
+      addLog(`第 ${data.roundNumber} 局開始，玩家下注中...`, 'info');
     });
 
     socket.on('minigame:pokerBetPlaced', (data) => {
-      pokerBetCount++;
-      document.getElementById('poker-bet-count').textContent = pokerBetCount;
+      if (data.bet === 'big') {
+        pokerBetBigCount++;
+      } else {
+        pokerBetSmallCount++;
+      }
+      document.getElementById('poker-bet-big-count').textContent = pokerBetBigCount;
+      document.getElementById('poker-bet-small-count').textContent = pokerBetSmallCount;
     });
 
-    socket.on('minigame:pokerEnded', (data) => {
+    socket.on('minigame:pokerRoundEnded', (data) => {
       if (pokerTimerInterval) {
         clearInterval(pokerTimerInterval);
         pokerTimerInterval = null;
@@ -2848,13 +2881,14 @@
 
       let resultText;
       if (data.result === 'tie') {
-        resultText = '和局';
+        resultText = '和局 (7)';
       } else if (data.result === 'big') {
         resultText = '大';
       } else {
         resultText = '小';
       }
 
+      document.getElementById('poker-result-round').textContent = data.roundNumber;
       document.getElementById('poker-card-display').textContent = cardDisplay;
       document.getElementById('poker-result-display').textContent = resultText;
       document.getElementById('poker-winners-count').textContent = data.winners.length;
@@ -2862,14 +2896,16 @@
 
       if (data.result === 'tie') {
         const tiedCount = data.tied ? data.tied.length : 0;
-        addLog(`比大小結算：${cardDisplay} = ${resultText}，${tiedCount}人平手`, 'info');
+        addLog(`第 ${data.roundNumber} 局：${cardDisplay} = ${resultText}，${tiedCount}人平手`, 'info');
       } else {
-        addLog(`比大小結算：${cardDisplay} = ${resultText}，${data.winners.length}人獲勝，${data.losers.length}人喝酒`, 'success');
+        addLog(`第 ${data.roundNumber} 局：${cardDisplay} = ${resultText}，${data.winners.length}人獲勝，${data.losers.length}人喝酒`, 'success');
       }
     });
 
-    socket.on('minigame:pokerRoundEnd', () => {
-      addLog('比大小本局結束', 'info');
+    socket.on('minigame:pokerGameEnded', (data) => {
+      addLog(`比大小遊戲結束，共進行 ${data.totalRounds} 局`, 'warning');
+      document.getElementById('btn-poker-start').style.display = 'block';
+      document.getElementById('poker-game-control').style.display = 'none';
     });
 
     // 猜歌曲前奏事件

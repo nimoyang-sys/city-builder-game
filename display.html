@@ -1756,8 +1756,8 @@
       background: var(--bg-card);
       border-radius: 32px;
       padding: 50px;
-      max-width: 900px;
-      width: 100%;
+      max-width: 1400px;
+      width: 95%;
       text-align: center;
       box-shadow: 0 20px 60px rgba(0,0,0,0.4);
     }
@@ -1839,9 +1839,10 @@
 
     .beer-waiting-container {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(5, 1fr);
       gap: 20px;
-      max-width: 800px;
+      max-width: 1200px;
+      width: 100%;
       margin: 0 auto;
     }
 
@@ -3413,8 +3414,11 @@
       socket.on('minigame:beerResultsSet', handleBeerResultsSet);
       socket.on('minigame:beerEnded', handleBeerEnded);
 
-      socket.on('minigame:pokerStarted', handlePokerStarted);
-      socket.on('minigame:pokerEnded', handlePokerEnded);
+      socket.on('minigame:pokerGameStarted', handlePokerGameStarted);
+      socket.on('minigame:pokerRoundStarted', handlePokerRoundStarted);
+      socket.on('minigame:pokerBetPlaced', handlePokerBetPlaced);
+      socket.on('minigame:pokerRoundEnded', handlePokerRoundEnded);
+      socket.on('minigame:pokerGameEnded', handlePokerGameEnded);
 
       socket.on('minigame:songGuessGameStarted', handleSongGuessGameStarted);
       socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
@@ -4358,35 +4362,51 @@
       }, 10000);
     }
 
-    // 比大小
+    // 比大小 - 左右佈局版本
     let pokerBetsData = { big: [], small: [] };
+    let pokerTimerInterval = null;
+    let pokerCurrentRound = 0;
 
-    function handlePokerStarted(data) {
+    function handlePokerGameStarted() {
       pokerBetsData = { big: [], small: [] };
+      pokerCurrentRound = 0;
+      // 遊戲開始，等待第一局
+    }
+
+    function handlePokerRoundStarted(data) {
+      pokerBetsData = { big: [], small: [] };
+      pokerCurrentRound = data.roundNumber;
+
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
-        <div class="minigame-content">
-          <div class="minigame-icon" style="font-size: 3rem;">🃏</div>
-          <div class="minigame-title">撲克牌比大小</div>
-          <div class="poker-card-back">
-            🂠
+        <div class="poker-game-container">
+          <!-- 左側：標題+撲克牌 -->
+          <div class="poker-left-section">
+            <div class="poker-game-title">🃏 比大小</div>
+            <div class="poker-round-info">第 ${data.roundNumber} 局</div>
+            <div class="poker-timer" id="poker-timer-display">20s</div>
+            <div class="poker-card-back">🂠</div>
+            <div class="poker-rule-hint">A~6 = 小 | 7 = 和局 | 8~K = 大</div>
           </div>
-          <div class="poker-betting">玩家下注中...</div>
-          <div class="poker-timer" id="poker-timer-display">20s</div>
-          <div style="font-size: 1.3rem; color: var(--text-muted); margin-bottom: 20px;">
-            A~6 = 小 | 7 = 和局 | 8~K = 大
-          </div>
-          <div class="poker-bets-container" id="poker-bets-container">
-            <div class="poker-bet-section big">
-              <div class="poker-bet-title big">📈 押大</div>
+
+          <!-- 右側：下注區 -->
+          <div class="poker-right-section">
+            <div class="poker-bet-section big" id="poker-section-big">
+              <div class="poker-bet-title big">
+                📈 押大 (8~K)
+                <span class="poker-bet-count" id="poker-count-big">0 人</span>
+              </div>
               <div class="poker-bet-players" id="poker-bets-big">
-                <span style="color: var(--text-muted); font-size: 1rem;">等待玩家...</span>
+                <div class="poker-no-bets">等待玩家下注...</div>
               </div>
             </div>
-            <div class="poker-bet-section small">
-              <div class="poker-bet-title small">📉 押小</div>
+            <div class="poker-bet-section small" id="poker-section-small">
+              <div class="poker-bet-title small">
+                📉 押小 (A~6)
+                <span class="poker-bet-count" id="poker-count-small">0 人</span>
+              </div>
               <div class="poker-bet-players" id="poker-bets-small">
-                <span style="color: var(--text-muted); font-size: 1rem;">等待玩家...</span>
+                <div class="poker-no-bets">等待玩家下注...</div>
               </div>
             </div>
           </div>
@@ -4396,20 +4416,30 @@
 
       // 倒計時
       const endTime = data.endTime;
-      const updateTimer = setInterval(() => {
+      if (pokerTimerInterval) clearInterval(pokerTimerInterval);
+
+      pokerTimerInterval = setInterval(() => {
         const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
         const timerEl = document.getElementById('poker-timer-display');
         if (timerEl) {
           timerEl.textContent = remaining + 's';
+          if (remaining <= 5) {
+            timerEl.classList.add('urgent');
+          }
         }
         if (remaining <= 0) {
-          clearInterval(updateTimer);
+          clearInterval(pokerTimerInterval);
+          pokerTimerInterval = null;
         }
       }, 100);
     }
 
-    // 监听玩家下注
-    socket.on('minigame:pokerBetPlaced', (data) => {
+    function handlePokerBetPlaced(data) {
+      // 移除舊的下注記錄（如果玩家改變選擇）
+      pokerBetsData.big = pokerBetsData.big.filter(name => name !== data.playerName);
+      pokerBetsData.small = pokerBetsData.small.filter(name => name !== data.playerName);
+
+      // 加入新的選擇
       if (data.bet === 'big') {
         pokerBetsData.big.push(data.playerName);
       } else if (data.bet === 'small') {
@@ -4417,26 +4447,64 @@
       }
 
       updatePokerBetsDisplay();
-    });
+    }
 
-    function updatePokerBetsDisplay() {
+    function updatePokerBetsDisplay(result = null) {
       const bigContainer = document.getElementById('poker-bets-big');
       const smallContainer = document.getElementById('poker-bets-small');
+      const bigCount = document.getElementById('poker-count-big');
+      const smallCount = document.getElementById('poker-count-small');
+      const bigSection = document.getElementById('poker-section-big');
+      const smallSection = document.getElementById('poker-section-small');
+
+      if (bigCount) bigCount.textContent = pokerBetsData.big.length + ' 人';
+      if (smallCount) smallCount.textContent = pokerBetsData.small.length + ' 人';
 
       if (bigContainer) {
         bigContainer.innerHTML = pokerBetsData.big.length > 0 ?
-          pokerBetsData.big.map(name => `<div class="poker-bet-player">${name}</div>`).join('') :
-          '<span style="color: var(--text-muted); font-size: 1rem;">等待玩家...</span>';
+          pokerBetsData.big.map(name => {
+            let cls = 'poker-bet-player';
+            if (result) {
+              cls += result === 'big' ? ' winner' : (result === 'tie' ? '' : ' loser');
+            }
+            return `<div class="${cls}">${name}</div>`;
+          }).join('') :
+          '<div class="poker-no-bets">等待玩家下注...</div>';
       }
 
       if (smallContainer) {
         smallContainer.innerHTML = pokerBetsData.small.length > 0 ?
-          pokerBetsData.small.map(name => `<div class="poker-bet-player">${name}</div>`).join('') :
-          '<span style="color: var(--text-muted); font-size: 1rem;">等待玩家...</span>';
+          pokerBetsData.small.map(name => {
+            let cls = 'poker-bet-player';
+            if (result) {
+              cls += result === 'small' ? ' winner' : (result === 'tie' ? '' : ' loser');
+            }
+            return `<div class="${cls}">${name}</div>`;
+          }).join('') :
+          '<div class="poker-no-bets">等待玩家下注...</div>';
+      }
+
+      // 結果出來後加入區塊樣式
+      if (result && bigSection && smallSection) {
+        bigSection.classList.remove('winner', 'loser');
+        smallSection.classList.remove('winner', 'loser');
+
+        if (result === 'big') {
+          bigSection.classList.add('winner');
+          smallSection.classList.add('loser');
+        } else if (result === 'small') {
+          smallSection.classList.add('winner');
+          bigSection.classList.add('loser');
+        }
       }
     }
 
-    function handlePokerEnded(data) {
+    function handlePokerRoundEnded(data) {
+      if (pokerTimerInterval) {
+        clearInterval(pokerTimerInterval);
+        pokerTimerInterval = null;
+      }
+
       const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
       const suits = ['♠', '♥', '♦', '♣'];
       const suit = suits[Math.floor(Math.random() * 4)];
@@ -4445,7 +4513,7 @@
 
       let resultText, resultIcon;
       if (data.result === 'tie') {
-        resultText = '和局';
+        resultText = '和局 (7)';
         resultIcon = '🤝';
       } else if (data.result === 'big') {
         resultText = '大';
@@ -4457,50 +4525,71 @@
 
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
-        <div class="minigame-content">
-          <div class="minigame-title">🃏 撲克牌比大小</div>
-          <div class="poker-card ${isRed ? 'red' : 'black'}">
-            <div class="poker-card-corner top-left">${cardValue}<br>${suit}</div>
-            <div class="poker-card-value">${cardValue}</div>
-            <div class="poker-card-suit">${suit}</div>
-            <div class="poker-card-corner bottom-right">${cardValue}<br>${suit}</div>
+        <div class="poker-game-container">
+          <!-- 左側：撲克牌結果 -->
+          <div class="poker-left-section">
+            <div class="poker-game-title">🃏 比大小</div>
+            <div class="poker-round-info">第 ${data.roundNumber} 局 - 結果</div>
+            <div class="poker-card ${isRed ? 'red' : 'black'}">
+              <div class="poker-card-corner top-left">${cardValue}<br>${suit}</div>
+              <div class="poker-card-value">${cardValue}</div>
+              <div class="poker-card-suit">${suit}</div>
+              <div class="poker-card-corner bottom-right">${cardValue}<br>${suit}</div>
+            </div>
+            <div class="poker-result-badge ${data.result}">${resultIcon} ${resultText}</div>
+            <div class="poker-waiting-next">等待主持人開始下一局...</div>
           </div>
-          <div class="poker-result ${data.result}">${resultIcon} 結果：${resultText}</div>
-          <div class="poker-winners-losers">
-            ${data.result === 'tie' ? `
-              <div class="poker-list tied" style="grid-column: 1 / -1;">
-                <div class="poker-list-title tied">🤝 和局（平手）</div>
-                <div class="poker-list-items">
-                  ${(data.tied && data.tied.length > 0) ?
-                    data.tied.map(t => `<div class="poker-player-item">👤 ${t.playerName}</div>`).join('') :
-                    '<span style="color: var(--text-muted);">無</span>'
-                  }
-                </div>
+
+          <!-- 右側：結果顯示 -->
+          <div class="poker-right-section">
+            <div class="poker-bet-section big ${data.result === 'big' ? 'winner' : (data.result === 'tie' ? '' : 'loser')}" id="poker-section-big">
+              <div class="poker-bet-title big">
+                📈 押大
+                <span class="poker-bet-count">${pokerBetsData.big.length} 人</span>
               </div>
-            ` : `
-              <div class="poker-list winners">
-                <div class="poker-list-title winners">🎉 獲勝者</div>
-                <div class="poker-list-items">
-                  ${data.winners.length > 0 ?
-                    data.winners.map(w => `<div class="poker-player-item">🏆 ${w.playerName} <span style="color: var(--warning);">+100分</span></div>`).join('') :
-                    '<span style="color: var(--text-muted);">無</span>'
-                  }
-                </div>
+              <div class="poker-bet-players" id="poker-bets-big">
+                ${pokerBetsData.big.length > 0 ?
+                  pokerBetsData.big.map(name => {
+                    const cls = data.result === 'big' ? 'poker-bet-player winner' :
+                               (data.result === 'tie' ? 'poker-bet-player' : 'poker-bet-player loser');
+                    return `<div class="${cls}">${name}</div>`;
+                  }).join('') :
+                  '<div class="poker-no-bets">無人下注</div>'
+                }
               </div>
-              <div class="poker-list losers">
-                <div class="poker-list-title losers">🍺 輸家（喝酒）</div>
-                <div class="poker-list-items">
-                  ${data.losers.length > 0 ?
-                    data.losers.map(l => `<div class="poker-player-item">🍻 ${l.playerName}</div>`).join('') :
-                    '<span style="color: var(--text-muted);">無</span>'
-                  }
-                </div>
+            </div>
+            <div class="poker-bet-section small ${data.result === 'small' ? 'winner' : (data.result === 'tie' ? '' : 'loser')}" id="poker-section-small">
+              <div class="poker-bet-title small">
+                📉 押小
+                <span class="poker-bet-count">${pokerBetsData.small.length} 人</span>
               </div>
-            `}
+              <div class="poker-bet-players" id="poker-bets-small">
+                ${pokerBetsData.small.length > 0 ?
+                  pokerBetsData.small.map(name => {
+                    const cls = data.result === 'small' ? 'poker-bet-player winner' :
+                               (data.result === 'tie' ? 'poker-bet-player' : 'poker-bet-player loser');
+                    return `<div class="${cls}">${name}</div>`;
+                  }).join('') :
+                  '<div class="poker-no-bets">無人下注</div>'
+                }
+              </div>
+            </div>
           </div>
-          <button class="poker-close-btn" onclick="closePokerResult()">關閉</button>
         </div>
       `;
+    }
+
+    function handlePokerGameEnded(data) {
+      if (pokerTimerInterval) {
+        clearInterval(pokerTimerInterval);
+        pokerTimerInterval = null;
+      }
+
+      setTimeout(() => {
+        document.getElementById('minigame-overlay').classList.remove('show');
+        pokerBetsData = { big: [], small: [] };
+        pokerCurrentRound = 0;
+      }, 1000);
     }
 
     function closePokerResult() {
