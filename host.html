@@ -1049,6 +1049,91 @@
         </div>
       </div>
 
+      <!-- 小遊戲控制 -->
+      <div class="panel-card">
+        <h3>🎮 小遊戲</h3>
+
+        <!-- 快問快答 -->
+        <div style="margin-bottom: 15px;">
+          <button class="btn btn-primary btn-block" onclick="startQuizGame()">
+            💡 快問快答
+          </button>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+            玩家答題，10題隨機題目，每題3秒，答對+50分
+          </p>
+        </div>
+
+        <!-- 喝啤酒比賽 -->
+        <div style="margin-bottom: 15px;">
+          <button class="btn btn-warning btn-block" onclick="startBeerGame()" id="btn-beer-waiting">
+            🍺 喝啤酒比賽
+          </button>
+          <div id="beer-game-control" style="display: none;">
+            <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
+              <p style="font-size: 0.85rem; margin-bottom: 5px;">
+                參與者：<span id="beer-participants-count">0</span> / 5
+              </p>
+              <div id="beer-participants-list" style="font-size: 0.8rem; color: var(--text-muted);"></div>
+              <button class="btn btn-success btn-block btn-sm" onclick="startBeerGamePlay()" id="btn-beer-start" disabled style="margin-top: 10px;">
+                開始比賽
+              </button>
+              <div id="beer-ranking-control" style="display: none; margin-top: 10px;">
+                <p style="font-size: 0.85rem; margin-bottom: 10px; font-weight: bold;">設定排名（拖曳排序）：</p>
+                <div id="beer-ranking-list"></div>
+                <button class="btn btn-primary btn-block btn-sm" onclick="confirmBeerRankings()" style="margin-top: 10px;">
+                  確認排名並發放獎勵
+                </button>
+                <button class="btn btn-danger btn-block btn-sm" onclick="endBeerGameFinal()" style="margin-top: 5px;">
+                  結束比賽
+                </button>
+              </div>
+            </div>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+            3-5人，第1名+500分，第2名+300分，其他+100分
+          </p>
+        </div>
+
+        <!-- 比大小 -->
+        <div>
+          <button class="btn btn-info btn-block" onclick="startPokerGame()" id="btn-poker-start">
+            🃏 撲克牌比大小
+          </button>
+          <div id="poker-game-control" style="display: none;">
+            <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
+              <p style="font-size: 0.85rem; margin-bottom: 5px;">
+                遊戲進行中... <span id="poker-timer" style="color: var(--warning); font-weight: bold;">20s</span>
+              </p>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                已下注：<span id="poker-bet-count">0</span> 人
+              </p>
+              <button class="btn btn-danger btn-block btn-sm" onclick="endPokerGameNow()" style="margin-top: 10px;">
+                立即結算
+              </button>
+            </div>
+            <div id="poker-result-control" style="display: none; margin-top: 10px;">
+              <div style="background: var(--bg); padding: 10px; border-radius: 8px;">
+                <p style="font-size: 0.9rem; font-weight: bold; margin-bottom: 5px;">
+                  結果：<span id="poker-card-display"></span> = <span id="poker-result-display"></span>
+                </p>
+                <p style="font-size: 0.8rem; color: var(--success);">
+                  贏家（+100分）：<span id="poker-winners-count">0</span> 人
+                </p>
+                <p style="font-size: 0.8rem; color: var(--danger);">
+                  輸家（喝酒）：<span id="poker-losers-count">0</span> 人
+                </p>
+                <button class="btn btn-primary btn-block btn-sm" onclick="nextPokerRound()" style="margin-top: 10px;">
+                  下一局
+                </button>
+              </div>
+            </div>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+            全員參與，20秒下注，押對+100分，押錯喝酒
+          </p>
+        </div>
+      </div>
+
       <!-- 頒獎控制 -->
       <div class="panel-card">
         <h3>🏆 頒獎典禮（依積分排名）</h3>
@@ -2071,6 +2156,197 @@
         log.removeChild(log.lastChild);
       }
     }
+
+    // ========== 小遊戲控制 ==========
+
+    let beerParticipants = [];
+    let pokerTimerInterval = null;
+
+    // 快問快答
+    function startQuizGame() {
+      if (confirm('確定要開始快問快答嗎？')) {
+        socket.emit('host:startQuiz');
+        addLog('開始快問快答', 'success');
+      }
+    }
+
+    // 喝啤酒比賽 - 開始等待
+    function startBeerGame() {
+      if (confirm('確定要開始喝啤酒比賽嗎？將開始等待玩家加入')) {
+        socket.emit('host:startBeerWaiting');
+        document.getElementById('btn-beer-waiting').style.display = 'none';
+        document.getElementById('beer-game-control').style.display = 'block';
+        addLog('喝啤酒比賽等待玩家加入', 'success');
+      }
+    }
+
+    // 喝啤酒比賽 - 開始比賽
+    function startBeerGamePlay() {
+      socket.emit('host:startBeerGame');
+      document.getElementById('btn-beer-start').disabled = true;
+      document.getElementById('beer-ranking-control').style.display = 'block';
+      addLog('喝啤酒比賽開始！', 'success');
+      updateBeerRankingList();
+    }
+
+    // 更新喝啤酒排名列表
+    function updateBeerRankingList() {
+      const list = document.getElementById('beer-ranking-list');
+      list.innerHTML = beerParticipants.map((p, index) => `
+        <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--bg-card); border-radius: 6px; margin-bottom: 5px;">
+          <span>${p.playerName}</span>
+          <select id="rank-${p.playerId}" style="padding: 4px; border-radius: 4px;">
+            ${[1, 2, 3, 4, 5].filter((_, i) => i < beerParticipants.length).map(r =>
+              `<option value="${r}">${r}</option>`
+            ).join('')}
+          </select>
+        </div>
+      `).join('');
+    }
+
+    // 確認喝啤酒排名
+    function confirmBeerRankings() {
+      const rankings = beerParticipants.map(p => ({
+        playerId: p.playerId,
+        rank: parseInt(document.getElementById(`rank-${p.playerId}`).value)
+      }));
+
+      // 檢查是否有重複排名
+      const ranks = rankings.map(r => r.rank);
+      if (new Set(ranks).size !== ranks.length) {
+        alert('排名不能重複！');
+        return;
+      }
+
+      if (confirm('確認設定排名並發放獎勵？')) {
+        socket.emit('host:setBeerRankings', { rankings });
+        addLog('喝啤酒比賽排名已設定', 'success');
+      }
+    }
+
+    // 結束喝啤酒比賽
+    function endBeerGameFinal() {
+      if (confirm('確定要結束喝啤酒比賽嗎？')) {
+        socket.emit('host:endBeerGame');
+        document.getElementById('btn-beer-waiting').style.display = 'block';
+        document.getElementById('beer-game-control').style.display = 'none';
+        document.getElementById('beer-ranking-control').style.display = 'none';
+        document.getElementById('btn-beer-start').disabled = false;
+        beerParticipants = [];
+        addLog('喝啤酒比賽結束', 'warning');
+      }
+    }
+
+    // 比大小 - 開始
+    function startPokerGame() {
+      if (confirm('確定要開始比大小嗎？玩家有20秒時間下注')) {
+        socket.emit('host:startPoker');
+        document.getElementById('btn-poker-start').style.display = 'none';
+        document.getElementById('poker-game-control').style.display = 'block';
+        document.getElementById('poker-result-control').style.display = 'none';
+        addLog('比大小遊戲開始', 'success');
+      }
+    }
+
+    // 比大小 - 立即結算
+    function endPokerGameNow() {
+      if (confirm('確定要立即結算嗎？')) {
+        socket.emit('host:endPoker');
+      }
+    }
+
+    // 比大小 - 下一局
+    function nextPokerRound() {
+      socket.emit('host:nextPokerRound');
+      document.getElementById('btn-poker-start').style.display = 'block';
+      document.getElementById('poker-game-control').style.display = 'none';
+      document.getElementById('poker-result-control').style.display = 'none';
+      if (pokerTimerInterval) {
+        clearInterval(pokerTimerInterval);
+        pokerTimerInterval = null;
+      }
+      addLog('準備下一局比大小', 'info');
+    }
+
+    // ========== 小遊戲事件監聽 ==========
+
+    // 快問快答事件
+    socket.on('minigame:quizStarted', (data) => {
+      addLog(`快問快答開始，共 ${data.questionCount} 題`, 'success');
+    });
+
+    socket.on('minigame:quizEnded', (data) => {
+      addLog(`快問快答結束，${data.results.length} 位玩家參與`, 'success');
+    });
+
+    // 喝啤酒比賽事件
+    socket.on('minigame:beerWaitingStart', () => {
+      beerParticipants = [];
+      document.getElementById('beer-participants-count').textContent = '0';
+      document.getElementById('beer-participants-list').innerHTML = '';
+    });
+
+    socket.on('minigame:beerPlayerJoined', (data) => {
+      beerParticipants.push({ playerId: data.playerId, playerName: data.playerName });
+      document.getElementById('beer-participants-count').textContent = data.currentCount;
+      document.getElementById('beer-participants-list').innerHTML =
+        beerParticipants.map(p => p.playerName).join(', ');
+
+      if (data.canStart) {
+        document.getElementById('btn-beer-start').disabled = false;
+      }
+
+      addLog(`${data.playerName} 加入喝啤酒比賽（${data.currentCount}/${data.maxPlayers}）`);
+    });
+
+    socket.on('minigame:beerResultsSet', (data) => {
+      addLog('喝啤酒比賽排名已確認，獎勵已發放', 'success');
+    });
+
+    socket.on('minigame:beerEnded', () => {
+      addLog('喝啤酒比賽結束', 'warning');
+    });
+
+    // 比大小事件
+    socket.on('minigame:pokerStarted', (data) => {
+      // 啟動倒計時
+      const endTime = data.endTime;
+
+      pokerTimerInterval = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+        document.getElementById('poker-timer').textContent = remaining + 's';
+
+        if (remaining <= 0) {
+          clearInterval(pokerTimerInterval);
+          pokerTimerInterval = null;
+        }
+      }, 100);
+    });
+
+    socket.on('minigame:pokerEnded', (data) => {
+      if (pokerTimerInterval) {
+        clearInterval(pokerTimerInterval);
+        pokerTimerInterval = null;
+      }
+
+      document.getElementById('poker-game-control').style.display = 'none';
+      document.getElementById('poker-result-control').style.display = 'block';
+
+      const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+      const cardDisplay = cardNames[data.card - 1] || data.card;
+      const resultText = data.result === 'big' ? '大' : '小';
+
+      document.getElementById('poker-card-display').textContent = cardDisplay;
+      document.getElementById('poker-result-display').textContent = resultText;
+      document.getElementById('poker-winners-count').textContent = data.winners.length;
+      document.getElementById('poker-losers-count').textContent = data.losers.length;
+
+      addLog(`比大小結算：${cardDisplay} = ${resultText}，${data.winners.length}人獲勝`, 'success');
+    });
+
+    socket.on('minigame:pokerRoundEnd', () => {
+      addLog('比大小本局結束', 'info');
+    });
 
     // 定時刷新
     setInterval(() => {

@@ -729,6 +729,46 @@ export const BUILDING_UPGRADES = {
   }
 };
 
+// 小遊戲設定
+export const MINI_GAMES = {
+  // 快問快答題庫
+  QUIZ_QUESTIONS: [
+    { id: 1, question: '創智動能成立於哪一年？', options: ['2020', '2021', '2022', '2023'], correct: 1 },
+    { id: 2, question: '台灣的首都是？', options: ['台北', '台中', '高雄', '台南'], correct: 0 },
+    { id: 3, question: '一天有幾個小時？', options: ['12', '24', '36', '48'], correct: 1 },
+    { id: 4, question: '地球有幾個大洋？', options: ['3', '4', '5', '6'], correct: 2 },
+    { id: 5, question: '台灣最高的山是？', options: ['玉山', '雪山', '合歡山', '阿里山'], correct: 0 },
+    { id: 6, question: '一年有幾個季節？', options: ['2', '3', '4', '5'], correct: 2 },
+    { id: 7, question: '紅綠燈的順序是？', options: ['紅黃綠', '綠黃紅', '紅綠黃', '黃綠紅'], correct: 0 },
+    { id: 8, question: '月球繞地球一圈需要多久？', options: ['7天', '14天', '28天', '30天'], correct: 2 },
+    { id: 9, question: '彩虹有幾種顏色？', options: ['5', '6', '7', '8'], correct: 2 },
+    { id: 10, question: '台灣的國鳥是？', options: ['藍鵲', '白鷺鷥', '老鷹', '麻雀'], correct: 0 },
+    { id: 11, question: '一個禮拜有幾天？', options: ['5', '6', '7', '8'], correct: 2 },
+    { id: 12, question: '台北101有幾層樓？', options: ['88', '99', '101', '108'], correct: 2 },
+    { id: 13, question: '太陽從哪邊升起？', options: ['東', '西', '南', '北'], correct: 0 },
+    { id: 14, question: '水的沸點是攝氏幾度？', options: ['50', '75', '100', '125'], correct: 2 },
+    { id: 15, question: '台灣的貨幣單位是？', options: ['元', '圓', '塊', '以上皆是'], correct: 3 }
+  ],
+
+  // 喝啤酒比賽設定
+  BEER_GAME: {
+    minPlayers: 3,
+    maxPlayers: 5,
+    rewards: {
+      first: 500,
+      second: 300,
+      others: 100
+    }
+  },
+
+  // 比大小設定
+  POKER_GAME: {
+    betTime: 20, // 下注時間（秒）
+    bigReward: 100, // 押對的獎勵
+    penalty: 0  // 押錯不扣分，只是要喝酒
+  }
+};
+
 export const ROLES = {
   // === 成本減免型（前期優勢）===
   ARCHITECT: {

@@ -13,7 +13,8 @@ import { fileURLToPath } from 'url';
 
 import { GameEngine } from './game/GameEngine.js';
 import { LotteryManager, DEFAULT_PRIZES } from './services/lotteryService.js';
-import { GAME_CONFIG, ROLES, ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, ITEM_CARDS, ITEM_CATEGORIES, CITY_GOALS, BUILDING_UPGRADES } from '../shared/config.js';
+import { MiniGameManager } from './game/MiniGameManager.js';
+import { GAME_CONFIG, ROLES, ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, ITEM_CARDS, ITEM_CATEGORIES, CITY_GOALS, BUILDING_UPGRADES, MINI_GAMES } from '../shared/config.js';
 import { connectDB } from './db/mongodb.js';
 import { hashPassword, verifyPassword, generatePlayerId } from './utils/crypto.js';
 
@@ -59,6 +60,7 @@ app.get('/display', (req, res) => {
 // 遊戲實例
 const gameEngine = new GameEngine();
 const lotteryManager = new LotteryManager();
+const miniGameManager = new MiniGameManager();
 
 // 設定預設獎品
 lotteryManager.setPrizes('TOP', DEFAULT_PRIZES.TOP);
@@ -93,7 +95,8 @@ app.get('/api/config', (req, res) => {
     items: ITEM_CARDS,
     itemCategories: ITEM_CATEGORIES,
     cityGoals: CITY_GOALS,
-    buildingUpgrades: BUILDING_UPGRADES
+    buildingUpgrades: BUILDING_UPGRADES,
+    miniGames: MINI_GAMES
   });
 });
 
@@ -538,6 +541,138 @@ io.on('connection', (socket) => {
     socket.emit('host:flashSaleStatus', status);
   });
 
+  // ===== 小遊戲事件 =====
+
+  // 快問快答 - 主持人開始
+  socket.on('host:startQuiz', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.startQuiz();
+    socket.emit('host:result', result);
+  });
+
+  // 快問快答 - 玩家提交答案
+  socket.on('player:submitQuizAnswer', ({ answerIndex }) => {
+    const player = gameEngine.getPlayerBySocketId(socket.id);
+    if (!player) {
+      socket.emit('player:error', { message: '玩家不存在' });
+      return;
+    }
+
+    const result = miniGameManager.submitQuizAnswer(player.id, player.name, answerIndex);
+    socket.emit('player:quizAnswerResult', result);
+  });
+
+  // 喝啤酒比賽 - 主持人開始等待
+  socket.on('host:startBeerWaiting', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.startBeerWaiting();
+    socket.emit('host:result', result);
+  });
+
+  // 喝啤酒比賽 - 玩家加入
+  socket.on('player:joinBeer', () => {
+    const player = gameEngine.getPlayerBySocketId(socket.id);
+    if (!player) {
+      socket.emit('player:error', { message: '玩家不存在' });
+      return;
+    }
+
+    const result = miniGameManager.joinBeer(player.id, player.name);
+    socket.emit('player:joinBeerResult', result);
+  });
+
+  // 喝啤酒比賽 - 主持人開始遊戲
+  socket.on('host:startBeerGame', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.startBeerGame();
+    socket.emit('host:result', result);
+  });
+
+  // 喝啤酒比賽 - 主持人設定排名
+  socket.on('host:setBeerRankings', ({ rankings }) => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.setBeerRankings(rankings);
+    socket.emit('host:result', result);
+
+    // 發放獎勵給玩家
+    if (result.success) {
+      result.results.forEach(r => {
+        gameEngine.addScore(r.playerId, r.reward, `喝啤酒比賽第${r.rank}名`);
+      });
+    }
+  });
+
+  // 喝啤酒比賽 - 主持人結束遊戲
+  socket.on('host:endBeerGame', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.endBeerGame();
+    socket.emit('host:result', result);
+  });
+
+  // 比大小 - 主持人開始
+  socket.on('host:startPoker', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.startPokerGame();
+    socket.emit('host:result', result);
+  });
+
+  // 比大小 - 玩家下注
+  socket.on('player:placeBet', ({ bet }) => {
+    const player = gameEngine.getPlayerBySocketId(socket.id);
+    if (!player) {
+      socket.emit('player:error', { message: '玩家不存在' });
+      return;
+    }
+
+    const result = miniGameManager.placeBet(player.id, player.name, bet);
+    socket.emit('player:placeBetResult', result);
+  });
+
+  // 比大小 - 主持人結束（提前結算）
+  socket.on('host:endPoker', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.endPokerGame();
+    socket.emit('host:result', result);
+
+    // 發放獎勵給贏家
+    if (result.success) {
+      result.winners.forEach(w => {
+        gameEngine.addScore(w.playerId, w.reward, '比大小獲勝');
+      });
+    }
+  });
+
+  // 比大小 - 主持人下一局
+  socket.on('host:nextPokerRound', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.nextPokerRound();
+    socket.emit('host:result', result);
+  });
+
   // 重置遊戲
   socket.on('host:reset', () => {
     if (socket.id !== hostSocketId) {
@@ -737,6 +872,55 @@ gameEngine.on('flashSalePurchased', (data) => {
 
 gameEngine.on('flashSaleEnded', (data) => {
   io.emit('game:flashSaleEnded', data);
+});
+
+// ========== 小遊戲事件轉發 ==========
+
+// 快問快答事件
+miniGameManager.on('quiz:started', (data) => {
+  io.emit('minigame:quizStarted', data);
+});
+
+miniGameManager.on('quiz:question', (data) => {
+  io.emit('minigame:quizQuestion', data);
+});
+
+miniGameManager.on('quiz:ended', (data) => {
+  io.emit('minigame:quizEnded', data);
+});
+
+// 喝啤酒比賽事件
+miniGameManager.on('beer:waitingStart', () => {
+  io.emit('minigame:beerWaitingStart');
+});
+
+miniGameManager.on('beer:playerJoined', (data) => {
+  io.emit('minigame:beerPlayerJoined', data);
+});
+
+miniGameManager.on('beer:gameStarted', (data) => {
+  io.emit('minigame:beerGameStarted', data);
+});
+
+miniGameManager.on('beer:resultsSet', (data) => {
+  io.emit('minigame:beerResultsSet', data);
+});
+
+miniGameManager.on('beer:ended', (data) => {
+  io.emit('minigame:beerEnded', data);
+});
+
+// 比大小事件
+miniGameManager.on('poker:started', (data) => {
+  io.emit('minigame:pokerStarted', data);
+});
+
+miniGameManager.on('poker:ended', (data) => {
+  io.emit('minigame:pokerEnded', data);
+});
+
+miniGameManager.on('poker:roundEnd', () => {
+  io.emit('minigame:pokerRoundEnd');
 });
 
 // ========== 啟動伺服器 ==========

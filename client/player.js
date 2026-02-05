@@ -132,6 +132,21 @@ function initSocket() {
   socket.on('game:flashSaleStarted', handleFlashSaleStarted);
   socket.on('game:flashSalePurchased', handleFlashSalePurchased);
   socket.on('game:flashSaleEnded', handleFlashSaleEnded);
+
+  // 小遊戲事件
+  socket.on('minigame:quizStarted', handleQuizStarted);
+  socket.on('minigame:quizQuestion', handleQuizQuestion);
+  socket.on('minigame:quizEnded', handleQuizEnded);
+  socket.on('player:quizAnswerResult', handleQuizAnswerResult);
+
+  socket.on('minigame:beerWaitingStart', handleBeerWaitingStart);
+  socket.on('minigame:beerPlayerJoined', handleBeerPlayerJoined);
+  socket.on('minigame:beerGameStarted', handleBeerGameStarted);
+  socket.on('player:joinBeerResult', handleJoinBeerResult);
+
+  socket.on('minigame:pokerStarted', handlePokerStarted);
+  socket.on('minigame:pokerEnded', handlePokerEnded);
+  socket.on('player:placeBetResult', handlePlaceBetResult);
 }
 
 // ===== 事件處理 =====
@@ -1131,6 +1146,248 @@ function showMiniEventPopup(event, effectResult) {
   }, 3000);
 }
 
+// ===== 小遊戲系統 =====
+
+let quizState = {
+  active: false,
+  currentQuestion: null,
+  questionIndex: 0,
+  totalQuestions: 0,
+  timer: null
+};
+
+let beerState = {
+  waiting: false,
+  joined: false
+};
+
+let pokerState = {
+  active: false,
+  bet: null,
+  timer: null
+};
+
+// 快問快答事件處理
+function handleQuizStarted(data) {
+  quizState = {
+    active: true,
+    currentQuestion: null,
+    questionIndex: 0,
+    totalQuestions: data.questionCount,
+    timer: null
+  };
+  showToast('快問快答開始！', 'info');
+}
+
+function handleQuizQuestion(data) {
+  quizState.currentQuestion = data;
+  quizState.questionIndex = data.questionIndex;
+  showQuizModal(data);
+
+  // 3秒後自動關閉（跳下一題）
+  if (quizState.timer) clearTimeout(quizState.timer);
+  quizState.timer = setTimeout(() => {
+    closeQuizModal();
+  }, 3000);
+}
+
+function handleQuizEnded(data) {
+  quizState.active = false;
+  closeQuizModal();
+  showToast('快問快答結束！', 'success');
+}
+
+function handleQuizAnswerResult(result) {
+  if (result.success) {
+    // 答案已提交
+  } else {
+    showToast(result.error || '無法提交答案', 'error');
+  }
+}
+
+function submitQuizAnswer(answerIndex) {
+  socket.emit('player:submitQuizAnswer', { answerIndex });
+  if (quizState.timer) clearTimeout(quizState.timer);
+  closeQuizModal();
+}
+
+// 喝啤酒比賽事件處理
+function handleBeerWaitingStart() {
+  beerState = {
+    waiting: true,
+    joined: false
+  };
+  showBeerJoinModal();
+}
+
+function handleBeerPlayerJoined(data) {
+  // 更新參與者列表（在投影畫面顯示）
+}
+
+function handleBeerGameStarted(data) {
+  beerState.waiting = false;
+  closeBeerJoinModal();
+  showToast('喝啤酒比賽開始！加油！', 'success');
+}
+
+function handleJoinBeerResult(result) {
+  if (result.success) {
+    beerState.joined = true;
+    showToast('成功加入喝啤酒比賽！', 'success');
+    closeBeerJoinModal();
+  } else {
+    showToast(result.error || '無法加入比賽', 'error');
+  }
+}
+
+function joinBeerGame() {
+  socket.emit('player:joinBeer');
+}
+
+// 比大小事件處理
+function handlePokerStarted(data) {
+  pokerState = {
+    active: true,
+    bet: null,
+    endTime: data.endTime,
+    timer: null
+  };
+  showPokerBetModal(data);
+}
+
+function handlePokerEnded(data) {
+  pokerState.active = false;
+  closePokerBetModal();
+
+  const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const cardDisplay = cardNames[data.card - 1] || data.card;
+  const resultText = data.result === 'big' ? '大' : '小';
+
+  const isWinner = data.winners.some(w => w.playerId === playerState.id);
+  const isLoser = data.losers.some(l => l.playerId === playerState.id);
+
+  if (isWinner) {
+    showToast(`🎉 ${cardDisplay} = ${resultText}，你猜對了！+100分`, 'success');
+  } else if (isLoser) {
+    showToast(`😅 ${cardDisplay} = ${resultText}，你猜錯了！喝酒！`, 'error');
+  } else {
+    showToast(`結果：${cardDisplay} = ${resultText}`, 'info');
+  }
+}
+
+function handlePlaceBetResult(result) {
+  if (result.success) {
+    showToast('下注成功！', 'success');
+  } else {
+    showToast(result.error || '下注失敗', 'error');
+  }
+}
+
+function placeBet(bet) {
+  pokerState.bet = bet;
+  socket.emit('player:placeBet', { bet });
+  closePokerBetModal();
+}
+
+// 小遊戲 Modal UI 控制
+function showQuizModal(data) {
+  const modal = document.getElementById('quiz-modal');
+  if (!modal) return;
+
+  // 更新問題
+  document.getElementById('quiz-question-text').textContent = data.question;
+
+  // 更新選項
+  const optionsContainer = document.getElementById('quiz-options');
+  optionsContainer.innerHTML = data.options.map((option, index) => `
+    <button class="modal-btn" style="padding: 15px; font-size: 1rem;" onclick="submitQuizAnswer(${index})">
+      ${option}
+    </button>
+  `).join('');
+
+  // 更新進度
+  document.getElementById('quiz-progress').textContent =
+    `第 ${data.questionIndex + 1} / ${data.totalQuestions} 題`;
+
+  // 倒計時
+  let timeLeft = data.timeLimit || 3;
+  document.getElementById('quiz-timer').textContent = timeLeft + 's';
+
+  const timerInterval = setInterval(() => {
+    timeLeft--;
+    const timerEl = document.getElementById('quiz-timer');
+    if (timerEl) {
+      timerEl.textContent = timeLeft + 's';
+    }
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+    }
+  }, 1000);
+
+  modal.classList.add('show');
+}
+
+function closeQuizModal() {
+  const modal = document.getElementById('quiz-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
+function showBeerJoinModal() {
+  const modal = document.getElementById('beer-join-modal');
+  if (modal) {
+    modal.classList.add('show');
+  }
+}
+
+function closeBeerJoinModal() {
+  const modal = document.getElementById('beer-join-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
+function showPokerBetModal(data) {
+  const modal = document.getElementById('poker-bet-modal');
+  if (!modal) return;
+
+  const endTime = data.endTime;
+
+  const updateCountdown = () => {
+    const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+    const countdownEl = document.getElementById('poker-countdown');
+    if (countdownEl) {
+      countdownEl.textContent = remaining + 's';
+      if (remaining > 10) {
+        countdownEl.style.color = 'var(--warning)';
+      } else if (remaining > 5) {
+        countdownEl.style.color = 'var(--danger)';
+      } else {
+        countdownEl.style.color = 'red';
+      }
+    }
+
+    if (remaining > 0) {
+      pokerState.timer = setTimeout(updateCountdown, 100);
+    }
+  };
+
+  updateCountdown();
+  modal.classList.add('show');
+}
+
+function closePokerBetModal() {
+  const modal = document.getElementById('poker-bet-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+  if (pokerState.timer) {
+    clearTimeout(pokerState.timer);
+    pokerState.timer = null;
+  }
+}
+
 // 讓這些函數可以在 HTML 中被調用
 window.openItemShopModal = openItemShopModal;
 window.closeItemShopModal = closeItemShopModal;
@@ -1138,6 +1395,9 @@ window.buyItem = buyItem;
 window.openMyItemsModal = openMyItemsModal;
 window.closeMyItemsModal = closeMyItemsModal;
 window.useItem = useItem;
+window.submitQuizAnswer = submitQuizAnswer;
+window.joinBeerGame = joinBeerGame;
+window.placeBet = placeBet;
 
 // ===== 建築升級系統 UI =====
 

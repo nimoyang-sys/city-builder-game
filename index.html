@@ -2232,6 +2232,59 @@
     </div>
   </div>
 
+  <!-- 快問快答 Modal -->
+  <div class="modal-overlay" id="quiz-modal">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-title" id="quiz-question-text" style="font-size: 1.2rem; margin-bottom: 20px;">問題載入中...</div>
+      <div id="quiz-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <!-- 動態生成 -->
+      </div>
+      <div style="text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--text-muted);">
+        <span id="quiz-progress">題號</span> | 剩餘時間: <span id="quiz-timer" style="color: var(--danger); font-weight: bold;">3s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 喝啤酒比賽加入 Modal -->
+  <div class="modal-overlay" id="beer-join-modal">
+    <div class="modal">
+      <div class="modal-emoji">🍺</div>
+      <div class="modal-title">喝啤酒比賽</div>
+      <div class="modal-info" style="text-align: center;">
+        <p style="margin-bottom: 10px;">每局最多5人參加</p>
+        <p style="font-size: 0.9rem; color: var(--text-muted);">第1名 +500分 | 第2名 +300分 | 其他 +100分</p>
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeBeerJoinModal()">取消</button>
+        <button class="modal-btn confirm" onclick="joinBeerGame()">我要參加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 比大小下注 Modal -->
+  <div class="modal-overlay" id="poker-bet-modal">
+    <div class="modal">
+      <div class="modal-emoji">🃏</div>
+      <div class="modal-title">比大小</div>
+      <div class="modal-info" style="text-align: center;">
+        <p style="margin-bottom: 10px;">猜測撲克牌是大還是小？</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">7~K = 大 | A~6 = 小</p>
+        <p style="font-size: 0.85rem; color: var(--success); margin-top: 5px;">猜對 +100分 | 猜錯要喝酒</p>
+      </div>
+      <div style="text-align: center; margin: 15px 0; font-size: 0.9rem; color: var(--warning);">
+        倒數：<span id="poker-countdown" style="font-weight: bold; font-size: 1.2rem;">20s</span>
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn" style="flex: 1; background: var(--danger); color: white;" onclick="placeBet('small')">
+          壓小 (A~6)
+        </button>
+        <button class="modal-btn" style="flex: 1; background: var(--success); color: white;" onclick="placeBet('big')">
+          壓大 (7~K)
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="./client/player.js"></script>

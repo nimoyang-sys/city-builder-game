@@ -2899,6 +2899,216 @@
     // 定期刷新
     setInterval(fetchGameState, 5000);
 
+    // ========== 小遊戲系統 ==========
+
+    let quizCurrentQuestion = null;
+
+    // 快問快答
+    function handleQuizStarted(data) {
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-icon">💡</div>
+          <div class="minigame-title">快問快答</div>
+          <div class="quiz-status" style="font-size: 1.5rem; color: var(--text);">
+            遊戲開始！共 ${data.questionCount} 題
+          </div>
+        </div>
+      `;
+      overlay.classList.add('show');
+    }
+
+    function handleQuizQuestion(data) {
+      quizCurrentQuestion = data;
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-title">💡 快問快答</div>
+          <div class="quiz-progress">第 ${data.questionIndex + 1} / ${data.totalQuestions} 題</div>
+          <div class="quiz-question">${data.question}</div>
+          <div class="quiz-options">
+            ${data.options.map((opt, i) => `
+              <div class="quiz-option">${opt}</div>
+            `).join('')}
+          </div>
+          <div class="quiz-timer">倒數 ${data.timeLimit} 秒</div>
+        </div>
+      `;
+      overlay.classList.add('show');
+    }
+
+    function handleQuizEnded(data) {
+      const overlay = document.getElementById('minigame-overlay');
+      const results = data.results.slice(0, 5); // 顯示前5名
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-icon">🏆</div>
+          <div class="minigame-title">快問快答結果</div>
+          <div class="beer-results" style="max-width: 600px; margin: 0 auto;">
+            ${results.map((r, i) => `
+              <div class="beer-result-item ${i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : ''}">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div class="beer-rank rank-${i + 1}">第${i + 1}名</div>
+                  <div style="font-weight: bold;">${r.playerName}</div>
+                </div>
+                <div>
+                  <span style="color: var(--success); font-weight: bold;">${r.correct}/${r.total}題</span>
+                  <span style="margin-left: 10px; color: var(--warning);">+${r.reward}分</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        overlay.classList.remove('show');
+      }, 10000);
+    }
+
+    // 喝啤酒比賽
+    let beerParticipants = [];
+
+    function handleBeerWaitingStart() {
+      beerParticipants = [];
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-icon">🍺</div>
+          <div class="minigame-title">喝啤酒比賽</div>
+          <div class="beer-status">等待玩家加入...</div>
+          <div class="beer-participants" id="beer-participants-display">
+            <div style="font-size: 1.2rem; color: var(--text-muted);">尚無玩家加入</div>
+          </div>
+        </div>
+      `;
+      overlay.classList.add('show');
+    }
+
+    function handleBeerPlayerJoined(data) {
+      beerParticipants.push(data.playerName);
+      const participantsDisplay = document.getElementById('beer-participants-display');
+      if (participantsDisplay) {
+        participantsDisplay.innerHTML = beerParticipants.map(name => `
+          <div class="beer-participant">${name}</div>
+        `).join('');
+      }
+    }
+
+    function handleBeerGameStarted(data) {
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-icon">🍺</div>
+          <div class="minigame-title">喝啤酒比賽</div>
+          <div class="beer-status">比賽進行中...</div>
+          <div class="beer-participants">
+            ${data.participants.map(p => `
+              <div class="beer-participant">${p.playerName}</div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function handleBeerResultsSet(data) {
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-icon">🍺</div>
+          <div class="minigame-title">喝啤酒比賽結果</div>
+          <div class="beer-results">
+            ${data.results.map(r => `
+              <div class="beer-result-item ${r.rank === 1 ? 'rank-1' : r.rank === 2 ? 'rank-2' : ''}">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <div class="beer-rank rank-${r.rank}">第${r.rank}名</div>
+                  <div style="font-weight: bold; font-size: 1.3rem;">${r.playerName}</div>
+                </div>
+                <div style="color: var(--warning); font-weight: bold; font-size: 1.2rem;">+${r.reward}分</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function handleBeerEnded() {
+      setTimeout(() => {
+        document.getElementById('minigame-overlay').classList.remove('show');
+        beerParticipants = [];
+      }, 10000);
+    }
+
+    // 比大小
+    function handlePokerStarted(data) {
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-icon">🃏</div>
+          <div class="minigame-title">撲克牌比大小</div>
+          <div class="poker-betting">玩家下注中...</div>
+          <div class="poker-timer" id="poker-timer-display">20s</div>
+          <div style="font-size: 1.2rem; color: var(--text-muted);">
+            7~K = 大 | A~6 = 小
+          </div>
+        </div>
+      `;
+      overlay.classList.add('show');
+
+      // 倒計時
+      const endTime = data.endTime;
+      const updateTimer = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+        const timerEl = document.getElementById('poker-timer-display');
+        if (timerEl) {
+          timerEl.textContent = remaining + 's';
+        }
+        if (remaining <= 0) {
+          clearInterval(updateTimer);
+        }
+      }, 100);
+    }
+
+    function handlePokerEnded(data) {
+      const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+      const cardDisplay = cardNames[data.card - 1] || data.card;
+      const resultText = data.result === 'big' ? '大' : '小';
+      const resultClass = data.result;
+
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="minigame-title">🃏 撲克牌比大小</div>
+          <div class="poker-card-display">${cardDisplay}</div>
+          <div class="poker-result ${resultClass}">結果：${resultText}</div>
+          <div class="poker-winners-losers">
+            <div class="poker-list">
+              <div class="poker-list-title winners">🎉 獲勝（+100分）</div>
+              <div class="poker-list-items">
+                ${data.winners.length > 0 ?
+                  data.winners.map(w => w.playerName).join('<br>') :
+                  '<span style="color: var(--text-muted);">無</span>'
+                }
+              </div>
+            </div>
+            <div class="poker-list">
+              <div class="poker-list-title losers">😅 輸了（喝酒）</div>
+              <div class="poker-list-items">
+                ${data.losers.length > 0 ?
+                  data.losers.map(l => l.playerName).join('<br>') :
+                  '<span style="color: var(--text-muted);">無</span>'
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      setTimeout(() => {
+        overlay.classList.remove('show');
+      }, 10000);
+    }
+
     // ========== 抽獎系統 ==========
     let lotteryPlayers = [];       // 可抽獎的玩家列表
     let lotteryWinners = [];       // 已中獎的玩家
