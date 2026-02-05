@@ -62,13 +62,13 @@
     }
 
     .logo {
-      width: 100px;  /* 從 60px 放大到 100px */
+      width: 140px;  /* 放大 logo 以接近標題文字大小 */
       height: auto;
       filter: drop-shadow(3px 3px 6px rgba(0,0,0,0.25));
     }
 
     .title-text h1 {
-      font-size: 2.2rem;  /* 從 1.8rem 放大到 2.2rem */
+      font-size: 2.2rem;
       font-weight: 900;
       color: #333;
       letter-spacing: 2px;
@@ -76,7 +76,7 @@
     }
 
     .title-text .slogan {
-      font-size: 1.1rem;  /* 從 0.9rem 放大到 1.1rem */
+      font-size: 1.1rem;
       color: #555;
       font-weight: 600;
       margin-top: 4px;
@@ -85,9 +85,9 @@
 
     .stats-bar {
       display: flex;
-      gap: 20px;
+      gap: 30px;  /* 增加間距從 20px 到 30px */
       align-items: center;
-      margin-left: auto;  /* 確保靠右 */
+      margin-left: auto;
     }
 
     .stat-item {
@@ -1200,7 +1200,7 @@
 
     /* 可收合排行榜 */
     .leaderboard-collapsible {
-      right: -270px;  /* 默認收起，只露出50px */
+      right: -280px;  /* 默認收起，只露出按鈕 */
       transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
@@ -1211,17 +1211,18 @@
     .leaderboard-collapsible::before {
       content: '📊';
       position: absolute;
-      left: -40px;
+      left: -50px;  /* 調整位置避免重疊 */
       top: 50%;
       transform: translateY(-50%);
-      font-size: 2rem;
+      font-size: 1.8rem;
       background: var(--bg-card);
-      padding: 10px 15px;
+      padding: 8px 12px;
       border-radius: 15px 0 0 15px;
       border: 4px solid #FFD93D;
       border-right: none;
       box-shadow: -4px 4px 15px rgba(255,107,157,0.2);
       cursor: pointer;
+      z-index: 10;  /* 確保在最上層 */
     }
 
     .panel-title {
@@ -1616,15 +1617,23 @@
 
     .waiting-content-wrapper {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 40px;
-      max-width: 1400px;
+      gap: 80px;
+      max-width: 1600px;
       width: 100%;
       height: 100%;
       position: relative;
       z-index: 1;
+    }
+
+    .waiting-left-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .waiting-top-section {
@@ -1633,18 +1642,17 @@
       align-items: center;
       justify-content: center;
       gap: 60px;
+      margin-bottom: 40px;
     }
 
-    .waiting-left-section {
+    .waiting-icon-wrapper {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
 
-    .waiting-right-section {
+    .waiting-logo-wrapper {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
     }
@@ -1655,6 +1663,13 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+    }
+
+    .waiting-right-section {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     /* 等待畫面裝飾 - 飄動的愛心和星星 */
@@ -2685,31 +2700,31 @@
   <!-- 等待畫面 -->
   <div class="waiting-overlay" id="waiting-overlay">
     <div class="waiting-content-wrapper">
-      <!-- 上方：跳動 icon（左）+ Logo（右） -->
-      <div class="waiting-top-section">
-        <!-- 左側：跳動 icon -->
-        <div class="waiting-left-section">
-          <div class="waiting-logo">🏗️</div>
+      <!-- 左半部：Icon + Logo + 副標題 + 玩家數 -->
+      <div class="waiting-left-section">
+        <!-- 上方：跳動 icon（左）+ Logo（右） -->
+        <div class="waiting-top-section">
+          <div class="waiting-icon-wrapper">
+            <div class="waiting-logo">🏗️</div>
+          </div>
+          <div class="waiting-logo-wrapper">
+            <img src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/logo%2F%E8%B3%87%E7%94%A2%2071.png?alt=media&token=dd82561c-60dc-4ffb-b478-5c5621bfa2a0"
+                 alt="創智動能 Logo"
+                 class="waiting-logo-img">
+          </div>
         </div>
 
-        <!-- 右側：Logo -->
-        <div class="waiting-right-section">
-          <img src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/logo%2F%E8%B3%87%E7%94%A2%2071.png?alt=media&token=dd82561c-60dc-4ffb-b478-5c5621bfa2a0"
-               alt="創智動能 Logo"
-               class="waiting-logo-img">
+        <!-- 下方：副標題 + 玩家數 -->
+        <div class="waiting-bottom-section">
+          <div class="waiting-subtitle">✨ 眾志成城・築夢成真 ✨</div>
+          <div class="waiting-players">
+            目前 <span id="waiting-player-count">0</span> 位夥伴已就位
+          </div>
         </div>
       </div>
 
-      <!-- 下方：副標題 + 玩家數 -->
-      <div class="waiting-bottom-section">
-        <div class="waiting-subtitle">✨ 眾志成城・築夢成真 ✨</div>
-        <div class="waiting-players">
-          目前 <span id="waiting-player-count">0</span> 位夥伴已就位
-        </div>
-      </div>
-
-      <!-- QR Code 區域 -->
-      <div class="waiting-qr-section">
+      <!-- 右半部：QR Code 區域 -->
+      <div class="waiting-right-section">
         <div class="qr-hint">
           <p>掃描 QR Code 或輸入網址加入遊戲</p>
           <div id="qr-code" style="margin: 20px auto; background: white; padding: 15px; border-radius: 8px; display: inline-block;"></div>
