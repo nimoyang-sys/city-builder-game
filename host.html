@@ -912,6 +912,22 @@
           </div>
           <div class="settlement-total" id="settlement-total"></div>
         </div>
+
+        <!-- 歷史紀錄 -->
+        <div style="margin-top: 15px;">
+          <button class="btn btn-info btn-block btn-sm" onclick="toggleEventHistory()">
+            📜 查看事件歷史紀錄
+          </button>
+          <div class="settlement-panel" id="event-history-panel" style="display: none;">
+            <div class="settlement-header">
+              <h4>📜 事件歷史紀錄</h4>
+              <button class="settlement-close" onclick="hideEventHistory()">✕</button>
+            </div>
+            <div id="event-history-list" style="max-height: 400px; overflow-y: auto;">
+              <p style="color: var(--text-muted); text-align: center; padding: 20px;">尚無歷史紀錄</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 玩家列表與加分 -->
@@ -921,7 +937,7 @@
         <!-- 分頁標籤 -->
         <div class="player-tabs">
           <button class="player-tab-btn active" onclick="switchPlayerTab('scoring')">
-            🎮 小遊戲加分
+            🎮 小遊戲加金幣
           </button>
           <button class="player-tab-btn" onclick="switchPlayerTab('roles')">
             🎭 角色與積分總覽
@@ -939,7 +955,7 @@
               </div>
             </div>
 
-            <!-- 分數設定 -->
+            <!-- 金幣設定 -->
             <div class="score-presets">
               <button class="score-preset-btn" onclick="setScoreAmount(50)">+50</button>
               <button class="score-preset-btn" onclick="setScoreAmount(100)">+100</button>
@@ -948,12 +964,12 @@
               <button class="score-preset-btn" onclick="setScoreAmount(1000)">+1000</button>
             </div>
             <div class="score-input-row">
-              <input type="number" id="score-amount" placeholder="自訂分數" value="100">
+              <input type="number" id="score-amount" placeholder="自訂金幣" value="100">
               <input type="text" id="score-reason" placeholder="原因（選填）" value="小遊戲獎勵">
             </div>
             <div style="display: flex; gap: 10px;">
-              <button class="btn btn-success" style="flex: 1;" onclick="addScoreToSelected()">
-                ✨ 為選中玩家加分
+              <button class="btn btn-success" style="flex: 1;" onclick="addCoinsToSelected()">
+                ✨ 為選中玩家加金幣
               </button>
               <button class="btn btn-info btn-sm" onclick="selectAllPlayers()">全選</button>
               <button class="btn btn-sm" style="background: var(--border);" onclick="deselectAllPlayers()">取消</button>
@@ -996,7 +1012,7 @@
       </div>
 
       <!-- 限時搶購控制 -->
-      <div class="panel-card">
+      <div class="panel-card" id="flash-sale-panel">
         <h3>⚡ 限時搶購</h3>
         <div id="flash-sale-control">
           <div class="form-group">
@@ -1050,12 +1066,12 @@
       </div>
 
       <!-- 小遊戲控制 -->
-      <div class="panel-card">
+      <div class="panel-card" id="minigame-panel">
         <h3>🎮 小遊戲</h3>
 
         <!-- 快問快答 -->
         <div style="margin-bottom: 15px;">
-          <button class="btn btn-primary btn-block" onclick="startQuizGame()">
+          <button class="btn btn-primary btn-block" onclick="startQuizGame()" id="btn-quiz">
             💡 快問快答
           </button>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
@@ -1193,6 +1209,7 @@
     let awardWinners = [];
     let currentAwardIndex = 0;
     let totalPrizes = 0;
+    let eventHistory = [];  // 事件歷史紀錄
 
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
@@ -1688,6 +1705,30 @@
       }
     }
 
+    function addCoinsToSelected() {
+      if (selectedPlayers.size === 0) {
+        alert('請先選擇玩家');
+        return;
+      }
+
+      const amount = parseInt(document.getElementById('score-amount').value);
+      const reason = document.getElementById('score-reason').value || '小遊戲獎勵';
+
+      if (isNaN(amount) || amount <= 0) {
+        alert('請輸入有效的金幣數量');
+        return;
+      }
+
+      const playerIds = Array.from(selectedPlayers);
+
+      if (confirm(`確定要為 ${playerIds.length} 位玩家各加 ${amount} 金幣嗎？\n原因：${reason}`)) {
+        socket.emit('host:addCoinsBatch', { playerIds, amount, reason });
+        addLog(`為 ${playerIds.length} 位玩家加金幣 +${amount}（${reason}）`, 'success');
+        selectedPlayers.clear();
+        updatePlayerList(players);
+      }
+    }
+
     // 事件處理
     function handleGameStarted(data) {
       addLog(`遊戲開始！共 ${data.playerCount} 位玩家`, 'success');
@@ -1754,6 +1795,15 @@
       `;
 
       panel.classList.add('show');
+
+      // 將此次事件加入歷史紀錄
+      eventHistory.unshift({
+        event: event,
+        results: sortedResults,
+        totalIncome: totalIncome,
+        timestamp: Date.now()
+      });
+      updateEventHistory();
     }
 
     // 隱藏結算明細
@@ -1761,9 +1811,136 @@
       document.getElementById('settlement-panel').classList.remove('show');
     }
 
+    // 顯示/隱藏事件歷史
+    function toggleEventHistory() {
+      const panel = document.getElementById('event-history-panel');
+      if (panel.style.display === 'none' || panel.style.display === '') {
+        panel.style.display = 'block';
+        panel.classList.add('show');
+      } else {
+        panel.style.display = 'none';
+        panel.classList.remove('show');
+      }
+    }
+
+    function hideEventHistory() {
+      const panel = document.getElementById('event-history-panel');
+      panel.style.display = 'none';
+      panel.classList.remove('show');
+    }
+
+    // 更新事件歷史列表
+    function updateEventHistory() {
+      const list = document.getElementById('event-history-list');
+
+      if (eventHistory.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">尚無歷史紀錄</p>';
+        return;
+      }
+
+      list.innerHTML = eventHistory.map((record, index) => {
+        const timeStr = new Date(record.timestamp).toLocaleTimeString('zh-TW', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        return `
+          <div style="background: var(--bg-card); border-radius: 8px; padding: 15px; margin-bottom: 10px; border-left: 4px solid var(--primary);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-size: 1rem; font-weight: bold;">
+                ${record.event.emoji || '📢'} ${record.event.title}
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-muted);">${timeStr}</div>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+              ${record.event.description || ''}
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px; background: var(--bg); border-radius: 6px;">
+              <span>共 ${record.results.length} 位玩家</span>
+              <span style="color: var(--success); font-weight: bold;">總營收 +${record.totalIncome}</span>
+            </div>
+            <button class="btn btn-sm btn-info" onclick="showHistoryDetail(${index})" style="margin-top: 8px; width: 100%;">
+              查看結算明細
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 顯示歷史事件的結算明細
+    function showHistoryDetail(index) {
+      const record = eventHistory[index];
+      if (!record) return;
+
+      const panel = document.getElementById('settlement-panel');
+      const eventInfo = document.getElementById('settlement-event-info');
+      const list = document.getElementById('settlement-list');
+      const total = document.getElementById('settlement-total');
+
+      // 顯示事件資訊
+      const timeStr = new Date(record.timestamp).toLocaleTimeString('zh-TW', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      eventInfo.innerHTML = `
+        <div style="margin-bottom: 10px; padding: 10px; background: var(--bg-card); border-radius: 8px;">
+          <div style="font-size: 1.1rem; margin-bottom: 5px;">${record.event.emoji || '📢'} ${record.event.title}</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">${record.event.description || ''}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">發布時間：${timeStr}</div>
+        </div>
+      `;
+
+      // 生成列表
+      list.innerHTML = record.results.map((r, idx) => {
+        const incomeClass = r.income > 0 ? '' : (r.income < 0 ? 'negative' : '');
+        const incomeSign = r.income >= 0 ? '+' : '';
+        return `
+          <div class="settlement-item">
+            <span class="player-name">
+              <span style="color: var(--text-muted); margin-right: 5px;">#${idx + 1}</span>
+              ${r.playerName}
+              ${r.luckyTriggered ? '<span style="color: var(--warning);" title="幸運觸發">🍀</span>' : ''}
+              ${r.itemIncomeBonus ? '<span style="color: var(--info);" title="道具加成">📦</span>' : ''}
+            </span>
+            <span class="income-detail">
+              <span class="income ${incomeClass}">${incomeSign}${r.income}</span>
+              <span class="coins" title="金幣">💰 ${r.newCoins}</span>
+              <span class="score" title="貢獻分">⭐ ${r.newScore}</span>
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      // 總計
+      total.innerHTML = `
+        <span>共 ${record.results.length} 位玩家</span>
+        <span style="color: var(--success);">總營收 +${record.totalIncome}</span>
+      `;
+
+      panel.classList.add('show');
+      hideEventHistory();
+    }
+
     function handleGameEnded(data) {
       addLog('遊戲結束！', 'warning');
       refreshGameState();
+
+      // 禁用小遊戲和限時搶購面板
+      const minigamePanel = document.getElementById('minigame-panel');
+      const flashSalePanel = document.getElementById('flash-sale-panel');
+      if (minigamePanel) {
+        minigamePanel.style.opacity = '0.5';
+        minigamePanel.style.pointerEvents = 'none';
+        const buttons = minigamePanel.querySelectorAll('button');
+        buttons.forEach(btn => btn.disabled = true);
+      }
+      if (flashSalePanel) {
+        flashSalePanel.style.opacity = '0.5';
+        flashSalePanel.style.pointerEvents = 'none';
+        const buttons = flashSalePanel.querySelectorAll('button');
+        buttons.forEach(btn => btn.disabled = true);
+      }
     }
 
     function handlePlayerJoined(player) {

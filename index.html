@@ -2040,7 +2040,7 @@
           <div class="resource-icon">⭐</div>
           <div>
             <div class="resource-value" id="res-score">0</div>
-            <div class="resource-label">貢獻分</div>
+            <div class="resource-label">總積分</div>
           </div>
         </div>
       </div>
@@ -2071,7 +2071,7 @@
         <div class="event-description" id="event-description"></div>
         <div class="event-effects" id="event-effects"></div>
         <div class="income-result" id="income-result">
-          <div>本次營收（金幣＋貢獻分）</div>
+          <div>本次營收（金幣＋總積分）</div>
           <div class="income-amount" id="income-amount">+0</div>
         </div>
         <div class="event-dismiss-hint">點擊任意處關閉，繼續建造</div>
@@ -2108,7 +2108,7 @@
     <!-- 結果畫面 -->
     <div class="result-screen" id="result-screen">
       <div class="result-card">
-        <div class="result-label">你的總貢獻分</div>
+        <div class="result-label">你的總積分</div>
         <div class="result-score" id="final-score">0</div>
       </div>
       <div class="result-card">
@@ -2125,13 +2125,13 @@
   </div>
 
   <!-- 成就按鈕 -->
-  <button class="achievements-btn" onclick="openAchievementsModal()" title="成就">
+  <button class="achievements-btn" onclick="openAchievementsModal()" title="成就" id="achievements-btn" style="display: none;">
     🏆
     <span class="badge" id="achievement-count">0/0</span>
   </button>
 
   <!-- 道具按鈕組 -->
-  <div class="item-buttons">
+  <div class="item-buttons" id="item-buttons" style="display: none;">
     <button class="item-btn shop" onclick="openItemShopModal()" title="道具商店">
       🛒
     </button>
@@ -2218,7 +2218,7 @@
         </div>
         <div class="modal-info-row">
           <span>每回合營收</span>
-          <span id="modal-income">+15</span>
+          <span id="modal-income">⭐ +15分</span>
         </div>
         <div class="modal-info-row">
           <span>建造後餘額</span>

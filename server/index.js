@@ -344,6 +344,16 @@ io.on('connection', (socket) => {
     socket.emit('host:result', { success: true, results });
   });
 
+  // 批次加金幣
+  socket.on('host:addCoinsBatch', ({ playerIds, amount, reason }) => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const results = gameEngine.addCoinsBatch(playerIds, amount, reason);
+    socket.emit('host:result', { success: true, results });
+  });
+
   // 結束遊戲
   socket.on('host:endGame', () => {
     if (socket.id !== hostSocketId) {
@@ -738,6 +748,10 @@ gameEngine.on('scoreAdded', (data) => {
 
 gameEngine.on('scoreBatchAdded', (data) => {
   io.emit('game:scoreBatchAdded', data);
+});
+
+gameEngine.on('coinsBatchAdded', (data) => {
+  io.emit('game:coinsBatchAdded', data);
 });
 
 gameEngine.on('gameEnded', (data) => {

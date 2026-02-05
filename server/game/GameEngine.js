@@ -388,7 +388,7 @@ export class GameEngine extends EventEmitter {
       tableNumber: player.tableNumber,
       score: player.score,
       buildingCount: Object.values(player.buildings).reduce((a, b) => a + b, 0),
-      role: player.role ? ROLES[player.role] : null
+      role: player.roleId ? ROLES[player.roleId] : player.role
     };
   }
 
@@ -402,8 +402,8 @@ export class GameEngine extends EventEmitter {
       buildings: player.buildings,
       totalIncome: player.totalIncome,
       connected: player.connected,
-      role: player.role ? ROLES[player.role] : null,
-      roleId: player.role,
+      role: player.roleId ? ROLES[player.roleId] : player.role,
+      roleId: player.roleId,
       items: player.items || [],
       achievements: player.achievements || [],
       achievementProgress: player.achievementProgress || {},
@@ -839,6 +839,48 @@ export class GameEngine extends EventEmitter {
       amount,
       reason,
       leaderboard: this.getLeaderboard()
+    });
+
+    return results;
+  }
+
+  /**
+   * 批次加金幣
+   */
+  addCoinsBatch(playerIds, amount, reason = '小遊戲獎勵') {
+    const results = [];
+    for (const playerId of playerIds) {
+      const player = this.players.get(playerId);
+      if (player) {
+        player.coins += amount;
+        results.push({
+          playerId,
+          success: true,
+          newCoins: player.coins
+        });
+
+        // 儲存到資料庫
+        this.savePlayerToDB(player);
+
+        // 通知該玩家
+        this.emitToPlayer(playerId, 'player:coinsUpdated', {
+          coins: player.coins,
+          amount: amount,
+          reason: reason
+        });
+      } else {
+        results.push({
+          playerId,
+          success: false,
+          error: '玩家不存在'
+        });
+      }
+    }
+
+    this.emit('coinsBatchAdded', {
+      playerIds,
+      amount,
+      reason
     });
 
     return results;

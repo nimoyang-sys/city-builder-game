@@ -420,6 +420,12 @@ function handleGameStarted(data) {
   updateGameStateDisplay();
   showGameContent();
   showToast('遊戲開始！開始建設你的城市吧！', 'success');
+
+  // 顯示成就和道具按鈕
+  const achievementsBtn = document.getElementById('achievements-btn');
+  const itemButtons = document.getElementById('item-buttons');
+  if (achievementsBtn) achievementsBtn.style.display = 'flex';
+  if (itemButtons) itemButtons.style.display = 'flex';
 }
 
 function handleBuildingPhase(data) {
@@ -675,14 +681,14 @@ function showEventDisplay(event, results) {
   document.getElementById('event-title').textContent = event.title;
   document.getElementById('event-description').textContent = event.description;
 
-  // 顯示效果標籤（營收會同時加金幣和貢獻分）
+  // 顯示效果標籤（營收會同時加金幣和總積分）
   const effectsContainer = document.getElementById('event-effects');
   if (event.display) {
     effectsContainer.innerHTML = `
       <span class="effect-tag ${event.display.mood === 'positive' ? 'positive' : 'negative'}">
         ${event.display.affected}
       </span>
-      <div class="effect-hint">營收 = 金幣 + 貢獻分</div>
+      <div class="effect-hint">營收 = 金幣 + 總積分</div>
     `;
   } else {
     effectsContainer.innerHTML = '';
@@ -734,7 +740,7 @@ function openBuyModal(buildingId) {
   document.getElementById('modal-emoji').textContent = building.emoji;
   document.getElementById('modal-title').textContent = `建造 ${building.name}`;
   document.getElementById('modal-cost').textContent = `💰 ${building.cost}`;
-  document.getElementById('modal-income').textContent = `+${building.income}`;
+  document.getElementById('modal-income').textContent = `⭐ +${building.income}分`;
   document.getElementById('modal-remaining').textContent = `💰 ${playerState.coins - building.cost}`;
 
   document.getElementById('buy-modal').classList.add('show');
