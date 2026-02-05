@@ -2025,8 +2025,9 @@
       );
       display: none;
       flex-direction: column;
-      padding: 40px;
+      padding: 30px 40px 0 40px;
       z-index: 100;
+      overflow-y: auto;
     }
 
     .end-overlay.show {
@@ -2050,10 +2051,12 @@
 
     /* 上方建築展示區域 */
     .end-buildings-display {
-      width: 100%;
-      height: 400px;
+      width: calc(100% + 80px);
+      margin-left: -40px;
+      margin-right: -40px;
+      height: 300px;
       position: relative;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
 
     .final-city-ground {
@@ -2061,13 +2064,14 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 100px;
+      height: 60px;
       background: linear-gradient(180deg, #8BC34A 0%, #689F38 100%);
+      border-top: 4px solid #9CCC65;
     }
 
     .final-buildings {
       position: absolute;
-      bottom: 100px;
+      bottom: 60px;
       left: 0;
       right: 0;
       display: flex;
@@ -2115,9 +2119,9 @@
     .end-slogan p {
       font-size: 2.4rem;
       font-weight: 700;
-      color: #5D4037;
+      color: #2D3436;
       margin: 20px 0;
-      text-shadow: 2px 2px 0 #fff;
+      text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
       opacity: 0;
       animation: fadeInUp 0.8s ease-out forwards;
     }

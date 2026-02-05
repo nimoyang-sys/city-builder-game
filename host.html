@@ -816,6 +816,89 @@
     ::-webkit-scrollbar-thumb:hover {
       background: var(--text-muted);
     }
+
+    /* 彈窗樣式 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border-radius: 16px;
+      width: 90%;
+      max-width: 1000px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+      animation: modalSlideIn 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        transform: scale(0.8) translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 25px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 1.3rem;
+      color: var(--text);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .modal-body {
+      padding: 20px 25px;
+      overflow-y: auto;
+      flex: 1;
+    }
   </style>
 </head>
 <body>
@@ -915,18 +998,9 @@
 
         <!-- 歷史紀錄 -->
         <div style="margin-top: 15px;">
-          <button class="btn btn-info btn-block btn-sm" onclick="toggleEventHistory()">
+          <button class="btn btn-info btn-block btn-sm" onclick="showEventHistoryModal()">
             📜 查看事件歷史紀錄
           </button>
-          <div class="settlement-panel" id="event-history-panel" style="display: none;">
-            <div class="settlement-header">
-              <h4>📜 事件歷史紀錄</h4>
-              <button class="settlement-close" onclick="hideEventHistory()">✕</button>
-            </div>
-            <div id="event-history-list" style="max-height: 400px; overflow-y: auto;">
-              <p style="color: var(--text-muted); text-align: center; padding: 20px;">尚無歷史紀錄</p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -1193,6 +1267,19 @@
             <span>主持人控制台已就緒</span>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 歷史紀錄彈窗 -->
+  <div class="modal-overlay" id="history-modal" onclick="hideEventHistoryModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📜 事件歷史紀錄</h3>
+        <button class="modal-close" onclick="hideEventHistoryModal()">✕</button>
+      </div>
+      <div class="modal-body" id="event-history-list">
+        <p style="color: var(--text-muted); text-align: center; padding: 40px;">尚無歷史紀錄</p>
       </div>
     </div>
   </div>
@@ -1811,22 +1898,16 @@
       document.getElementById('settlement-panel').classList.remove('show');
     }
 
-    // 顯示/隱藏事件歷史
-    function toggleEventHistory() {
-      const panel = document.getElementById('event-history-panel');
-      if (panel.style.display === 'none' || panel.style.display === '') {
-        panel.style.display = 'block';
-        panel.classList.add('show');
-      } else {
-        panel.style.display = 'none';
-        panel.classList.remove('show');
-      }
+    // 顯示/隱藏事件歷史彈窗
+    function showEventHistoryModal() {
+      updateEventHistory();
+      const modal = document.getElementById('history-modal');
+      modal.classList.add('show');
     }
 
-    function hideEventHistory() {
-      const panel = document.getElementById('event-history-panel');
-      panel.style.display = 'none';
-      panel.classList.remove('show');
+    function hideEventHistoryModal() {
+      const modal = document.getElementById('history-modal');
+      modal.classList.remove('show');
     }
 
     // 更新事件歷史列表
@@ -1871,6 +1952,9 @@
     function showHistoryDetail(index) {
       const record = eventHistory[index];
       if (!record) return;
+
+      // 先關閉歷史紀錄彈窗
+      hideEventHistoryModal();
 
       const panel = document.getElementById('settlement-panel');
       const eventInfo = document.getElementById('settlement-event-info');
