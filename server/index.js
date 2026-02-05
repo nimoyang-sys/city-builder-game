@@ -509,6 +509,15 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // 更新 GameEngine 的抽獎狀態
+    gameEngine.lotteryState = {
+      active: true,
+      players: players,
+      prizeCount: prizeCount,
+      currentRank: 0,
+      winners: []
+    };
+
     // 發送給所有客戶端（特別是投影畫面）
     io.emit('award:start', { players, prizeCount });
     console.log('Award ceremony started with', prizeCount, 'prizes');
@@ -521,6 +530,12 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // 更新抽獎狀態
+    if (gameEngine.lotteryState.active) {
+      gameEngine.lotteryState.currentRank = rank;
+      gameEngine.lotteryState.winners.push({ rank, winner });
+    }
+
     io.emit('award:reveal', { rank, winner });
     console.log(`Award #${rank}: ${winner.name}`);
   });
@@ -531,6 +546,15 @@ io.on('connection', (socket) => {
       socket.emit('host:error', { error: '無權限' });
       return;
     }
+
+    // 重置抽獎狀態
+    gameEngine.lotteryState = {
+      active: false,
+      players: [],
+      prizeCount: 0,
+      currentRank: 0,
+      winners: []
+    };
 
     io.emit('award:close');
     console.log('Award ceremony closed');

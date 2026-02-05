@@ -3312,6 +3312,36 @@
       // 更新排行榜
       renderLeaderboard(state.leaderboard);
 
+      // 檢查抽獎狀態並恢復抽獎畫面
+      if (state.lotteryState && state.lotteryState.active) {
+        console.log('🎰 偵測到進行中的抽獎，恢復抽獎畫面');
+
+        // 恢復抽獎數據
+        awardPlayers = state.lotteryState.players;
+        awardPrizeCount = state.lotteryState.prizeCount;
+        awardWinners = state.lotteryState.winners || [];
+        currentAwardRank = state.lotteryState.currentRank || 0;
+
+        // 顯示抽獎畫面
+        startAwardMode();
+
+        // 如果已經有得獎者，恢復到得獎者列表
+        if (awardWinners.length > 0) {
+          console.log('🏆 恢復已抽出的得獎者:', awardWinners.length);
+          updateAwardWinnersList();
+        }
+      } else if (state.state === 'ENDED') {
+        // 遊戲已結束但沒有抽獎，顯示結束畫面
+        const endOverlay = document.getElementById('end-overlay');
+        if (endOverlay && !endOverlay.classList.contains('show')) {
+          const lotteryOverlay = document.getElementById('lottery-overlay');
+          if (!lotteryOverlay || !lotteryOverlay.classList.contains('show')) {
+            console.log('🎉 顯示遊戲結束畫面');
+            endOverlay.classList.add('show');
+          }
+        }
+      }
+
       // 顯示/隱藏等待畫面
       const waitingOverlay = document.getElementById('waiting-overlay');
       if (state.state === 'WAITING') {

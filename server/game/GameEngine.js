@@ -55,6 +55,15 @@ export class GameEngine extends EventEmitter {
     this.flashSale = null;  // { item, originalPrice, salePrice, quantity, remaining, endTime, buyers }
     this.flashSaleTimer = null;
 
+    // 抽獎系統狀態
+    this.lotteryState = {
+      active: false,          // 是否正在抽獎
+      players: [],            // 參與抽獎的玩家列表（依排名排序）
+      prizeCount: 0,          // 總獎品數
+      currentRank: 0,         // 目前抽到第幾名
+      winners: []             // 已抽出的得獎者 [{ rank, player }]
+    };
+
     // 自動儲存計時器
     this.autoSaveTimer = null;
     this.startAutoSave();
@@ -2018,7 +2027,8 @@ export class GameEngine extends EventEmitter {
       cityBuildingList: this.cityBuildingList,
       currentEvent: this.currentEvent,
       leaderboard: this.getLeaderboard(),
-      totalBuildings: Object.values(this.cityBuildings).reduce((a, b) => a + b, 0)
+      totalBuildings: Object.values(this.cityBuildings).reduce((a, b) => a + b, 0),
+      lotteryState: this.lotteryState
     };
   }
 
