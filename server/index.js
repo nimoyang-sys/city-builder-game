@@ -218,6 +218,20 @@ io.on('connection', (socket) => {
       gameState: gameEngine.getGameState()
     });
 
+    // 檢查是否有進行中的小遊戲，並通知新玩家
+    const activeGames = miniGameManager.getActiveGames();
+    for (const game of activeGames) {
+      if (game.type === 'quiz') {
+        socket.emit('minigame:quizQuestion', game.data);
+      } else if (game.type === 'beerWaiting') {
+        socket.emit('minigame:beerWaitingStart', game.data);
+      } else if (game.type === 'beerActive') {
+        socket.emit('minigame:beerGameStarted', game.data);
+      } else if (game.type === 'poker') {
+        socket.emit('minigame:pokerStarted', game.data);
+      }
+    }
+
     // 通知其他人
     socket.broadcast.emit('game:playerJoined', gameEngine.getPlayerPublicInfo(player));
 
@@ -233,6 +247,20 @@ io.on('connection', (socket) => {
         player: gameEngine.getPlayerState(player),
         gameState: gameEngine.getGameState()
       });
+
+      // 檢查是否有進行中的小遊戲，並通知重新連線的玩家
+      const activeGames = miniGameManager.getActiveGames();
+      for (const game of activeGames) {
+        if (game.type === 'quiz') {
+          socket.emit('minigame:quizQuestion', game.data);
+        } else if (game.type === 'beerWaiting') {
+          socket.emit('minigame:beerWaitingStart', game.data);
+        } else if (game.type === 'beerActive') {
+          socket.emit('minigame:beerGameStarted', game.data);
+        } else if (game.type === 'poker') {
+          socket.emit('minigame:pokerStarted', game.data);
+        }
+      }
     } else {
       socket.emit('player:notFound');
     }
@@ -293,9 +321,10 @@ io.on('connection', (socket) => {
       if (result.buildingGained || result.buildingCopied) {
         const gameState = gameEngine.getGameState();
 
-        // 通知投影畫面更新城市建築
+        // 通知投影畫面更新城市建築（包含建築列表）
         io.emit('game:cityBuildingsUpdate', {
           cityBuildings: gameEngine.getCityBuildingStats(),
+          cityBuildingList: gameEngine.getCityBuildingList(),
           leaderboard: gameEngine.getLeaderboard()
         });
 
@@ -727,6 +756,15 @@ io.on('connection', (socket) => {
 
     const result = miniGameManager.placeBet(player.id, player.name, bet);
     socket.emit('player:placeBetResult', result);
+
+    // 广播玩家下注到所有客户端（投影界面和主持人界面）
+    if (result.success) {
+      io.emit('minigame:pokerBetPlaced', {
+        playerId: player.id,
+        playerName: player.name,
+        bet: bet
+      });
+    }
   });
 
   // 比大小 - 主持人結束（提前結算）

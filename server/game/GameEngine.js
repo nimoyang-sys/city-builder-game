@@ -412,6 +412,7 @@ export class GameEngine extends EventEmitter {
       name: player.name,
       tableNumber: player.tableNumber,
       score: player.score,
+      coins: player.coins,
       buildingCount: Object.values(player.buildings).reduce((a, b) => a + b, 0),
       role: player.roleId ? ROLES[player.roleId] : player.role
     };

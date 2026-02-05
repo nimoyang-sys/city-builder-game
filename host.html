@@ -423,7 +423,7 @@
 
     /* 玩家網格 */
     .player-list {
-      max-height: 300px;
+      max-height: 400px;
       overflow-y: auto;
       padding: 10px;
       background: var(--bg);
@@ -1004,87 +1004,6 @@
         </div>
       </div>
 
-      <!-- 玩家列表與加分 -->
-      <div class="panel-card" style="grid-column: span 2;">
-        <h3>👥 玩家管理</h3>
-
-        <!-- 分頁標籤 -->
-        <div class="player-tabs">
-          <button class="player-tab-btn active" onclick="switchPlayerTab('scoring')">
-            🎮 小遊戲加金幣
-          </button>
-          <button class="player-tab-btn" onclick="switchPlayerTab('roles')">
-            🎭 角色與積分總覽
-          </button>
-        </div>
-
-        <!-- 分頁內容 -->
-        <div id="player-tab-scoring" class="player-tab-content active">
-          <div class="score-add-section">
-            <!-- 已選玩家顯示 -->
-            <div class="selected-players-info" id="selected-info">
-              已選擇 <strong id="selected-count">0</strong> 位玩家
-              <div class="selected-players-display" id="selected-display">
-                <span class="no-selection">點擊下方玩家來選擇</span>
-              </div>
-            </div>
-
-            <!-- 金幣設定 -->
-            <div class="score-presets">
-              <button class="score-preset-btn" onclick="setScoreAmount(50)">+50</button>
-              <button class="score-preset-btn" onclick="setScoreAmount(100)">+100</button>
-              <button class="score-preset-btn" onclick="setScoreAmount(200)">+200</button>
-              <button class="score-preset-btn" onclick="setScoreAmount(500)">+500</button>
-              <button class="score-preset-btn" onclick="setScoreAmount(1000)">+1000</button>
-            </div>
-            <div class="score-input-row">
-              <input type="number" id="score-amount" placeholder="自訂金幣" value="100">
-              <input type="text" id="score-reason" placeholder="原因（選填）" value="小遊戲獎勵">
-            </div>
-            <div style="display: flex; gap: 10px;">
-              <button class="btn btn-success" style="flex: 1;" onclick="addCoinsToSelected()">
-                ✨ 為選中玩家加金幣
-              </button>
-              <button class="btn btn-info btn-sm" onclick="selectAllPlayers()">全選</button>
-              <button class="btn btn-sm" style="background: var(--border);" onclick="deselectAllPlayers()">取消</button>
-            </div>
-          </div>
-
-          <!-- 可收合玩家列表 -->
-          <div class="player-list-section" id="player-list-section">
-            <div class="player-list-header" onclick="togglePlayerListSection()">
-              <h4>📋 玩家列表 (<span id="player-total">0</span>人)</h4>
-              <span class="player-list-toggle">
-                點擊展開/收合 <span class="arrow">▼</span>
-              </span>
-            </div>
-            <div class="player-list" id="player-list">
-              <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- 角色與積分總覽分頁 -->
-        <div id="player-tab-roles" class="player-tab-content">
-          <div style="margin-top: 10px;">
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
-              顯示所有玩家的角色、積分與建築數量
-            </p>
-            <div id="roles-overview-list">
-              <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 城市建築統計 -->
-      <div class="panel-card">
-        <h3>🏘️ 城市建築</h3>
-        <div class="city-stats" id="city-stats">
-          <p style="color: var(--text-muted); text-align: center; grid-column: span 5;">尚無建築</p>
-        </div>
-      </div>
-
       <!-- 限時搶購控制 -->
       <div class="panel-card" id="flash-sale-panel">
         <h3>⚡ 限時搶購</h3>
@@ -1190,7 +1109,7 @@
             🃏 撲克牌比大小
           </button>
           <div id="poker-game-control" style="display: none;">
-            <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
+            <div id="poker-betting-control" style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
               <p style="font-size: 0.85rem; margin-bottom: 5px;">
                 遊戲進行中... <span id="poker-timer" style="color: var(--warning); font-weight: bold;">20s</span>
               </p>
@@ -1212,14 +1131,17 @@
                 <p style="font-size: 0.8rem; color: var(--danger);">
                   輸家（喝酒）：<span id="poker-losers-count">0</span> 人
                 </p>
-                <button class="btn btn-primary btn-block btn-sm" onclick="nextPokerRound()" style="margin-top: 10px;">
-                  下一局
+                <button class="btn btn-primary btn-block btn-sm" onclick="startPokerGame()" style="margin-top: 10px;">
+                  再開一局
+                </button>
+                <button class="btn btn-warning btn-block btn-sm" onclick="endPokerMinigame()" style="margin-top: 10px;">
+                  結束遊戲
                 </button>
               </div>
             </div>
           </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
-            全員參與，20秒下注，押對+100分，押錯喝酒
+            全員參與，20秒下注，押對+100分，押錯喝酒。A~6=小，7=和局，8~K=大
           </p>
         </div>
       </div>
@@ -1255,6 +1177,87 @@
         <div id="lottery-status" style="margin-top: 15px; display: none;">
           <p style="color: var(--info);">🎯 頒獎進行中... <span id="award-progress"></span></p>
           <div id="lottery-winners-list" style="margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 0.9rem;"></div>
+        </div>
+      </div>
+
+      <!-- 玩家列表與加分 -->
+      <div class="panel-card" style="grid-column: span 2;">
+        <h3>👥 玩家管理</h3>
+
+        <!-- 分頁標籤 -->
+        <div class="player-tabs">
+          <button class="player-tab-btn active" onclick="switchPlayerTab('scoring')">
+            🎮 小遊戲加金幣
+          </button>
+          <button class="player-tab-btn" onclick="switchPlayerTab('roles')">
+            🎭 角色與積分總覽
+          </button>
+        </div>
+
+        <!-- 分頁內容 -->
+        <div id="player-tab-scoring" class="player-tab-content active">
+          <div class="score-add-section">
+            <!-- 已選玩家顯示 -->
+            <div class="selected-players-info" id="selected-info">
+              已選擇 <strong id="selected-count">0</strong> 位玩家
+              <div class="selected-players-display" id="selected-display">
+                <span class="no-selection">點擊下方玩家來選擇</span>
+              </div>
+            </div>
+
+            <!-- 金幣設定 -->
+            <div class="score-presets">
+              <button class="score-preset-btn" onclick="setScoreAmount(50)">+50</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(100)">+100</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(200)">+200</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(500)">+500</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(1000)">+1000</button>
+            </div>
+            <div class="score-input-row">
+              <input type="number" id="score-amount" placeholder="自訂金幣" value="100">
+              <input type="text" id="score-reason" placeholder="原因（選填）" value="小遊戲獎勵">
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-success" style="flex: 1;" onclick="addCoinsToSelected()">
+                ✨ 為選中玩家加金幣
+              </button>
+              <button class="btn btn-info btn-sm" onclick="selectAllPlayers()">全選</button>
+              <button class="btn btn-sm" style="background: var(--border);" onclick="deselectAllPlayers()">取消</button>
+            </div>
+          </div>
+
+          <!-- 可收合玩家列表 -->
+          <div class="player-list-section" id="player-list-section">
+            <div class="player-list-header" onclick="togglePlayerListSection()">
+              <h4>📋 玩家列表 (<span id="player-total">0</span>人)</h4>
+              <span class="player-list-toggle">
+                點擊展開/收合 <span class="arrow">▼</span>
+              </span>
+            </div>
+            <div class="player-list" id="player-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 角色與積分總覽分頁 -->
+        <div id="player-tab-roles" class="player-tab-content">
+          <div style="margin-top: 10px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
+              顯示所有玩家的角色、積分與建築數量
+            </p>
+            <div id="roles-overview-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 城市建築統計 -->
+      <div class="panel-card">
+        <h3>🏘️ 城市建築</h3>
+        <div class="city-stats" id="city-stats">
+          <p style="color: var(--text-muted); text-align: center; grid-column: span 5;">尚無建築</p>
         </div>
       </div>
 
@@ -1611,10 +1614,11 @@
           ${leaderboard.map((player, index) => `
             <div class="player-chip ${selectedPlayers.has(player.id) ? 'selected' : ''}"
                  onclick="togglePlayerSelection('${player.id}')"
-                 title="${player.name} - ${player.score}分 - 🏠${player.buildingCount || 0}${player.role ? ` - ${player.role.name}` : ''}">
+                 title="${player.name} - ${player.score}分 - 💰${player.coins || 0}金幣 - 🏠${player.buildingCount || 0}${player.role ? ` - ${player.role.name}` : ''}">
               <span class="rank ${index < 3 ? 'top-3' : ''}">${index + 1}</span>
               ${player.role ? `<span style="font-size: 1rem;">${player.role.emoji}</span>` : ''}
               <span class="name">${player.name}</span>
+              <span class="coins" style="color: #FFD700; font-size: 0.85rem;">💰${player.coins || 0}</span>
               <span class="score">${player.score}</span>
               <span class="check">${selectedPlayers.has(player.id) ? '✓' : ''}</span>
             </div>
@@ -2504,7 +2508,9 @@
         socket.emit('host:startPoker');
         document.getElementById('btn-poker-start').style.display = 'none';
         document.getElementById('poker-game-control').style.display = 'block';
+        document.getElementById('poker-betting-control').style.display = 'block';
         document.getElementById('poker-result-control').style.display = 'none';
+        document.getElementById('poker-bet-count').textContent = '0';
         addLog('比大小遊戲開始', 'success');
       }
     }
@@ -2516,17 +2522,19 @@
       }
     }
 
-    // 比大小 - 下一局
-    function nextPokerRound() {
-      socket.emit('host:nextPokerRound');
-      document.getElementById('btn-poker-start').style.display = 'block';
-      document.getElementById('poker-game-control').style.display = 'none';
-      document.getElementById('poker-result-control').style.display = 'none';
-      if (pokerTimerInterval) {
-        clearInterval(pokerTimerInterval);
-        pokerTimerInterval = null;
+    // 比大小 - 結束小遊戲
+    function endPokerMinigame() {
+      if (confirm('確定要結束比大小遊戲嗎？')) {
+        socket.emit('host:nextPokerRound');
+        document.getElementById('btn-poker-start').style.display = 'block';
+        document.getElementById('poker-game-control').style.display = 'none';
+        document.getElementById('poker-result-control').style.display = 'none';
+        if (pokerTimerInterval) {
+          clearInterval(pokerTimerInterval);
+          pokerTimerInterval = null;
+        }
+        addLog('比大小遊戲結束', 'warning');
       }
-      addLog('準備下一局比大小', 'info');
     }
 
     // ========== 小遊戲事件監聽 ==========
@@ -2569,7 +2577,12 @@
     });
 
     // 比大小事件
+    let pokerBetCount = 0;
+
     socket.on('minigame:pokerStarted', (data) => {
+      pokerBetCount = 0;
+      document.getElementById('poker-bet-count').textContent = '0';
+
       // 啟動倒計時
       const endTime = data.endTime;
 
@@ -2584,25 +2597,43 @@
       }, 100);
     });
 
+    socket.on('minigame:pokerBetPlaced', (data) => {
+      pokerBetCount++;
+      document.getElementById('poker-bet-count').textContent = pokerBetCount;
+    });
+
     socket.on('minigame:pokerEnded', (data) => {
       if (pokerTimerInterval) {
         clearInterval(pokerTimerInterval);
         pokerTimerInterval = null;
       }
 
-      document.getElementById('poker-game-control').style.display = 'none';
+      document.getElementById('poker-betting-control').style.display = 'none';
       document.getElementById('poker-result-control').style.display = 'block';
 
       const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
       const cardDisplay = cardNames[data.card - 1] || data.card;
-      const resultText = data.result === 'big' ? '大' : '小';
+
+      let resultText;
+      if (data.result === 'tie') {
+        resultText = '和局';
+      } else if (data.result === 'big') {
+        resultText = '大';
+      } else {
+        resultText = '小';
+      }
 
       document.getElementById('poker-card-display').textContent = cardDisplay;
       document.getElementById('poker-result-display').textContent = resultText;
       document.getElementById('poker-winners-count').textContent = data.winners.length;
       document.getElementById('poker-losers-count').textContent = data.losers.length;
 
-      addLog(`比大小結算：${cardDisplay} = ${resultText}，${data.winners.length}人獲勝`, 'success');
+      if (data.result === 'tie') {
+        const tiedCount = data.tied ? data.tied.length : 0;
+        addLog(`比大小結算：${cardDisplay} = ${resultText}，${tiedCount}人平手`, 'info');
+      } else {
+        addLog(`比大小結算：${cardDisplay} = ${resultText}，${data.winners.length}人獲勝，${data.losers.length}人喝酒`, 'success');
+      }
     });
 
     socket.on('minigame:pokerRoundEnd', () => {

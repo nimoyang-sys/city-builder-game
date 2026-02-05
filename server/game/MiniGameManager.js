@@ -380,16 +380,32 @@ export class MiniGameManager extends EventEmitter {
     }
 
     const card = this.pokerState.card;
-    const result = card >= 7 ? 'big' : 'small'; // 7以上是大，6以下是小
+    // A~6 小(1-6)，7 和局(7)，8~K 大(8-13)
+    let result;
+    if (card >= 8) {
+      result = 'big';
+    } else if (card <= 6) {
+      result = 'small';
+    } else {
+      result = 'tie'; // 7 是和局
+    }
 
     this.pokerState.result = result;
 
     // 計算贏家和輸家
     const winners = [];
     const losers = [];
+    const tied = []; // 和局玩家
 
     for (const [playerId, betData] of this.pokerState.playerBets) {
-      if (betData.bet === result) {
+      if (result === 'tie') {
+        // 和局，所有人都算平手，不加分也不喝酒
+        tied.push({
+          playerId: betData.playerId,
+          playerName: betData.playerName,
+          bet: betData.bet
+        });
+      } else if (betData.bet === result) {
         winners.push({
           playerId: betData.playerId,
           playerName: betData.playerName,
@@ -407,15 +423,17 @@ export class MiniGameManager extends EventEmitter {
 
     this.pokerState.winners = winners;
     this.pokerState.losers = losers;
+    this.pokerState.tied = tied;
 
     this.emit('poker:ended', {
       card,
       result,
       winners,
-      losers
+      losers,
+      tied
     });
 
-    return { success: true, card, result, winners, losers };
+    return { success: true, card, result, winners, losers, tied };
   }
 
   nextPokerRound() {
@@ -471,6 +489,57 @@ export class MiniGameManager extends EventEmitter {
       card: this.pokerState.card,
       hasResult: this.pokerState.result !== null
     };
+  }
+
+  /**
+   * 獲取當前進行中的小遊戲狀態（用於新玩家加入）
+   */
+  getActiveGames() {
+    const activeGames = [];
+
+    if (this.quizState.active && this.quizState.currentQuestion) {
+      activeGames.push({
+        type: 'quiz',
+        data: {
+          questionIndex: this.quizState.questionIndex,
+          totalQuestions: this.quizState.questions.length,
+          currentQuestion: this.quizState.currentQuestion
+        }
+      });
+    }
+
+    if (this.beerState.waiting) {
+      activeGames.push({
+        type: 'beerWaiting',
+        data: {
+          participants: this.beerState.participants
+        }
+      });
+    }
+
+    if (this.beerState.active) {
+      activeGames.push({
+        type: 'beerActive',
+        data: {
+          participants: this.beerState.participants
+        }
+      });
+    }
+
+    if (this.pokerState.active) {
+      activeGames.push({
+        type: 'poker',
+        data: {
+          betTime: this.pokerState.betTime,
+          endTime: this.pokerState.endTime,
+          hasResult: this.pokerState.result !== null,
+          result: this.pokerState.result,
+          card: this.pokerState.card
+        }
+      });
+    }
+
+    return activeGames;
   }
 }
 
