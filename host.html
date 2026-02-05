@@ -911,11 +911,12 @@
           <label>密碼</label>
           <input type="password" id="host-password" placeholder="請輸入主持人密碼" required>
         </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="remember-password" style="width: auto; cursor: pointer;">
+          <label for="remember-password" style="margin: 0; cursor: pointer; color: var(--text);">記住密碼</label>
+        </div>
         <button type="submit" class="btn btn-primary btn-block">登入</button>
       </form>
-      <p style="text-align: center; margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;">
-        預設密碼：banquet2024
-      </p>
     </div>
   </div>
 
@@ -1144,6 +1145,55 @@
             全員參與，20秒下注，押對+100分，押錯喝酒。A~6=小，7=和局，8~K=大
           </p>
         </div>
+
+        <!-- 猜歌曲前奏 -->
+        <div>
+          <button class="btn btn-success btn-block" onclick="startSongGuessGame()" id="btn-song-start">
+            🎵 猜歌曲前奏
+          </button>
+          <div id="song-game-control" style="display: none;">
+            <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
+              <p style="font-size: 0.9rem; font-weight: bold; margin-bottom: 10px;">
+                第 <span id="song-current-round">0</span> 局 | 已答題：<span id="song-answered-count">0</span> 人
+              </p>
+              <button class="btn btn-primary btn-block btn-sm" onclick="startNewSongRound()" id="btn-start-song-round">
+                🎶 開始新一局
+              </button>
+              <button class="btn btn-warning btn-block btn-sm" onclick="endCurrentSongRound()" id="btn-end-song-round" style="margin-top: 10px; display: none;">
+                ⏹️ 本局結束答題
+              </button>
+              <div id="song-answer-select" style="display: none; margin-top: 10px;">
+                <label style="font-size: 0.85rem; margin-bottom: 5px; display: block;">選擇正確答案：</label>
+                <select id="song-correct-answer" class="form-control" style="margin-bottom: 10px;">
+                  <option value="">-- 請選擇 --</option>
+                  <option value="大海">大海</option>
+                  <option value="姐妹">姐妹</option>
+                  <option value="七里香">七里香</option>
+                  <option value="癡心絕對">癡心絕對</option>
+                  <option value="修練愛情">修練愛情</option>
+                  <option value="Sugar">Sugar</option>
+                  <option value="青蘋果樂園">青蘋果樂園</option>
+                  <option value="特務J">特務J</option>
+                  <option value="幹大事">幹大事</option>
+                  <option value="愛人錯過">愛人錯過</option>
+                  <option value="月亮惹的禍">月亮惹的禍</option>
+                  <option value="派對動物">派對動物</option>
+                  <option value="其他">其他（自行輸入）</option>
+                </select>
+                <input type="text" id="song-custom-answer" class="form-control" placeholder="自行輸入歌名" style="display: none; margin-bottom: 10px;">
+                <button class="btn btn-success btn-block btn-sm" onclick="confirmSongAnswer()">
+                  ✓ 確認答案並公布結果
+                </button>
+              </div>
+              <button class="btn btn-danger btn-block btn-sm" onclick="endSongGuessGame()" style="margin-top: 10px;">
+                🏁 立即結束遊戲
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+            8-10局，答對+100分，答錯喝酒
+          </p>
+        </div>
       </div>
 
       <!-- 頒獎控制 -->
@@ -1363,10 +1413,28 @@
       socket.on('game:flashSalePurchased', handleFlashSalePurchased);
       socket.on('game:flashSaleEnded', handleFlashSaleEnded);
 
+      // 檢查是否有保存的密碼，自動登入
+      const savedPassword = localStorage.getItem('host-password');
+      if (savedPassword) {
+        document.getElementById('host-password').value = savedPassword;
+        document.getElementById('remember-password').checked = true;
+        // 自動嘗試登入
+        socket.emit('host:register', { password: savedPassword });
+      }
+
       // 登入表單
       document.getElementById('login-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const password = document.getElementById('host-password').value;
+        const rememberPassword = document.getElementById('remember-password').checked;
+
+        // 如果勾選記住密碼，保存到 localStorage
+        if (rememberPassword) {
+          localStorage.setItem('host-password', password);
+        } else {
+          localStorage.removeItem('host-password');
+        }
+
         socket.emit('host:register', { password });
       });
     });
@@ -1384,6 +1452,8 @@
         refreshGameState();
       } else {
         alert(data.error || '登入失敗');
+        // 如果自動登入失敗，清除保存的密碼
+        localStorage.removeItem('host-password');
       }
     }
 
@@ -2576,6 +2646,79 @@
       }
     }
 
+    // 猜歌曲前奏 - 開始遊戲
+    function startSongGuessGame() {
+      if (confirm('確定要開始猜歌曲前奏遊戲嗎？')) {
+        socket.emit('host:startSongGuessGame');
+        document.getElementById('btn-song-start').style.display = 'none';
+        document.getElementById('song-game-control').style.display = 'block';
+        document.getElementById('song-current-round').textContent = '0';
+        document.getElementById('song-answered-count').textContent = '0';
+        addLog('猜歌曲前奏遊戲開始', 'success');
+      }
+    }
+
+    // 猜歌曲前奏 - 開始新一局
+    function startNewSongRound() {
+      socket.emit('host:startSongRound');
+      document.getElementById('btn-start-song-round').style.display = 'none';
+      document.getElementById('btn-end-song-round').style.display = 'block';
+      document.getElementById('song-answer-select').style.display = 'none';
+      document.getElementById('song-answered-count').textContent = '0';
+      addLog('新一局開始，播放歌曲前奏...', 'info');
+    }
+
+    // 猜歌曲前奏 - 結束本局答題
+    function endCurrentSongRound() {
+      document.getElementById('btn-end-song-round').style.display = 'none';
+      document.getElementById('song-answer-select').style.display = 'block';
+      addLog('本局答題結束，請選擇正確答案', 'warning');
+    }
+
+    // 猜歌曲前奏 - 確認答案
+    function confirmSongAnswer() {
+      const correctAnswer = document.getElementById('song-correct-answer').value;
+      const customAnswer = document.getElementById('song-custom-answer').value.trim();
+
+      if (!correctAnswer) {
+        alert('請選擇正確答案！');
+        return;
+      }
+
+      if (correctAnswer === '其他' && !customAnswer) {
+        alert('請輸入自訂歌名！');
+        return;
+      }
+
+      socket.emit('host:endSongRound', { correctAnswer, customAnswer });
+      document.getElementById('song-answer-select').style.display = 'none';
+      document.getElementById('btn-start-song-round').style.display = 'block';
+      document.getElementById('song-correct-answer').value = '';
+      document.getElementById('song-custom-answer').value = '';
+      document.getElementById('song-custom-answer').style.display = 'none';
+      addLog('答案已公布，正在發放獎勵...', 'success');
+    }
+
+    // 猜歌曲前奏 - 結束遊戲
+    function endSongGuessGame() {
+      if (confirm('確定要結束猜歌遊戲嗎？')) {
+        socket.emit('host:endSongGuessGame');
+        document.getElementById('btn-song-start').style.display = 'block';
+        document.getElementById('song-game-control').style.display = 'none';
+        addLog('猜歌曲前奏遊戲結束', 'warning');
+      }
+    }
+
+    // 監聽答案選單變化，顯示/隱藏自訂輸入框
+    document.getElementById('song-correct-answer').addEventListener('change', function() {
+      const customInput = document.getElementById('song-custom-answer');
+      if (this.value === '其他') {
+        customInput.style.display = 'block';
+      } else {
+        customInput.style.display = 'none';
+      }
+    });
+
     // ========== 小遊戲事件監聽 ==========
 
     // 快問快答事件
@@ -2677,6 +2820,40 @@
 
     socket.on('minigame:pokerRoundEnd', () => {
       addLog('比大小本局結束', 'info');
+    });
+
+    // 猜歌曲前奏事件
+    socket.on('minigame:songGuessRoundStarted', (data) => {
+      document.getElementById('song-current-round').textContent = data.round;
+      document.getElementById('song-answered-count').textContent = '0';
+      document.getElementById('btn-start-song-round').style.display = 'none';
+      document.getElementById('btn-end-song-round').style.display = 'block';
+      addLog(`第 ${data.round} 局開始`, 'info');
+    });
+
+    socket.on('minigame:songGuessPlayerSubmitted', (data) => {
+      document.getElementById('song-answered-count').textContent = data.totalSubmitted;
+      addLog(`${data.playerName} 已提交答案`, 'info');
+    });
+
+    socket.on('minigame:songGuessRoundEnded', (data) => {
+      const correctCount = data.results.filter(r => r.isCorrect).length;
+      const wrongCount = data.results.length - correctCount;
+      addLog(`第 ${data.round} 局結束。答案：${data.correctAnswer}。答對 ${correctCount} 人，答錯 ${wrongCount} 人`, 'success');
+
+      // Reset UI for next round
+      document.getElementById('song-answer-select').style.display = 'none';
+      document.getElementById('song-correct-answer').value = '';
+      document.getElementById('song-custom-answer').style.display = 'none';
+      document.getElementById('song-custom-answer').value = '';
+      document.getElementById('btn-end-song-round').style.display = 'none';
+      document.getElementById('btn-start-song-round').style.display = 'block';
+    });
+
+    socket.on('minigame:songGuessGameEnded', () => {
+      document.getElementById('btn-song-start').style.display = 'block';
+      document.getElementById('song-game-control').style.display = 'none';
+      addLog('猜歌曲前奏遊戲結束', 'success');
     });
 
     // 定時刷新

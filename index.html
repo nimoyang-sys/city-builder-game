@@ -90,6 +90,13 @@
       position: relative;
     }
 
+    .company-logo {
+      width: 180px;
+      height: auto;
+      margin: 0 auto 30px;
+      filter: drop-shadow(2px 4px 8px rgba(0,0,0,0.2));
+    }
+
     .game-logo {
       font-size: 4rem;
       margin-bottom: -30px;
@@ -849,6 +856,17 @@
       to {
         opacity: 0;
         transform: translate(-50%, -20px);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.6;
+        transform: scale(1.05);
       }
     }
 
@@ -2075,6 +2093,7 @@
   <!-- 加入遊戲畫面 -->
   <div id="join-screen">
     <div class="join-wrapper">
+      <img src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/logo%2F%E8%B3%87%E7%94%A2%2072.png?alt=media&token=54bd80ed-9c24-48fc-8a11-19aa95542d13" alt="創智動能" class="company-logo">
       <div class="game-logo">🏙️</div>
       <div class="join-container">
         <h1 class="game-title">創智動能 2026</h1>
@@ -2389,6 +2408,48 @@
         </button>
         <button class="modal-btn" style="flex: 1; background: var(--success); color: white;" onclick="placeBet('big')">
           壓大 (7~K)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 猜歌曲前奏 Modal -->
+  <div class="modal-overlay" id="song-guess-modal">
+    <div class="modal">
+      <div class="modal-emoji">🎵</div>
+      <div class="modal-title">猜歌曲前奏</div>
+      <div class="modal-info" style="text-align: center;">
+        <p style="margin-bottom: 15px;">請輸入你猜測的歌名</p>
+      </div>
+      <input type="text" id="song-guess-input" class="form-control" placeholder="輸入歌名..." style="margin-bottom: 15px; padding: 12px; font-size: 1rem; border: 2px solid var(--primary); border-radius: 8px; text-align: center;">
+      <div class="modal-buttons">
+        <button class="modal-btn" style="background: var(--success); color: white;" onclick="submitSongGuess()">
+          ✓ 確認送出
+        </button>
+      </div>
+      <div id="song-identifying" style="display: none; text-align: center; margin-top: 15px;">
+        <div style="font-size: 1.1rem; color: var(--warning); font-weight: bold; animation: pulse 1.5s infinite;">
+          識別中...
+        </div>
+        <div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">
+          等待主持人公布結果
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 猜歌結果 Modal -->
+  <div class="modal-overlay" id="song-result-modal">
+    <div class="modal">
+      <div class="modal-emoji" id="song-result-emoji">🎉</div>
+      <div class="modal-title" id="song-result-title">結果</div>
+      <div class="modal-info" style="text-align: center;">
+        <p id="song-result-message" style="font-size: 1.2rem; font-weight: bold; margin-bottom: 10px;"></p>
+        <p id="song-result-detail" style="font-size: 0.9rem; color: var(--text-muted);"></p>
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn" style="background: var(--primary); color: white;" onclick="closeSongResult()">
+          確定
         </button>
       </div>
     </div>

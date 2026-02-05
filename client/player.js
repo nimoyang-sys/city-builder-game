@@ -152,6 +152,10 @@ function initSocket() {
   socket.on('minigame:pokerEnded', handlePokerEnded);
   socket.on('player:placeBetResult', handlePlaceBetResult);
 
+  socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
+  socket.on('minigame:songGuessRoundEnded', handleSongGuessRoundEnded);
+  socket.on('player:songAnswerResult', handleSongAnswerResult);
+
   // 抽獎事件
   socket.on('award:reveal', handleAwardReveal);
 }
@@ -1369,6 +1373,120 @@ function placeBet(bet) {
   closePokerBetModal();
 }
 
+// 猜歌曲前奏事件處理
+let songGuessState = {
+  active: false,
+  submitted: false
+};
+
+function handleSongGuessRoundStarted(data) {
+  songGuessState = {
+    active: true,
+    submitted: false
+  };
+  showSongGuessModal();
+}
+
+function handleSongGuessRoundEnded(data) {
+  songGuessState.active = false;
+  closeSongGuessModal();
+
+  // 查找玩家結果
+  const playerResult = data.results.find(r => r.playerId === playerState.id);
+
+  if (playerResult) {
+    if (playerResult.isCorrect) {
+      showSongResult(true, data.correctAnswer, playerResult.reward);
+    } else {
+      showSongResult(false, data.correctAnswer, 0);
+    }
+  } else {
+    // 玩家未參與
+    showToast(`正確答案：${data.correctAnswer}`, 'info');
+  }
+}
+
+function handleSongAnswerResult(result) {
+  if (result.success) {
+    songGuessState.submitted = true;
+    // 隱藏輸入框和按鈕，顯示識別中動畫
+    document.getElementById('song-guess-input').style.display = 'none';
+    document.querySelector('#song-guess-modal .modal-buttons').style.display = 'none';
+    document.getElementById('song-identifying').style.display = 'block';
+  } else {
+    showToast(result.error || '提交失敗', 'error');
+  }
+}
+
+function submitSongGuess() {
+  const input = document.getElementById('song-guess-input');
+  const answer = input.value.trim();
+
+  if (!answer) {
+    showToast('請輸入歌名', 'error');
+    return;
+  }
+
+  socket.emit('player:submitSongAnswer', { answer });
+}
+
+function showSongGuessModal() {
+  const modal = document.getElementById('song-guess-modal');
+  const input = document.getElementById('song-guess-input');
+  const identifying = document.getElementById('song-identifying');
+  const buttons = document.querySelector('#song-guess-modal .modal-buttons');
+
+  if (modal) {
+    input.value = '';
+    input.style.display = 'block';
+    buttons.style.display = 'flex';
+    identifying.style.display = 'none';
+    modal.classList.add('show');
+  }
+}
+
+function closeSongGuessModal() {
+  const modal = document.getElementById('song-guess-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
+function showSongResult(isCorrect, correctAnswer, reward) {
+  const modal = document.getElementById('song-result-modal');
+  const emoji = document.getElementById('song-result-emoji');
+  const title = document.getElementById('song-result-title');
+  const message = document.getElementById('song-result-message');
+  const detail = document.getElementById('song-result-detail');
+
+  if (isCorrect) {
+    emoji.textContent = '🎉';
+    title.textContent = '恭喜答對~';
+    title.style.color = 'var(--success)';
+    message.textContent = `+${reward}元`;
+    message.style.color = 'var(--success)';
+    detail.textContent = `正確答案：${correctAnswer}`;
+  } else {
+    emoji.textContent = '😅';
+    title.textContent = '喔喔~喝一杯吧~';
+    title.style.color = 'var(--danger)';
+    message.textContent = '答錯了';
+    message.style.color = 'var(--danger)';
+    detail.textContent = `正確答案：${correctAnswer}`;
+  }
+
+  if (modal) {
+    modal.classList.add('show');
+  }
+}
+
+function closeSongResult() {
+  const modal = document.getElementById('song-result-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
 // ===== 抽獎事件 =====
 
 function handleAwardReveal(data) {
@@ -1659,6 +1777,8 @@ window.submitQuizAnswer = submitQuizAnswer;
 window.closeQuizResultModal = closeQuizResultModal;
 window.joinBeerGame = joinBeerGame;
 window.placeBet = placeBet;
+window.submitSongGuess = submitSongGuess;
+window.closeSongResult = closeSongResult;
 
 // ===== 建築升級系統 UI =====
 

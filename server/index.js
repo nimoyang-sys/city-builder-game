@@ -383,7 +383,10 @@ io.on('connection', (socket) => {
 
   // 註冊為主持人
   socket.on('host:register', ({ password }) => {
-    if (password === process.env.HOST_PASSWORD || password === 'banquet2024') {
+    // 優先使用環境變數中的密碼，否則使用配置文件中的密碼
+    const correctPassword = process.env.HOST_PASSWORD || GAME_CONFIG.host.password;
+
+    if (password === correctPassword) {
       hostSocketId = socket.id;
       socket.emit('host:registered', {
         success: true,

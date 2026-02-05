@@ -11,6 +11,11 @@ export const GAME_CONFIG = {
     year: 2026
   },
 
+  // 主持人密碼設定
+  host: {
+    password: 'nimo111'  // 修改此密碼以保護主持人控制台
+  },
+
   // 玩家初始資源
   player: {
     initial: {

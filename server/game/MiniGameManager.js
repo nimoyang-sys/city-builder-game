@@ -435,6 +435,7 @@ export class MiniGameManager extends EventEmitter {
     this.pokerState.winners = winners;
     this.pokerState.losers = losers;
     this.pokerState.tied = tied;
+    this.pokerState.active = false; // 重要：设置为非活动状态
 
     this.emit('poker:ended', {
       card,
