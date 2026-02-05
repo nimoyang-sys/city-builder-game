@@ -1227,7 +1227,8 @@ let quizState = {
   currentQuestion: null,
   questionIndex: 0,
   totalQuestions: 0,
-  timer: null
+  timer: null,
+  countdownInterval: null // 倒數計時器
 };
 
 let beerState = {
@@ -1400,6 +1401,12 @@ function showQuizModal(data) {
   const modal = document.getElementById('quiz-modal');
   if (!modal) return;
 
+  // 清除舊的倒數計時器
+  if (quizState.countdownInterval) {
+    clearInterval(quizState.countdownInterval);
+    quizState.countdownInterval = null;
+  }
+
   // 更新問題
   document.getElementById('quiz-question-text').textContent = data.question;
 
@@ -1415,18 +1422,25 @@ function showQuizModal(data) {
   document.getElementById('quiz-progress').textContent =
     `第 ${data.questionIndex + 1} / ${data.totalQuestions} 題`;
 
-  // 倒計時
-  let timeLeft = data.timeLimit || 3;
+  // 倒計時 - 確保使用正確的時間限制
+  let timeLeft = data.timeLimit || 5;
   document.getElementById('quiz-timer').textContent = timeLeft + 's';
 
-  const timerInterval = setInterval(() => {
+  quizState.countdownInterval = setInterval(() => {
     timeLeft--;
     const timerEl = document.getElementById('quiz-timer');
     if (timerEl) {
       timerEl.textContent = timeLeft + 's';
+      // 時間快結束時改變顏色
+      if (timeLeft <= 2) {
+        timerEl.style.color = 'red';
+      } else if (timeLeft <= 3) {
+        timerEl.style.color = 'orange';
+      }
     }
     if (timeLeft <= 0) {
-      clearInterval(timerInterval);
+      clearInterval(quizState.countdownInterval);
+      quizState.countdownInterval = null;
     }
   }, 1000);
 
@@ -1436,6 +1450,12 @@ function showQuizModal(data) {
 function showQuizWaiting() {
   const modal = document.getElementById('quiz-modal');
   if (!modal) return;
+
+  // 清除倒數計時器
+  if (quizState.countdownInterval) {
+    clearInterval(quizState.countdownInterval);
+    quizState.countdownInterval = null;
+  }
 
   // 更新問題文字
   document.getElementById('quiz-question-text').textContent = '等待下一題...';
@@ -1448,10 +1468,17 @@ function showQuizWaiting() {
   const timerEl = document.getElementById('quiz-timer');
   if (timerEl) {
     timerEl.textContent = '';
+    timerEl.style.color = ''; // 重置顏色
   }
 }
 
 function closeQuizModal() {
+  // 清除倒數計時器
+  if (quizState.countdownInterval) {
+    clearInterval(quizState.countdownInterval);
+    quizState.countdownInterval = null;
+  }
+
   const modal = document.getElementById('quiz-modal');
   if (modal) {
     modal.classList.remove('show');
