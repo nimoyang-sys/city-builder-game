@@ -3375,6 +3375,7 @@
       socket.on('minigame:pokerStarted', handlePokerStarted);
       socket.on('minigame:pokerEnded', handlePokerEnded);
 
+      socket.on('minigame:songGuessGameStarted', handleSongGuessGameStarted);
       socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
       socket.on('minigame:songGuessPlayerSubmitted', handleSongGuessPlayerSubmitted);
       socket.on('minigame:songGuessRoundEnded', handleSongGuessRoundEnded);
@@ -4464,6 +4465,37 @@
       correctAnswer: null,
       currentRound: 0
     };
+
+    function handleSongGuessGameStarted() {
+      songGuessState.players.clear();
+      songGuessState.correctAnswer = null;
+      songGuessState.currentRound = 0;
+
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="song-guess-container">
+            <div class="song-info">
+              <div class="song-icon">🎵</div>
+              <div class="song-title">猜歌曲前奏</div>
+              <div class="song-status">等待主持人開始第一局...</div>
+              <div class="song-status" style="margin-top: 20px; font-size: 1.3rem; color: var(--text-muted); animation: pulse 2s infinite;">
+                🎤 準備好你的音樂知識了嗎？
+              </div>
+            </div>
+            <div class="song-players-section">
+              <div class="song-players-title">🎤 玩家列表</div>
+              <div class="song-players-grid" id="song-players-grid">
+                <div style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;">
+                  遊戲即將開始...
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      overlay.classList.add('show');
+    }
 
     function handleSongGuessRoundStarted(data) {
       songGuessState.players.clear();
