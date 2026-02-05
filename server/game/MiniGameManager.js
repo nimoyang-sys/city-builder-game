@@ -144,11 +144,15 @@ export class MiniGameManager extends EventEmitter {
   }
 
   submitQuizAnswer(playerId, playerName, answerIndex) {
+    console.log(`[Quiz] Player ${playerName} (${playerId}) submitting answer for question ${this.quizState.questionIndex}`);
+
     if (!this.quizState.active || !this.quizState.currentQuestion) {
+      console.log('[Quiz] Cannot submit - quiz not active or no current question');
       return { success: false, error: '目前沒有進行中的問題' };
     }
 
     const question = this.quizState.currentQuestion;
+    const currentQuestionIndex = this.quizState.questionIndex;
     const isCorrect = answerIndex === question.correct;
 
     // 記錄答案
@@ -164,8 +168,10 @@ export class MiniGameManager extends EventEmitter {
 
     const playerData = this.quizState.playerAnswers.get(playerId);
 
-    // 檢查是否已經回答過這題（使用當前題目的 Set 追蹤）
-    if (this.quizState.currentQuestionAnswered && this.quizState.currentQuestionAnswered.has(playerId)) {
+    // 檢查這位玩家是否已經回答過這一題（使用題目索引檢查）
+    const alreadyAnswered = playerData.answers.some(ans => ans.questionIndex === currentQuestionIndex);
+    if (alreadyAnswered) {
+      console.log(`[Quiz] Player ${playerName} already answered question ${currentQuestionIndex}`);
       return { success: false, error: '已經回答過這題了' };
     }
 
@@ -175,7 +181,7 @@ export class MiniGameManager extends EventEmitter {
     }
 
     playerData.answers.push({
-      questionIndex: this.quizState.questionIndex,
+      questionIndex: currentQuestionIndex,
       questionId: question.id,
       answerIndex,
       isCorrect
@@ -184,6 +190,8 @@ export class MiniGameManager extends EventEmitter {
     if (isCorrect) {
       playerData.correct++;
     }
+
+    console.log(`[Quiz] Answer recorded - correct: ${isCorrect}, total: ${playerData.total}`);
 
     return { success: true, isCorrect };
   }

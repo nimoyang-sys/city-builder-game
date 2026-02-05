@@ -790,9 +790,9 @@ function openBuyModal(buildingId) {
 
   document.getElementById('modal-emoji').textContent = building.emoji;
   document.getElementById('modal-title').textContent = `建造 ${building.name}`;
-  document.getElementById('modal-cost').textContent = `💰 ${building.cost}`;
-  document.getElementById('modal-income').textContent = `⭐ +${building.income}分`;
-  document.getElementById('modal-remaining').textContent = `💰 ${playerState.coins - building.cost}`;
+  document.getElementById('modal-cost').textContent = `💰 ${building.cost}元`;
+  document.getElementById('modal-income').textContent = `💰 +${building.income}元`;
+  document.getElementById('modal-remaining').textContent = `💰 ${playerState.coins - building.cost}元`;
 
   document.getElementById('buy-modal').classList.add('show');
 }

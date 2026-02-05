@@ -1155,13 +1155,17 @@ miniGameManager.on('quiz:ended', (data) => {
   console.log(`[Server] Results: ${data.results.length} participants`);
 
   try {
-    // 發放獎勵給玩家
+    // 發放獎勵給玩家（addScore 會同時增加分數和金幣）
     data.results.forEach(result => {
       const player = gameEngine.getPlayer(result.playerId);
       if (player && result.reward > 0) {
-        gameEngine.addCoins(result.playerId, result.reward);
-        gameEngine.addScore(result.playerId, result.reward);
-        console.log(`[Server] Awarded ${result.reward} coins to ${result.playerName}`);
+        const addResult = gameEngine.addScore(result.playerId, result.reward, '快問快答獎勵');
+        if (addResult.success) {
+          console.log(`[Server] Awarded ${result.reward} coins and score to ${result.playerName}`);
+          console.log(`[Server] New coins: ${addResult.newCoins}, New score: ${addResult.newScore}`);
+        } else {
+          console.error(`[Server] Failed to award to ${result.playerName}:`, addResult.error);
+        }
       }
     });
   } catch (error) {
@@ -1190,6 +1194,27 @@ miniGameManager.on('beer:resultsSet', (data) => {
 });
 
 miniGameManager.on('beer:ended', (data) => {
+  console.log(`[Server] Beer game ended, awarding coins to ${data.results.length} participants`);
+
+  try {
+    // 發放獎勵給玩家（addScore 會同時增加分數和金幣）
+    data.results.forEach(result => {
+      const player = gameEngine.getPlayer(result.playerId);
+      if (player && result.reward > 0) {
+        const addResult = gameEngine.addScore(result.playerId, result.reward, '喝啤酒比賽獎勵');
+        if (addResult.success) {
+          console.log(`[Server] Awarded ${result.reward} coins and score to ${result.playerName}`);
+          console.log(`[Server] New coins: ${addResult.newCoins}, New score: ${addResult.newScore}`);
+        } else {
+          console.error(`[Server] Failed to award to ${result.playerName}:`, addResult.error);
+        }
+      }
+    });
+  } catch (error) {
+    console.error('[Server] Error awarding beer game rewards:', error);
+  }
+
+  console.log('[Server] Broadcasting minigame:beerEnded to all clients');
   io.emit('minigame:beerEnded', data);
 });
 

@@ -3931,12 +3931,19 @@
     let currentEventData = null;  // 保存當前事件數據
 
     function handleEventTriggered(data) {
-      updateStatusBadge('EVENT');
       currentEventData = data;  // 保存事件數據供結算明細使用
-      showEvent(data.event);
+
+      // 先更新狀態和排行榜
+      updateStatusBadge('EVENT');
+      renderLeaderboard(data.leaderboard);
+
       // 重新取得完整狀態（包含建築列表）
       fetchGameState();
-      renderLeaderboard(data.leaderboard);
+
+      // 延遲顯示事件彈窗，確保不會被 fetchGameState 的狀態更新干擾
+      setTimeout(() => {
+        showEvent(data.event);
+      }, 200);
     }
 
     function handleScoreAdded(data) {
@@ -4172,7 +4179,7 @@
                     <div style="text-align: right;">
                       <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 3px;">獎勵</div>
                       <div style="font-size: 1.3rem; font-weight: bold; color: var(--warning);">
-                        +${r.reward} 分
+                        +${r.reward} 元
                       </div>
                     </div>
                   </div>
@@ -4219,7 +4226,7 @@
     function handleBeerWaitingStart() {
       beerParticipants = [];
       const overlay = document.getElementById('minigame-overlay');
-      const maxSlots = 6; // 最多顯示6個位置
+      const maxSlots = 5; // 最多顯示5個位置（一局最多5人）
       overlay.innerHTML = `
         <div class="minigame-content">
           <div class="minigame-icon">🍺</div>
@@ -4244,7 +4251,7 @@
       beerParticipants.push(data.playerName);
       const participantsDisplay = document.getElementById('beer-participants-display');
       if (participantsDisplay) {
-        const maxSlots = 6;
+        const maxSlots = 5; // 最多顯示5個位置
         const emptySlots = Math.max(0, maxSlots - beerParticipants.length);
 
         participantsDisplay.innerHTML = `

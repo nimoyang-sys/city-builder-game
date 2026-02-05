@@ -967,6 +967,15 @@
       <!-- 事件發布 -->
       <div class="panel-card">
         <h3>📢 發布事件</h3>
+
+        <!-- 自動發布開關 -->
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; padding: 10px; background: var(--bg); border-radius: 8px;">
+          <label style="flex: 1; font-weight: 600; cursor: pointer;" for="auto-event-toggle">
+            ⏰ 自動發布事件（每5分鐘）
+          </label>
+          <input type="checkbox" id="auto-event-toggle" onchange="toggleAutoEvent()" style="width: 20px; height: 20px; cursor: pointer;">
+        </div>
+
         <button class="btn btn-warning btn-block" id="btn-random-event" onclick="triggerRandomEvent()" style="margin-bottom: 15px;">
           🎲 隨機發布事件
         </button>
@@ -1069,7 +1078,7 @@
             💡 快問快答
           </button>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
-            玩家答題，10題隨機題目，每題3秒，答對+50分
+            玩家答題，10題隨機題目，每題3秒，答對+50元
           </p>
         </div>
 
@@ -1100,7 +1109,7 @@
             </div>
           </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
-            3-5人，第1名+500分，第2名+300分，其他+100分
+            3-5人，第1名+500元，第2名+300元，其他+100元
           </p>
         </div>
 
@@ -1127,7 +1136,7 @@
                   結果：<span id="poker-card-display"></span> = <span id="poker-result-display"></span>
                 </p>
                 <p style="font-size: 0.8rem; color: var(--success);">
-                  贏家（+100分）：<span id="poker-winners-count">0</span> 人
+                  贏家（+100元）：<span id="poker-winners-count">0</span> 人
                 </p>
                 <p style="font-size: 0.8rem; color: var(--danger);">
                   輸家（喝酒）：<span id="poker-losers-count">0</span> 人
@@ -1142,7 +1151,7 @@
             </div>
           </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
-            全員參與，20秒下注，押對+100分，押錯喝酒。A~6=小，7=和局，8~K=大
+            全員參與，20秒下注，押對+100元，押錯喝酒。A~6=小，7=和局，8~K=大
           </p>
         </div>
 
@@ -1191,7 +1200,7 @@
             </div>
           </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
-            8-10局，答對+100分，答錯喝酒
+            8-10局，答對+100元，答錯喝酒
           </p>
         </div>
       </div>
@@ -1697,12 +1706,10 @@
           ${leaderboard.map((player, index) => `
             <div class="player-chip ${selectedPlayers.has(player.id) ? 'selected' : ''}"
                  onclick="togglePlayerSelection('${player.id}')"
-                 title="${player.name} - ${player.score}分 - 💰${player.coins || 0}金幣 - 🏠${player.buildingCount || 0}${player.role ? ` - ${player.role.name}` : ''}">
+                 title="${player.name}${player.role ? ` - ${player.role.name}` : ''}">
               <span class="rank ${index < 3 ? 'top-3' : ''}">${index + 1}</span>
               ${player.role ? `<span style="font-size: 1rem;">${player.role.emoji}</span>` : ''}
               <span class="name">${player.name}</span>
-              <span class="coins" style="color: #FFD700; font-size: 0.85rem;">💰${player.coins || 0}</span>
-              <span class="score">${player.score}</span>
               <span class="check">${selectedPlayers.has(player.id) ? '✓' : ''}</span>
             </div>
           `).join('')}
@@ -1787,6 +1794,7 @@
               <th style="width: 50px;">排名</th>
               <th>玩家名稱</th>
               <th>角色</th>
+              <th style="text-align: right;">金幣</th>
               <th style="text-align: right;">積分</th>
               <th style="text-align: right;">建築數</th>
             </tr>
@@ -1804,6 +1812,9 @@
                       ${player.role.emoji} ${player.role.name}
                     </span>
                   ` : '<span style="color: var(--text-muted);">未分配</span>'}
+                </td>
+                <td style="text-align: right; font-weight: 600; color: #FFD700;">
+                  💰 ${player.coins || 0}
                 </td>
                 <td style="text-align: right; font-weight: 600; color: var(--primary);">
                   ${player.score || 0}
@@ -2235,6 +2246,45 @@
     function startBuildingPhase() {
       socket.emit('host:startBuilding');
       addLog('開始建設階段');
+    }
+
+    // 自動發布事件相關變數
+    let autoEventTimer = null;
+    let autoEventEnabled = false;
+
+    function toggleAutoEvent() {
+      const checkbox = document.getElementById('auto-event-toggle');
+      autoEventEnabled = checkbox.checked;
+
+      if (autoEventEnabled) {
+        // 啟動自動發布
+        addLog('✅ 自動發布事件已啟動（每5分鐘）');
+        startAutoEventTimer();
+      } else {
+        // 停止自動發布
+        addLog('❌ 自動發布事件已停止');
+        stopAutoEventTimer();
+      }
+    }
+
+    function startAutoEventTimer() {
+      // 清除現有計時器
+      stopAutoEventTimer();
+
+      // 設定5分鐘計時器 (300000毫秒)
+      autoEventTimer = setInterval(() => {
+        if (autoEventEnabled && gameState.state === 'BUILDING') {
+          socket.emit('host:triggerEvent', { eventId: null });
+          addLog('⏰ 自動發布隨機事件');
+        }
+      }, 300000); // 5分鐘 = 300000毫秒
+    }
+
+    function stopAutoEventTimer() {
+      if (autoEventTimer) {
+        clearInterval(autoEventTimer);
+        autoEventTimer = null;
+      }
     }
 
     function triggerRandomEvent() {
