@@ -15,6 +15,7 @@ import { GameEngine } from './game/GameEngine.js';
 import { LotteryManager, DEFAULT_PRIZES } from './services/lotteryService.js';
 import { GAME_CONFIG, ROLES, ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, ITEM_CARDS, ITEM_CATEGORIES, CITY_GOALS, BUILDING_UPGRADES } from '../shared/config.js';
 import { connectDB } from './db/mongodb.js';
+import { hashPassword, verifyPassword, generatePlayerId } from './utils/crypto.js';
 
 // 載入環境變數
 dotenv.config();
@@ -130,8 +131,25 @@ io.on('connection', (socket) => {
   // ===== 玩家事件 =====
 
   // 加入遊戲
-  socket.on('player:join', ({ name, tableNumber }) => {
-    const player = gameEngine.addPlayer(socket.id, name, tableNumber);
+  socket.on('player:join', async ({ name, password, tableNumber }) => {
+    if (!password) {
+      socket.emit('player:error', { message: '請輸入密碼' });
+      return;
+    }
+
+    // 加密密碼
+    const passwordHash = hashPassword(password);
+
+    // 根據名字+密碼生成固定的 playerId
+    const playerId = generatePlayerId(name, passwordHash);
+
+    // 嘗試用 playerId 添加或恢復玩家
+    const player = await gameEngine.addPlayerWithPassword(socket.id, playerId, name, passwordHash, tableNumber);
+
+    if (!player) {
+      socket.emit('player:error', { message: '密碼錯誤！請確認您的密碼' });
+      return;
+    }
 
     socket.emit('player:joined', {
       player: gameEngine.getPlayerState(player),

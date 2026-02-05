@@ -2010,6 +2010,11 @@
           <label for="player-name">你的名字</label>
           <input type="text" id="player-name" placeholder="請輸入名字" required maxlength="20">
         </div>
+        <div class="input-group">
+          <label for="player-password">密碼（4-8位數字或字母）</label>
+          <input type="password" id="player-password" placeholder="請設定密碼" required minlength="4" maxlength="8" pattern="[a-zA-Z0-9]+">
+          <small style="display: block; margin-top: 5px; color: #666; font-size: 0.85rem;">💡 同名字+同密碼可在不同裝置登入</small>
+        </div>
         <button type="submit" class="btn btn-primary" id="join-btn">加入遊戲</button>
       </form>
     </div>

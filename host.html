@@ -300,6 +300,82 @@
       color: #ef4444;
     }
 
+    /* 玩家分頁樣式 */
+    .player-tabs {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 15px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .player-tab-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .player-tab-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text);
+    }
+
+    .player-tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: var(--bg-hover);
+    }
+
+    .player-tab-content {
+      display: none;
+    }
+
+    .player-tab-content.active {
+      display: block;
+    }
+
+    /* 角色總覽表格 */
+    .roles-overview-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    .roles-overview-table th,
+    .roles-overview-table td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .roles-overview-table th {
+      background: var(--bg);
+      font-weight: 600;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .roles-overview-table tr:hover {
+      background: var(--bg-hover);
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 15px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: var(--bg-card);
+    }
+
     /* 玩家列表 - 可收合區塊 */
     .player-list-section {
       margin-top: 15px;
@@ -790,9 +866,6 @@
       <!-- 遊戲控制 -->
       <div class="panel-card">
         <h3>🎯 遊戲控制</h3>
-        <button class="btn btn-primary btn-block" id="btn-assign-roles" onclick="assignRoles()">
-          🎭 分配角色
-        </button>
         <button class="btn btn-success btn-block" id="btn-start" onclick="startGame()">
           ▶️ 開始遊戲
         </button>
@@ -803,7 +876,7 @@
           🔄 重置遊戲
         </button>
         <p style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">
-          遊戲開始後玩家可隨時建築<br>發布事件 = 回合結算
+          玩家加入時會自動分配角色<br>遊戲開始後玩家可隨時建築<br>發布事件 = 回合結算
         </p>
       </div>
 
@@ -845,48 +918,71 @@
       <div class="panel-card" style="grid-column: span 2;">
         <h3>👥 玩家管理</h3>
 
-        <div class="score-add-section">
-          <h4>🎮 小遊戲加分</h4>
+        <!-- 分頁標籤 -->
+        <div class="player-tabs">
+          <button class="player-tab-btn active" onclick="switchPlayerTab('scoring')">
+            🎮 小遊戲加分
+          </button>
+          <button class="player-tab-btn" onclick="switchPlayerTab('roles')">
+            🎭 角色與積分總覽
+          </button>
+        </div>
 
-          <!-- 已選玩家顯示 -->
-          <div class="selected-players-info" id="selected-info">
-            已選擇 <strong id="selected-count">0</strong> 位玩家
-            <div class="selected-players-display" id="selected-display">
-              <span class="no-selection">點擊下方玩家來選擇</span>
+        <!-- 分頁內容 -->
+        <div id="player-tab-scoring" class="player-tab-content active">
+          <div class="score-add-section">
+            <!-- 已選玩家顯示 -->
+            <div class="selected-players-info" id="selected-info">
+              已選擇 <strong id="selected-count">0</strong> 位玩家
+              <div class="selected-players-display" id="selected-display">
+                <span class="no-selection">點擊下方玩家來選擇</span>
+              </div>
+            </div>
+
+            <!-- 分數設定 -->
+            <div class="score-presets">
+              <button class="score-preset-btn" onclick="setScoreAmount(50)">+50</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(100)">+100</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(200)">+200</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(500)">+500</button>
+              <button class="score-preset-btn" onclick="setScoreAmount(1000)">+1000</button>
+            </div>
+            <div class="score-input-row">
+              <input type="number" id="score-amount" placeholder="自訂分數" value="100">
+              <input type="text" id="score-reason" placeholder="原因（選填）" value="小遊戲獎勵">
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-success" style="flex: 1;" onclick="addScoreToSelected()">
+                ✨ 為選中玩家加分
+              </button>
+              <button class="btn btn-info btn-sm" onclick="selectAllPlayers()">全選</button>
+              <button class="btn btn-sm" style="background: var(--border);" onclick="deselectAllPlayers()">取消</button>
             </div>
           </div>
 
-          <!-- 分數設定 -->
-          <div class="score-presets">
-            <button class="score-preset-btn" onclick="setScoreAmount(50)">+50</button>
-            <button class="score-preset-btn" onclick="setScoreAmount(100)">+100</button>
-            <button class="score-preset-btn" onclick="setScoreAmount(200)">+200</button>
-            <button class="score-preset-btn" onclick="setScoreAmount(500)">+500</button>
-            <button class="score-preset-btn" onclick="setScoreAmount(1000)">+1000</button>
-          </div>
-          <div class="score-input-row">
-            <input type="number" id="score-amount" placeholder="自訂分數" value="100">
-            <input type="text" id="score-reason" placeholder="原因（選填）" value="小遊戲獎勵">
-          </div>
-          <div style="display: flex; gap: 10px;">
-            <button class="btn btn-success" style="flex: 1;" onclick="addScoreToSelected()">
-              ✨ 為選中玩家加分
-            </button>
-            <button class="btn btn-info btn-sm" onclick="selectAllPlayers()">全選</button>
-            <button class="btn btn-sm" style="background: var(--border);" onclick="deselectAllPlayers()">取消</button>
+          <!-- 可收合玩家列表 -->
+          <div class="player-list-section" id="player-list-section">
+            <div class="player-list-header" onclick="togglePlayerListSection()">
+              <h4>📋 玩家列表 (<span id="player-total">0</span>人)</h4>
+              <span class="player-list-toggle">
+                點擊展開/收合 <span class="arrow">▼</span>
+              </span>
+            </div>
+            <div class="player-list" id="player-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
+            </div>
           </div>
         </div>
 
-        <!-- 可收合玩家列表 -->
-        <div class="player-list-section" id="player-list-section">
-          <div class="player-list-header" onclick="togglePlayerListSection()">
-            <h4>📋 玩家列表 (<span id="player-total">0</span>人)</h4>
-            <span class="player-list-toggle">
-              點擊展開/收合 <span class="arrow">▼</span>
-            </span>
-          </div>
-          <div class="player-list" id="player-list">
-            <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
+        <!-- 角色與積分總覽分頁 -->
+        <div id="player-tab-roles" class="player-tab-content">
+          <div style="margin-top: 10px;">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;">
+              顯示所有玩家的角色、積分與建築數量
+            </p>
+            <div id="roles-overview-list">
+              <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
+            </div>
           </div>
         </div>
       </div>
@@ -1358,6 +1454,77 @@
     function togglePlayerListSection() {
       const section = document.getElementById('player-list-section');
       section.classList.toggle('collapsed');
+    }
+
+    // 切換玩家管理分頁
+    function switchPlayerTab(tabName) {
+      // 移除所有 active 類別
+      document.querySelectorAll('.player-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelectorAll('.player-tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      // 啟用選中的分頁
+      if (tabName === 'scoring') {
+        document.querySelector('.player-tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('player-tab-scoring').classList.add('active');
+      } else if (tabName === 'roles') {
+        document.querySelector('.player-tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('player-tab-roles').classList.add('active');
+        updateRolesOverview();
+      }
+    }
+
+    // 更新角色與積分總覽
+    function updateRolesOverview() {
+      const container = document.getElementById('roles-overview-list');
+
+      if (!players || players.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>';
+        return;
+      }
+
+      // 依照積分排序
+      const sortedPlayers = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
+
+      container.innerHTML = `
+        <table class="roles-overview-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">排名</th>
+              <th>玩家名稱</th>
+              <th>角色</th>
+              <th style="text-align: right;">積分</th>
+              <th style="text-align: right;">建築數</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sortedPlayers.map((player, index) => `
+              <tr>
+                <td style="font-weight: 600; color: ${index < 3 ? 'var(--primary)' : 'var(--text-muted)'};">
+                  #${index + 1}
+                </td>
+                <td style="font-weight: 600;">${player.name}</td>
+                <td>
+                  ${player.role ? `
+                    <span class="role-badge" style="background: ${player.role.color}20; color: ${player.role.color};">
+                      ${player.role.emoji} ${player.role.name}
+                    </span>
+                  ` : '<span style="color: var(--text-muted);">未分配</span>'}
+                </td>
+                <td style="text-align: right; font-weight: 600; color: var(--primary);">
+                  ${player.score || 0}
+                </td>
+                <td style="text-align: right; color: var(--text-muted);">
+                  🏠 ${player.buildingCount || 0}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
     }
 
     // 更新選中資訊與已選玩家標籤

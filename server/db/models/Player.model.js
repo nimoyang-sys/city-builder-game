@@ -22,6 +22,10 @@ const playerSchema = new mongoose.Schema({
     trim: true,
     maxlength: 20
   },
+  passwordHash: {
+    type: String,
+    required: true
+  },
   tableNumber: {
     type: String,
     default: null
@@ -107,6 +111,7 @@ const playerSchema = new mongoose.Schema({
 
 // 索引
 playerSchema.index({ playerId: 1 });
+playerSchema.index({ name: 1, passwordHash: 1 }); // 用於名字+密碼查詢
 playerSchema.index({ connected: 1 });
 playerSchema.index({ score: -1 });
 

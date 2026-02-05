@@ -7,8 +7,9 @@ import { EventEmitter } from 'events';
 import { GAME_CONFIG, ROLES, ACHIEVEMENTS, ITEM_CARDS, CITY_GOALS, BUILDING_UPGRADES } from '../../shared/config.js';
 import { drawRandomEvent, getEventById, getAllEvents } from '../data/events.js';
 import { drawMiniEvent, MINI_EVENTS } from '../data/miniEvents.js';
-import { savePlayer, getPlayerById, getAllPlayers, updatePlayerConnection, clearAllPlayers } from '../db/playerService.js';
+import { savePlayer, getPlayerById, getAllPlayers, updatePlayerConnection, clearAllPlayers, getPlayerByNameAndPassword } from '../db/playerService.js';
 import { saveGameState, getGameState as getGameStateFromDB, resetGameState as resetGameStateInDB } from '../db/gameStateService.js';
+import { verifyPassword } from '../utils/crypto.js';
 
 export class GameEngine extends EventEmitter {
   constructor() {
@@ -186,6 +187,11 @@ export class GameEngine extends EventEmitter {
     // 產生持久化的玩家 ID（不依賴 socket.id）
     const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // 隨機分配角色
+    const roleIds = Object.keys(ROLES);
+    const randomRoleId = roleIds[Math.floor(Math.random() * roleIds.length)];
+    const randomRole = ROLES[randomRoleId];
+
     const player = {
       id: playerId,
       socketId,
@@ -197,9 +203,9 @@ export class GameEngine extends EventEmitter {
       totalIncome: 0,
       connected: true,
       joinedAt: Date.now(),
-      // 角色系統
-      role: null,
-      roleId: null,
+      // 角色系統 - 自動隨機分配
+      role: randomRole,
+      roleId: randomRoleId,
       lastBuiltBuilding: null,
       // 成就系統
       achievements: [],  // 已解鎖的成就 ID 列表
@@ -217,6 +223,87 @@ export class GameEngine extends EventEmitter {
     this.savePlayerToDB(player);
 
     return player;
+  }
+
+  /**
+   * 使用名字+密碼添加或登入玩家
+   * 如果資料庫中已存在該名字+密碼的玩家，則恢復其資料
+   * 否則建立新玩家
+   */
+  async addPlayerWithPassword(socketId, playerId, name, passwordHash, tableNumber = null) {
+    // 先檢查資料庫中是否有同名同密碼的玩家
+    const dbPlayer = await getPlayerByNameAndPassword(name, passwordHash);
+
+    if (dbPlayer) {
+      // 密碼正確，載入現有玩家資料
+      const player = {
+        id: playerId,
+        socketId,
+        name: dbPlayer.name,
+        tableNumber: dbPlayer.tableNumber || tableNumber,
+        coins: dbPlayer.coins,
+        score: dbPlayer.score,
+        buildings: dbPlayer.buildings instanceof Map ? Object.fromEntries(dbPlayer.buildings) : (dbPlayer.buildings || {}),
+        totalIncome: dbPlayer.totalIncome || 0,
+        connected: true,
+        joinedAt: dbPlayer.joinedAt ? dbPlayer.joinedAt.getTime() : Date.now(),
+        role: dbPlayer.role,
+        roleId: dbPlayer.roleId,
+        lastBuiltBuilding: dbPlayer.lastBuiltBuilding,
+        achievements: dbPlayer.achievements || [],
+        achievementProgress: dbPlayer.achievementProgress instanceof Map ? Object.fromEntries(dbPlayer.achievementProgress) : (dbPlayer.achievementProgress || {}),
+        items: dbPlayer.items || [],
+        activeEffects: dbPlayer.activeEffects || []
+      };
+
+      this.players.set(playerId, player);
+      this.socketToPlayer.set(socketId, playerId);
+      this.emit('playerJoined', this.getPlayerPublicInfo(player));
+
+      // 更新連線狀態到資料庫
+      await updatePlayerConnection(playerId, socketId, true);
+
+      console.log(`✅ Player ${player.name} logged in (existing account)`);
+      return player;
+    } else {
+      // 新玩家，建立帳號
+      const roleIds = Object.keys(ROLES);
+      const randomRoleId = roleIds[Math.floor(Math.random() * roleIds.length)];
+      const randomRole = ROLES[randomRoleId];
+
+      const player = {
+        id: playerId,
+        socketId,
+        name,
+        tableNumber,
+        coins: GAME_CONFIG.player.initial.coins,
+        score: GAME_CONFIG.player.initial.score,
+        buildings: {},
+        totalIncome: 0,
+        connected: true,
+        joinedAt: Date.now(),
+        role: randomRole,
+        roleId: randomRoleId,
+        lastBuiltBuilding: null,
+        achievements: [],
+        achievementProgress: {},
+        items: [],
+        activeEffects: []
+      };
+
+      this.players.set(playerId, player);
+      this.socketToPlayer.set(socketId, playerId);
+      this.emit('playerJoined', this.getPlayerPublicInfo(player));
+
+      // 儲存到資料庫（包含 passwordHash）
+      await this.savePlayerToDB({
+        ...player,
+        passwordHash
+      });
+
+      console.log(`✅ New player ${player.name} created`);
+      return player;
+    }
   }
 
   /**

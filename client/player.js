@@ -1322,13 +1322,19 @@ function bindEvents() {
     e.preventDefault();
 
     const name = document.getElementById('player-name').value.trim();
+    const password = document.getElementById('player-password').value.trim();
 
     if (!name) {
       showToast('請輸入名字！', 'error');
       return;
     }
 
-    socket.emit('player:join', { name, tableNumber: null });
+    if (!password || password.length < 4) {
+      showToast('請輸入至少4位數的密碼！', 'error');
+      return;
+    }
+
+    socket.emit('player:join', { name, password, tableNumber: null });
   });
 
   // 點擊彈窗外部關閉
