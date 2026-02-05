@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import { GAME_CONFIG, ROLES, ACHIEVEMENTS, ITEM_CARDS, CITY_GOALS, BUILDING_UPGRADES } from '../../shared/config.js';
 import { drawRandomEvent, getEventById, getAllEvents } from '../data/events.js';
 import { drawMiniEvent, MINI_EVENTS } from '../data/miniEvents.js';
-import { savePlayer, getPlayerById, getAllPlayers, updatePlayerConnection, clearAllPlayers, getPlayerByNameAndPassword } from '../db/playerService.js';
+import { savePlayer, getPlayerById, getAllPlayers, updatePlayerConnection, clearAllPlayers, getPlayerByNameAndPassword, bulkSavePlayers } from '../db/playerService.js';
 import { saveGameState, getGameState as getGameStateFromDB, resetGameState as resetGameStateInDB } from '../db/gameStateService.js';
 import { verifyPassword } from '../utils/crypto.js';
 
@@ -164,12 +164,18 @@ export class GameEngine extends EventEmitter {
     }
 
     this.autoSaveTimer = setInterval(async () => {
-      await this.saveGameStateToDB();
+      try {
+        // 儲存遊戲狀態
+        await this.saveGameStateToDB();
 
-      // 批次儲存所有玩家
-      const players = Array.from(this.players.values());
-      for (const player of players) {
-        await this.savePlayerToDB(player);
+        // 批次儲存所有玩家（效能優化：一次性批次寫入）
+        const players = Array.from(this.players.values());
+        if (players.length > 0) {
+          await bulkSavePlayers(players);
+          console.log(`💾 Auto-saved ${players.length} players to database`);
+        }
+      } catch (error) {
+        console.error('❌ Auto-save error:', error);
       }
     }, 30000); // 30 秒
   }

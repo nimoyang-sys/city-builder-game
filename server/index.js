@@ -28,11 +28,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const httpServer = createServer(app);
 
-// 初始化 Socket.IO
+// 初始化 Socket.IO（優化高並發設定）
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
+  },
+  // 效能優化設定（支援 30+ 玩家）
+  pingTimeout: 60000,           // Ping 超時時間
+  pingInterval: 25000,          // Ping 間隔
+  maxHttpBufferSize: 1e6,       // 1MB 緩衝區
+  transports: ['websocket', 'polling'],  // 優先使用 WebSocket
+  allowUpgrades: true,          // 允許升級到 WebSocket
+  perMessageDeflate: {          // 壓縮設定
+    threshold: 1024             // 超過 1KB 才壓縮
   }
 });
 
@@ -82,6 +91,33 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
 
+// 伺服器狀態監控（新增）
+app.get('/api/server/status', (req, res) => {
+  const mongoose = require('mongoose');
+
+  res.json({
+    server: {
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      nodeVersion: process.version
+    },
+    socketIO: {
+      connectedClients: io.engine.clientsCount,
+      rooms: io.sockets.adapter.rooms.size
+    },
+    database: {
+      connected: mongoose.connection.readyState === 1,
+      poolSize: mongoose.connection.client?.s?.options?.maxPoolSize || 'N/A'
+    },
+    game: {
+      state: gameEngine.state,
+      players: gameEngine.players.size,
+      buildings: Object.keys(gameEngine.cityBuildings).length
+    },
+    timestamp: Date.now()
+  });
+});
+
 // 取得遊戲設定
 app.get('/api/config', (req, res) => {
   res.json({
@@ -129,7 +165,7 @@ app.post('/api/lottery/prizes', (req, res) => {
 // ========== Socket.IO 事件 ==========
 
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log('✅ Client connected:', socket.id, `(Total: ${io.engine.clientsCount})`);
 
   // ===== 玩家事件 =====
 
@@ -697,14 +733,19 @@ io.on('connection', (socket) => {
 
   // ===== 斷線處理 =====
   socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
+    console.log('⚠️  Client disconnected:', socket.id, `(Remaining: ${io.engine.clientsCount - 1})`);
 
     if (socket.id === hostSocketId) {
       hostSocketId = null;
-      console.log('Host disconnected');
+      console.log('🎤 Host disconnected');
     }
 
     gameEngine.removePlayer(socket.id);
+  });
+
+  // Socket 錯誤處理
+  socket.on('error', (error) => {
+    console.error('❌ Socket error:', socket.id, error.message);
   });
 });
 

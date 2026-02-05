@@ -10,7 +10,8 @@
     "client:dev": "vite",
     "build": "echo 'No build step required'",
     "start": "node server/index.js",
-    "test": "vitest"
+    "test": "vitest",
+    "test:performance": "node test-performance.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
