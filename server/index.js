@@ -16,7 +16,7 @@ import { LotteryManager, DEFAULT_PRIZES } from './services/lotteryService.js';
 import { MiniGameManager } from './game/MiniGameManager.js';
 import { GAME_CONFIG, ROLES, ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, ITEM_CARDS, ITEM_CATEGORIES, CITY_GOALS, BUILDING_UPGRADES, MINI_GAMES } from '../shared/config.js';
 import { connectDB } from './db/mongodb.js';
-import { hashPassword, verifyPassword, generatePlayerId } from './utils/crypto.js';
+import { hashPassword, verifyPassword, generatePlayerId, normalizeName } from './utils/crypto.js';
 
 // 載入環境變數
 dotenv.config();
@@ -200,24 +200,36 @@ io.on('connection', (socket) => {
 
     const trimmedName = name.trim();
 
-    // 驗證名稱長度（中文4字、英文8字）
+    // 驗證名稱長度（中文3字、英文8字母）
     const nameLength = [...trimmedName].length; // 正確計算 emoji 和中文字數
     const hasChineseChar = /[\u4e00-\u9fa5]/.test(trimmedName);
 
-    if (hasChineseChar && nameLength > 4) {
-      socket.emit('player:error', { message: '名稱過長！中文最多 4 個字' });
+    if (hasChineseChar && nameLength > 3) {
+      socket.emit('player:error', { message: '名稱過長！中文最多 3 個字' });
       return;
     }
 
     if (!hasChineseChar && nameLength > 8) {
-      socket.emit('player:error', { message: '名稱過長！英文最多 8 個字' });
+      socket.emit('player:error', { message: '名稱過長！英文最多 8 個字母' });
+      return;
+    }
+
+    // 檢查名字是否已被使用（不分大小寫）
+    const normalizedInputName = normalizeName(trimmedName);
+    const existingPlayerWithSameName = Array.from(gameEngine.players.values()).find(p =>
+      normalizeName(p.name) === normalizedInputName
+    );
+
+    if (existingPlayerWithSameName) {
+      // 如果是同一個人用不同密碼登入，提示密碼錯誤
+      socket.emit('player:error', { message: '此名稱已被使用，請使用正確的密碼或更換名稱' });
       return;
     }
 
     // 加密密碼
     const passwordHash = hashPassword(password);
 
-    // 根據名字+密碼生成固定的 playerId
+    // 根據名字+密碼生成固定的 playerId（名字會被標準化為小寫）
     const playerId = generatePlayerId(trimmedName, passwordHash);
 
     // 嘗試用 playerId 添加或恢復玩家

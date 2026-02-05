@@ -25,12 +25,23 @@ export function verifyPassword(password, hash) {
 }
 
 /**
+ * 標準化名字（統一小寫、去空白）
+ * @param {string} name - 玩家名字
+ * @returns {string} - 標準化後的名字
+ */
+export function normalizeName(name) {
+  return name.trim().toLowerCase();
+}
+
+/**
  * 根據名字和密碼生成唯一 playerId
  * @param {string} name - 玩家名字
  * @param {string} passwordHash - 密碼 hash
  * @returns {string} - 唯一 playerId
  */
 export function generatePlayerId(name, passwordHash) {
-  const combined = `${name}:${passwordHash}`;
+  // 將名字標準化為小寫，確保 "Nimo" 和 "nimo" 是同一個人
+  const normalizedName = normalizeName(name);
+  const combined = `${normalizedName}:${passwordHash}`;
   return crypto.createHash('sha256').update(combined).digest('hex').substring(0, 16);
 }

@@ -20,17 +20,17 @@ const playerSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    maxlength: 8,  // 最多 8 個字元（中文4字約8bytes，英文8字）
+    maxlength: 8,  // 最多 8 個字元（中文3字約6bytes，英文8字）
     validate: {
       validator: function(v) {
         const length = [...v].length;
         const hasChineseChar = /[\u4e00-\u9fa5]/.test(v);
         if (hasChineseChar) {
-          return length <= 4; // 中文最多4字
+          return length <= 3; // 中文最多3字
         }
-        return length <= 8; // 英文最多8字
+        return length <= 8; // 英文最多8字母
       },
-      message: props => `名稱過長！中文最多4個字，英文最多8個字`
+      message: props => `名稱過長！中文最多3個字，英文最多8個字母`
     }
   },
   passwordHash: {
