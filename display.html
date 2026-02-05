@@ -4007,10 +4007,34 @@
         </div>
       `;
       overlay.classList.add('show');
+
+      // 添加點擊背景關閉功能
+      overlay.onclick = closeQuizResultOnBackgroundClick;
+
+      // 確保關閉按鈕可以點擊
+      const closeBtn = overlay.querySelector('button');
+      if (closeBtn) {
+        closeBtn.onclick = (e) => {
+          e.stopPropagation();
+          closeQuizResultOverlay();
+        };
+      }
     }
 
-    function closeQuizResultOverlay() {
+    function closeQuizResultOverlay(event) {
+      // 如果有event，阻止事件冒泡
+      if (event) {
+        event.stopPropagation();
+      }
       document.getElementById('minigame-overlay').classList.remove('show');
+    }
+
+    // 點擊背景關閉快問快答結果
+    function closeQuizResultOnBackgroundClick(event) {
+      // 只有點擊背景（overlay本身）時才關閉
+      if (event.target.id === 'minigame-overlay') {
+        closeQuizResultOverlay();
+      }
     }
 
     // 喝啤酒比賽
