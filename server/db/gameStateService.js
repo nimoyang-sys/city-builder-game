@@ -31,10 +31,17 @@ export async function saveGameState(gameStateData) {
         cityPollution: gameStateData.cityPollution,
         cityTech: gameStateData.cityTech,
         cityBuildings: gameStateData.cityBuildings,
+        cityBuildingList: gameStateData.cityBuildingList,
         startedAt: gameStateData.startedAt,
         endedAt: gameStateData.endedAt,
         totalPlayers: gameStateData.totalPlayers,
-        connectedPlayers: gameStateData.connectedPlayers
+        connectedPlayers: gameStateData.connectedPlayers,
+        eventHistory: gameStateData.eventHistory,
+        rolesAssigned: gameStateData.rolesAssigned,
+        globalAchievements: gameStateData.globalAchievements,
+        cityGoals: gameStateData.cityGoals,
+        flashSale: gameStateData.flashSale,
+        lotteryState: gameStateData.lotteryState
       },
       {
         upsert: true,

@@ -79,9 +79,24 @@ lotteryManager.setPrizes('BOTTOM', DEFAULT_PRIZES.BOTTOM);
 // 主持人 Socket ID
 let hostSocketId = null;
 
+// 全域錯誤處理（防止未捕獲的異常導致伺服器崩潰）
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  console.error('Stack:', error.stack);
+  // 不要退出進程，繼續運行
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise);
+  console.error('Reason:', reason);
+  // 不要退出進程，繼續運行
+});
+
 // 連接資料庫並載入遊戲狀態
 connectDB().then(async () => {
   await gameEngine.loadFromDatabase();
+}).catch((error) => {
+  console.error('❌ Failed to connect to database:', error);
 });
 
 // ========== REST API ==========
@@ -1124,15 +1139,24 @@ miniGameManager.on('quiz:question', (data) => {
 });
 
 miniGameManager.on('quiz:ended', (data) => {
-  // 發放獎勵給玩家
-  data.results.forEach(result => {
-    const player = gameEngine.getPlayer(result.playerId);
-    if (player && result.reward > 0) {
-      gameEngine.addCoins(result.playerId, result.reward);
-      gameEngine.addScore(result.playerId, result.reward);
-    }
-  });
+  console.log('[Server] Quiz ended event received, broadcasting to clients');
+  console.log(`[Server] Results: ${data.results.length} participants`);
 
+  try {
+    // 發放獎勵給玩家
+    data.results.forEach(result => {
+      const player = gameEngine.getPlayer(result.playerId);
+      if (player && result.reward > 0) {
+        gameEngine.addCoins(result.playerId, result.reward);
+        gameEngine.addScore(result.playerId, result.reward);
+        console.log(`[Server] Awarded ${result.reward} coins to ${result.playerName}`);
+      }
+    });
+  } catch (error) {
+    console.error('[Server] Error awarding quiz rewards:', error);
+  }
+
+  console.log('[Server] Broadcasting minigame:quizEnded to all clients');
   io.emit('minigame:quizEnded', data);
 });
 

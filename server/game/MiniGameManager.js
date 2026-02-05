@@ -87,35 +87,60 @@ export class MiniGameManager extends EventEmitter {
   }
 
   nextQuizQuestion() {
-    if (!this.quizState.active) return;
+    try {
+      console.log(`[Quiz] nextQuizQuestion called, questionIndex: ${this.quizState.questionIndex}, total: ${this.quizState.questions.length}, active: ${this.quizState.active}`);
 
-    if (this.quizState.questionIndex >= this.quizState.questions.length) {
-      // 所有題目結束
+      if (!this.quizState.active) {
+        console.log('[Quiz] Quiz not active, returning');
+        return;
+      }
+
+      if (this.quizState.questionIndex >= this.quizState.questions.length) {
+        // 所有題目結束
+        console.log('[Quiz] All questions completed, ending quiz');
+        this.endQuiz();
+        return;
+      }
+
+      const question = this.quizState.questions[this.quizState.questionIndex];
+      if (!question) {
+        console.error('[Quiz] Question not found at index:', this.quizState.questionIndex);
+        this.endQuiz();
+        return;
+      }
+
+      this.quizState.currentQuestion = question;
+      this.quizState.currentQuestionAnswered = new Set(); // 記錄這題已回答的玩家
+
+      console.log(`[Quiz] Emitting question ${this.quizState.questionIndex + 1}/${this.quizState.questions.length}`);
+
+      this.emit('quiz:question', {
+        questionIndex: this.quizState.questionIndex,
+        totalQuestions: this.quizState.questions.length,
+        question: question.question,
+        options: question.options,
+        timeLimit: 5
+      });
+
+      // 5秒後自動跳到下一題
+      if (this.quizState.timer) {
+        clearTimeout(this.quizState.timer);
+      }
+
+      this.quizState.timer = setTimeout(() => {
+        try {
+          this.quizState.questionIndex++;
+          console.log(`[Quiz] Timer fired, moving to question index ${this.quizState.questionIndex}`);
+          this.nextQuizQuestion();
+        } catch (error) {
+          console.error('[Quiz] Error in timer callback:', error);
+          this.endQuiz();
+        }
+      }, 5000);
+    } catch (error) {
+      console.error('[Quiz] Error in nextQuizQuestion:', error);
       this.endQuiz();
-      return;
     }
-
-    const question = this.quizState.questions[this.quizState.questionIndex];
-    this.quizState.currentQuestion = question;
-    this.quizState.currentQuestionAnswered = new Set(); // 記錄這題已回答的玩家
-
-    this.emit('quiz:question', {
-      questionIndex: this.quizState.questionIndex,
-      totalQuestions: this.quizState.questions.length,
-      question: question.question,
-      options: question.options,
-      timeLimit: 5
-    });
-
-    // 5秒後自動跳到下一題
-    if (this.quizState.timer) {
-      clearTimeout(this.quizState.timer);
-    }
-
-    this.quizState.timer = setTimeout(() => {
-      this.quizState.questionIndex++;
-      this.nextQuizQuestion();
-    }, 5000);
   }
 
   submitQuizAnswer(playerId, playerName, answerIndex) {
@@ -164,10 +189,16 @@ export class MiniGameManager extends EventEmitter {
   }
 
   endQuiz() {
-    if (!this.quizState.active) return { success: false };
+    console.log('[Quiz] endQuiz called, active:', this.quizState.active);
+
+    if (!this.quizState.active) {
+      console.log('[Quiz] Quiz already ended, returning');
+      return { success: false };
+    }
 
     if (this.quizState.timer) {
       clearTimeout(this.quizState.timer);
+      this.quizState.timer = null;
     }
 
     // 計算結果
@@ -184,9 +215,13 @@ export class MiniGameManager extends EventEmitter {
     // 按正確率排序
     results.sort((a, b) => b.correct - a.correct);
 
+    console.log(`[Quiz] Ending quiz with ${results.length} participants`);
+
     this.quizState.active = false;
+    this.quizState.currentQuestion = null;
 
     // 發送結果，包含所有題目資訊
+    console.log('[Quiz] Emitting quiz:ended event');
     this.emit('quiz:ended', {
       results,
       questions: this.quizState.questions // 包含所有題目和正確答案

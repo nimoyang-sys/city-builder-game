@@ -109,6 +109,49 @@ const gameStateSchema = new mongoose.Schema({
   connectedPlayers: {
     type: Number,
     default: 0
+  },
+
+  // 事件歷史
+  eventHistory: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: []
+  },
+
+  // 角色分配狀態
+  rolesAssigned: {
+    type: Boolean,
+    default: false
+  },
+
+  // 全域成就
+  globalAchievements: {
+    type: Map,
+    of: String, // { achievementId: playerId }
+    default: () => new Map()
+  },
+
+  // 城市協力目標
+  cityGoals: {
+    active: {
+      type: [String],
+      default: []
+    },
+    completed: {
+      type: [String],
+      default: []
+    }
+  },
+
+  // 限時搶購
+  flashSale: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
+
+  // 抽獎狀態
+  lotteryState: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
   }
 }, {
   timestamps: true,

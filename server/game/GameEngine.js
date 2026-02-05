@@ -113,7 +113,16 @@ export class GameEngine extends EventEmitter {
         this.state = dbGameState.state || 'WAITING';
         this.cityBuildings = dbGameState.cityBuildings instanceof Map ? Object.fromEntries(dbGameState.cityBuildings) : (dbGameState.cityBuildings || {});
         this.cityBuildingList = dbGameState.cityBuildingList || [];
+        this.eventHistory = dbGameState.eventHistory || [];
+        this.rolesAssigned = dbGameState.rolesAssigned || false;
+        this.globalAchievements = dbGameState.globalAchievements instanceof Map ? Object.fromEntries(dbGameState.globalAchievements) : (dbGameState.globalAchievements || {});
+        this.cityGoals = dbGameState.cityGoals || { active: [], completed: [] };
+        this.flashSale = dbGameState.flashSale || null;
+        this.startTime = dbGameState.startedAt ? dbGameState.startedAt.getTime() : null;
+
         console.log(`📥 Loaded ${this.cityBuildingList.length} buildings from database`);
+        console.log(`📥 Loaded ${this.eventHistory.length} events from history`);
+        console.log(`📥 Game state: ${this.state}, Roles assigned: ${this.rolesAssigned}`);
       }
 
       console.log('✅ Game state loaded successfully');
@@ -155,7 +164,13 @@ export class GameEngine extends EventEmitter {
         startedAt: this.startTime,
         endedAt: this.state === 'ENDED' ? new Date() : null,
         totalPlayers: this.players.size,
-        connectedPlayers: Array.from(this.players.values()).filter(p => p.connected).length
+        connectedPlayers: Array.from(this.players.values()).filter(p => p.connected).length,
+        eventHistory: this.eventHistory,
+        rolesAssigned: this.rolesAssigned,
+        globalAchievements: this.globalAchievements,
+        cityGoals: this.cityGoals,
+        flashSale: this.flashSale,
+        lotteryState: this.lotteryState || null
       };
 
       await saveGameState(gameStateData);
