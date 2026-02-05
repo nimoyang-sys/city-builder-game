@@ -981,6 +981,15 @@ miniGameManager.on('quiz:question', (data) => {
 });
 
 miniGameManager.on('quiz:ended', (data) => {
+  // 發放獎勵給玩家
+  data.results.forEach(result => {
+    const player = gameEngine.getPlayer(result.playerId);
+    if (player && result.reward > 0) {
+      gameEngine.addCoins(result.playerId, result.reward);
+      gameEngine.addScore(result.playerId, result.reward);
+    }
+  });
+
   io.emit('minigame:quizEnded', data);
 });
 

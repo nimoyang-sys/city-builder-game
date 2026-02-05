@@ -151,6 +151,9 @@ function initSocket() {
   socket.on('minigame:pokerStarted', handlePokerStarted);
   socket.on('minigame:pokerEnded', handlePokerEnded);
   socket.on('player:placeBetResult', handlePlaceBetResult);
+
+  // 抽獎事件
+  socket.on('award:reveal', handleAwardReveal);
 }
 
 // ===== 事件處理 =====
@@ -188,10 +191,16 @@ function handlePlayerJoined(data) {
 
   if (gameState.state === 'WAITING') {
     showWaitingScreen();
+    // 確保按鈕在等待畫面被隱藏
+    hideGameButtons();
   } else if (gameState.state === 'ENDED') {
     showResultScreen(gameState);
+    // 遊戲結束時隱藏按鈕
+    hideGameButtons();
   } else {
     showGameContent();
+    // 遊戲進行中時顯示按鈕
+    showGameButtons();
 
     // 如果遊戲已經開始（中途加入），且有角色，自動彈出角色彈窗
     console.log('🎮 中途加入檢查:', {
@@ -447,10 +456,7 @@ function handleGameStarted(data) {
   showToast('遊戲開始！開始建設你的城市吧！', 'success');
 
   // 顯示成就和道具按鈕
-  const achievementsBtn = document.getElementById('achievements-btn');
-  const itemButtons = document.getElementById('item-buttons');
-  if (achievementsBtn) achievementsBtn.style.display = 'flex';
-  if (itemButtons) itemButtons.style.display = 'flex';
+  showGameButtons();
 
   // 如果玩家有角色且角色彈窗還沒顯示過，自動彈出角色彈窗
   console.log('🎮 遊戲開始檢查:', {
@@ -493,6 +499,8 @@ function handleGameEnded(data) {
   updateGameStateDisplay();
   showResultScreen(data);
   showToast('遊戲結束！', 'info');
+  // 遊戲結束時隱藏按鈕
+  hideGameButtons();
 }
 
 function handleOtherPlayerJoined(player) {
@@ -820,6 +828,8 @@ function showJoinScreen() {
   document.getElementById('join-screen').style.display = 'flex';
   document.getElementById('game-screen').style.display = 'none';
   document.body.classList.remove('game-active');
+  // 確保按鈕在加入畫面被隱藏
+  hideGameButtons();
 }
 
 function showGameScreen() {
@@ -841,6 +851,20 @@ function showGameContent() {
   document.getElementById('result-screen').classList.remove('show');
 }
 
+function showGameButtons() {
+  const achievementsBtn = document.getElementById('achievements-btn');
+  const itemButtons = document.getElementById('item-buttons');
+  if (achievementsBtn) achievementsBtn.style.display = 'flex';
+  if (itemButtons) itemButtons.style.display = 'flex';
+}
+
+function hideGameButtons() {
+  const achievementsBtn = document.getElementById('achievements-btn');
+  const itemButtons = document.getElementById('item-buttons');
+  if (achievementsBtn) achievementsBtn.style.display = 'none';
+  if (itemButtons) itemButtons.style.display = 'none';
+}
+
 function showResultScreen(data) {
   document.getElementById('waiting-screen').classList.remove('show');
   document.getElementById('game-content').style.display = 'none';
@@ -848,15 +872,15 @@ function showResultScreen(data) {
 
   document.getElementById('final-score').textContent = playerState.score;
 
+  // 初始顯示 "???"，等待抽獎通知
+  document.getElementById('lottery-tier').textContent = '???';
+  document.getElementById('lottery-tier').style.color = 'var(--text-muted)';
+
+  // 儲存抽獎資訊供後續使用，但不顯示
   if (data && data.lotteryInfo) {
     const myInfo = data.lotteryInfo.find(p => p.id === playerState.id);
     if (myInfo) {
-      const tierNames = {
-        'TOP': '🥇 大獎池',
-        'MID': '🥈 中獎池',
-        'BOTTOM': '🥉 普獎池'
-      };
-      document.getElementById('lottery-tier').textContent = tierNames[myInfo.tier] || myInfo.tier;
+      playerState.lotteryInfo = myInfo;
     }
   }
 
@@ -1224,7 +1248,8 @@ function handleQuizStarted(data) {
     currentQuestion: null,
     questionIndex: 0,
     totalQuestions: data.questionCount,
-    timer: null
+    timer: null,
+    answered: false
   };
   showToast('快問快答開始！', 'info');
 }
@@ -1232,18 +1257,25 @@ function handleQuizStarted(data) {
 function handleQuizQuestion(data) {
   quizState.currentQuestion = data;
   quizState.questionIndex = data.questionIndex;
+  quizState.answered = false; // 重置作答狀態
   showQuizModal(data);
 
-  // 3秒後自動關閉（跳下一題）
+  // 3秒後自動進入等待狀態
   if (quizState.timer) clearTimeout(quizState.timer);
   quizState.timer = setTimeout(() => {
-    closeQuizModal();
+    if (!quizState.answered) {
+      showQuizWaiting(); // 未作答，顯示等待狀態
+    }
   }, 3000);
 }
 
 function handleQuizEnded(data) {
   quizState.active = false;
   closeQuizModal();
+
+  // 顯示答題結果彈窗
+  showQuizResultModal(data);
+
   showToast('快問快答結束！', 'success');
 }
 
@@ -1258,7 +1290,8 @@ function handleQuizAnswerResult(result) {
 function submitQuizAnswer(answerIndex) {
   socket.emit('player:submitQuizAnswer', { answerIndex });
   if (quizState.timer) clearTimeout(quizState.timer);
-  closeQuizModal();
+  quizState.answered = true;
+  showQuizWaiting(); // 顯示等待下一題狀態，不關閉彈窗
 }
 
 // 喝啤酒比賽事件處理
@@ -1339,6 +1372,28 @@ function placeBet(bet) {
   closePokerBetModal();
 }
 
+// ===== 抽獎事件 =====
+
+function handleAwardReveal(data) {
+  // 檢查是否是自己中獎
+  if (data.winner && data.winner.id === playerState.id) {
+    // 更新抽獎機會顯示為"中獎!!!"
+    const lotteryTierEl = document.getElementById('lottery-tier');
+    if (lotteryTierEl) {
+      lotteryTierEl.textContent = '🎉 中獎!!!';
+      lotteryTierEl.style.color = '#FFD700';
+      lotteryTierEl.style.textShadow = '0 0 20px rgba(255, 215, 0, 0.8)';
+      lotteryTierEl.style.animation = 'winnerCelebrate 0.8s ease-in-out infinite alternate';
+    }
+
+    // 顯示慶祝提示
+    showToast('🎊 恭喜中獎！請到舞台領獎！', 'success');
+
+    // 可選：播放慶祝音效或動畫
+    // 如果需要更華麗的效果，可以在這裡添加
+  }
+}
+
 // 小遊戲 Modal UI 控制
 function showQuizModal(data) {
   const modal = document.getElementById('quiz-modal');
@@ -1377,8 +1432,88 @@ function showQuizModal(data) {
   modal.classList.add('show');
 }
 
+function showQuizWaiting() {
+  const modal = document.getElementById('quiz-modal');
+  if (!modal) return;
+
+  // 更新問題文字
+  document.getElementById('quiz-question-text').textContent = '等待下一題...';
+
+  // 清空選項區域，顯示等待訊息
+  const optionsContainer = document.getElementById('quiz-options');
+  optionsContainer.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">準備下一題中...</div>';
+
+  // 清除計時器顯示
+  const timerEl = document.getElementById('quiz-timer');
+  if (timerEl) {
+    timerEl.textContent = '';
+  }
+}
+
 function closeQuizModal() {
   const modal = document.getElementById('quiz-modal');
+  if (modal) {
+    modal.classList.remove('show');
+  }
+}
+
+function showQuizResultModal(data) {
+  const modal = document.getElementById('quiz-result-modal');
+  if (!modal) return;
+
+  // 找到當前玩家的結果
+  const myResult = data.results.find(r => r.playerId === playerState.id);
+
+  if (!myResult) {
+    showToast('未找到您的答題記錄', 'error');
+    return;
+  }
+
+  // 更新統計數據
+  document.getElementById('quiz-result-correct').textContent = myResult.correct;
+  document.getElementById('quiz-result-total').textContent = myResult.total;
+  document.getElementById('quiz-result-reward').textContent = myResult.reward;
+
+  // 生成題目詳情
+  const detailsContainer = document.getElementById('quiz-result-details');
+  detailsContainer.innerHTML = data.questions.map((question, index) => {
+    const myAnswer = myResult.answers.find(a => a.questionIndex === index);
+    const correctOption = question.options[question.correct];
+
+    let answerDisplay = '';
+    let resultClass = '';
+
+    if (myAnswer) {
+      const myOption = question.options[myAnswer.answerIndex];
+      if (myAnswer.isCorrect) {
+        answerDisplay = `<span style="color: var(--success);">✓ ${myOption}</span>`;
+        resultClass = 'correct';
+      } else {
+        answerDisplay = `<span style="color: var(--danger);">✗ ${myOption}</span> → 正確答案: <span style="color: var(--success);">${correctOption}</span>`;
+        resultClass = 'incorrect';
+      }
+    } else {
+      answerDisplay = `<span style="color: var(--text-muted);">未作答</span> → 正確答案: <span style="color: var(--success);">${correctOption}</span>`;
+      resultClass = 'unanswered';
+    }
+
+    return `
+      <div style="margin-bottom: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid ${resultClass === 'correct' ? 'var(--success)' : resultClass === 'incorrect' ? 'var(--danger)' : 'var(--text-muted)'};">
+        <div style="font-weight: bold; margin-bottom: 8px; color: var(--text-primary);">
+          第 ${index + 1} 題：${question.question}
+        </div>
+        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+          ${answerDisplay}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  modal.classList.add('show');
+}
+
+function closeQuizResultModal() {
+  const modal = document.getElementById('quiz-result-modal');
   if (modal) {
     modal.classList.remove('show');
   }
@@ -1446,6 +1581,7 @@ window.openMyItemsModal = openMyItemsModal;
 window.closeMyItemsModal = closeMyItemsModal;
 window.useItem = useItem;
 window.submitQuizAnswer = submitQuizAnswer;
+window.closeQuizResultModal = closeQuizResultModal;
 window.joinBeerGame = joinBeerGame;
 window.placeBet = placeBet;
 

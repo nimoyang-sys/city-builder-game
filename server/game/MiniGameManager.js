@@ -86,16 +86,17 @@ export class MiniGameManager extends EventEmitter {
 
     const question = this.quizState.questions[this.quizState.questionIndex];
     this.quizState.currentQuestion = question;
+    this.quizState.currentQuestionAnswered = new Set(); // 記錄這題已回答的玩家
 
     this.emit('quiz:question', {
       questionIndex: this.quizState.questionIndex,
       totalQuestions: this.quizState.questions.length,
       question: question.question,
       options: question.options,
-      timeLimit: 3
+      timeLimit: 5
     });
 
-    // 3秒後自動跳到下一題
+    // 5秒後自動跳到下一題
     if (this.quizState.timer) {
       clearTimeout(this.quizState.timer);
     }
@@ -103,7 +104,7 @@ export class MiniGameManager extends EventEmitter {
     this.quizState.timer = setTimeout(() => {
       this.quizState.questionIndex++;
       this.nextQuizQuestion();
-    }, 3000);
+    }, 5000);
   }
 
   submitQuizAnswer(playerId, playerName, answerIndex) {
@@ -127,13 +128,18 @@ export class MiniGameManager extends EventEmitter {
 
     const playerData = this.quizState.playerAnswers.get(playerId);
 
-    // 檢查是否已經回答過這題
-    const alreadyAnswered = playerData.answers.some(a => a.questionId === question.id);
-    if (alreadyAnswered) {
+    // 檢查是否已經回答過這題（使用當前題目的 Set 追蹤）
+    if (this.quizState.currentQuestionAnswered && this.quizState.currentQuestionAnswered.has(playerId)) {
       return { success: false, error: '已經回答過這題了' };
     }
 
+    // 標記這位玩家已回答當前題目
+    if (this.quizState.currentQuestionAnswered) {
+      this.quizState.currentQuestionAnswered.add(playerId);
+    }
+
     playerData.answers.push({
+      questionIndex: this.quizState.questionIndex,
       questionId: question.id,
       answerIndex,
       isCorrect
@@ -160,7 +166,8 @@ export class MiniGameManager extends EventEmitter {
       correct: data.correct,
       total: data.total,
       accuracy: data.total > 0 ? (data.correct / data.total * 100).toFixed(1) : '0.0',
-      reward: data.correct * 50
+      reward: data.correct * 50,
+      answers: data.answers // 包含玩家的答案
     }));
 
     // 按正確率排序
@@ -168,7 +175,11 @@ export class MiniGameManager extends EventEmitter {
 
     this.quizState.active = false;
 
-    this.emit('quiz:ended', { results });
+    // 發送結果，包含所有題目資訊
+    this.emit('quiz:ended', {
+      results,
+      questions: this.quizState.questions // 包含所有題目和正確答案
+    });
 
     return { success: true, results };
   }

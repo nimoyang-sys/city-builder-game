@@ -2175,8 +2175,8 @@
         <div class="result-score" id="final-score">0</div>
       </div>
       <div class="result-card">
-        <div class="result-label">你的抽獎層級</div>
-        <div class="result-score" id="lottery-tier">-</div>
+        <div class="result-label">你的抽獎機會</div>
+        <div class="result-score" id="lottery-tier">???</div>
       </div>
       <div class="leaderboard">
         <div class="leaderboard-title">🏆 最終排行榜</div>
@@ -2333,6 +2333,28 @@
       <div class="modal-buttons">
         <button class="modal-btn cancel" onclick="closeBeerJoinModal()">取消</button>
         <button class="modal-btn confirm" onclick="joinBeerGame()">我要參加</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 快問快答結果 Modal -->
+  <div class="modal-overlay" id="quiz-result-modal">
+    <div class="modal" style="max-width: 600px; max-height: 80vh; overflow-y: auto;">
+      <div class="modal-emoji">💡</div>
+      <div class="modal-title">快問快答結果</div>
+      <div class="modal-info" style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">
+          答對 <span id="quiz-result-correct">0</span> / <span id="quiz-result-total">10</span> 題
+        </div>
+        <div style="font-size: 1.1rem; margin-top: 10px; color: var(--warning);">
+          獲得 <span id="quiz-result-reward">0</span> 金幣和積分 ⭐
+        </div>
+      </div>
+      <div id="quiz-result-details" style="text-align: left; padding: 10px;">
+        <!-- 動態生成題目和答案 -->
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn confirm" onclick="closeQuizResultModal()">確定</button>
       </div>
     </div>
   </div>
