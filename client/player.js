@@ -23,6 +23,9 @@ let playerState = {
   activeEffects: []
 };
 
+// 角色彈窗是否已經顯示過
+let roleModalShown = false;
+
 // 遊戲狀態
 let gameState = {
   state: 'WAITING',
@@ -181,6 +184,13 @@ function handlePlayerJoined(data) {
   updateItemsDisplay();
   updateAchievementsDisplay();
   showGameScreen();
+
+  // 如果遊戲已經開始（中途加入），且有角色，自動彈出角色彈窗
+  if (gameState.state !== 'WAITING' && playerState.role && !roleModalShown) {
+    setTimeout(() => {
+      openRoleModal();
+    }, 500); // 延遲 0.5 秒讓畫面轉換更流暢
+  }
 
   if (gameState.state === 'WAITING') {
     showWaitingScreen();
@@ -431,6 +441,13 @@ function handleGameStarted(data) {
   const itemButtons = document.getElementById('item-buttons');
   if (achievementsBtn) achievementsBtn.style.display = 'flex';
   if (itemButtons) itemButtons.style.display = 'flex';
+
+  // 如果玩家有角色且角色彈窗還沒顯示過，自動彈出角色彈窗
+  if (playerState.role && !roleModalShown) {
+    setTimeout(() => {
+      openRoleModal();
+    }, 500); // 延遲 0.5 秒讓畫面轉換更流暢
+  }
 }
 
 function handleBuildingPhase(data) {
@@ -508,7 +525,8 @@ function updateRoleDisplay() {
 
   if (!headerBadge) return;
 
-  if (playerState.role) {
+  // 只有在遊戲已開始且角色彈窗已顯示過後才顯示在右上角
+  if (playerState.role && gameState.state !== 'WAITING' && roleModalShown) {
     headerEmoji.textContent = playerState.role.emoji;
     headerName.textContent = playerState.role.name;
     headerBadge.style.backgroundColor = `${playerState.role.color}20`;
@@ -1628,6 +1646,10 @@ function openRoleModal() {
 function closeRoleModal() {
   const modal = document.getElementById('role-modal');
   modal.classList.remove('show');
+
+  // 標記角色彈窗已顯示過，並更新右上角顯示
+  roleModalShown = true;
+  updateRoleDisplay();
 }
 
 window.openRoleModal = openRoleModal;

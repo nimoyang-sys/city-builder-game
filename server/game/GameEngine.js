@@ -240,6 +240,25 @@ export class GameEngine extends EventEmitter {
    * 否則建立新玩家
    */
   async addPlayerWithPassword(socketId, playerId, name, passwordHash, tableNumber = null) {
+    // 🔍 先檢查記憶體中是否已經有這個玩家（避免重複登入）
+    const existingPlayer = this.players.get(playerId);
+    if (existingPlayer) {
+      // 更新 socket ID（玩家重新連線）
+      const oldSocketId = existingPlayer.socketId;
+      if (oldSocketId) {
+        this.socketToPlayer.delete(oldSocketId);
+      }
+
+      existingPlayer.socketId = socketId;
+      existingPlayer.connected = true;
+      this.socketToPlayer.set(socketId, playerId);
+
+      await updatePlayerConnection(playerId, socketId, true);
+
+      console.log(`🔄 Player ${existingPlayer.name} reconnected (same session)`);
+      return existingPlayer;
+    }
+
     // 先檢查資料庫中是否有同名同密碼的玩家
     const dbPlayer = await getPlayerByNameAndPassword(name, passwordHash);
 

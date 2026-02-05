@@ -733,21 +733,25 @@ export const BUILDING_UPGRADES = {
 export const MINI_GAMES = {
   // 快問快答題庫
   QUIZ_QUESTIONS: [
-    { id: 1, question: '創智動能成立於哪一年？', options: ['2020', '2021', '2022', '2023'], correct: 1 },
-    { id: 2, question: '台灣的首都是？', options: ['台北', '台中', '高雄', '台南'], correct: 0 },
-    { id: 3, question: '一天有幾個小時？', options: ['12', '24', '36', '48'], correct: 1 },
-    { id: 4, question: '地球有幾個大洋？', options: ['3', '4', '5', '6'], correct: 2 },
-    { id: 5, question: '台灣最高的山是？', options: ['玉山', '雪山', '合歡山', '阿里山'], correct: 0 },
-    { id: 6, question: '一年有幾個季節？', options: ['2', '3', '4', '5'], correct: 2 },
-    { id: 7, question: '紅綠燈的順序是？', options: ['紅黃綠', '綠黃紅', '紅綠黃', '黃綠紅'], correct: 0 },
-    { id: 8, question: '月球繞地球一圈需要多久？', options: ['7天', '14天', '28天', '30天'], correct: 2 },
-    { id: 9, question: '彩虹有幾種顏色？', options: ['5', '6', '7', '8'], correct: 2 },
-    { id: 10, question: '台灣的國鳥是？', options: ['藍鵲', '白鷺鷥', '老鷹', '麻雀'], correct: 0 },
-    { id: 11, question: '一個禮拜有幾天？', options: ['5', '6', '7', '8'], correct: 2 },
-    { id: 12, question: '台北101有幾層樓？', options: ['88', '99', '101', '108'], correct: 2 },
-    { id: 13, question: '太陽從哪邊升起？', options: ['東', '西', '南', '北'], correct: 0 },
-    { id: 14, question: '水的沸點是攝氏幾度？', options: ['50', '75', '100', '125'], correct: 2 },
-    { id: 15, question: '台灣的貨幣單位是？', options: ['元', '圓', '塊', '以上皆是'], correct: 3 }
+    { id: 1, question: '為什麼冰可樂比常溫可樂喝起來更甜？', options: ['低溫增強甜味感受', '糖分在低溫下更活躍', '廠商故意調配', '錯覺'], correct: 0 },
+    { id: 2, question: '飛機窗戶上的小孔作用是？', options: ['透氣', '平衡內外氣壓', '防止結霧', '裝飾'], correct: 1 },
+    { id: 3, question: '橡皮擦為什麼能擦掉鉛筆字？', options: ['化學溶解', '物理摩擦帶走石墨', '靜電吸附', '熱力溶解'], correct: 1 },
+    { id: 4, question: '保鮮膜「保鮮」主要靠？', options: ['完全密封', '減緩水分流失', '釋放保鮮劑', '降溫'], correct: 1 },
+    { id: 5, question: '手機充電到100%後繼續插著，主要傷害的是？', options: ['手機電池', '你的強迫症', '電費帳單', '充電線'], correct: 1 },
+    { id: 6, question: '「請重啟電腦以更新軟體」通知出現時，多數人會？', options: ['立即重啟', '忽略直到關機', '焦慮要不要更新', '問同事'], correct: 1 },
+    { id: 7, question: '電腦當機時，我們反覆按同一個鍵是為了？', options: ['測試鍵盤', '表達情緒', '增加修復機率', '喚醒電腦'], correct: 1 },
+    { id: 8, question: '手機只剩1%電量時，人類潛能會？', options: ['大幅提升', '維持不變', '完全喪失', '隨機變化'], correct: 0 },
+    { id: 9, question: '當AI回覆「作為一個AI模型，我……」時，它最可能接下來要？', options: ['給出完美答案', '禮貌地拒絕你', '開始胡說八道', '結束對話'], correct: 1 },
+    { id: 10, question: '你對AI說「請用幽默的方式回答」，結果通常會？', options: ['真的很好笑', '它努力了但不好笑', '它假裝沒看到這句', '生成笑話'], correct: 1 },
+    { id: 11, question: 'AI生成一張「手」的圖片時，最容易出現？', options: ['完美的手', '六根手指', '沒有手', '透明的手'], correct: 1 },
+    { id: 12, question: '當你問AI「你怎麼評價自己？」，它的回答本質上是？', options: ['真實想法', '訓練資料的統計結果', '隨機生成的', 'AI的自我意識'], correct: 1 },
+    { id: 13, question: 'AI說「我理解你的感受」，實際上它？', options: ['真的理解', '在模仿人類對話模式', '在安慰你', '在分析情緒'], correct: 1 },
+    { id: 14, question: '當AI說「我理解你的感受」，實際上它正在？', options: ['真的在分析你的情緒', '隨機選擇一句安慰模板', '偷偷搜索「人類情感模擬指南」', '表達同理心'], correct: 1 },
+    { id: 15, question: '讓AI畫「一個人在喝咖啡」，最容易出現什麼bug？', options: ['咖啡杯長在臉上', '手裡拿著空氣', '背景出現外星人', '人物扭曲'], correct: 0 },
+    { id: 16, question: 'AI生成圖片時，文字部分通常會？', options: ['完美呈現', '變成亂碼', '用其他語言顯示', '消失'], correct: 1 },
+    { id: 17, question: '當AI說「我無法回答這個問題，因為……」時，真正原因是？', options: ['問題太深奧', '觸發了安全限制', '它要去吃虛擬午餐了', '不想回答'], correct: 1 },
+    { id: 18, question: 'AI講笑話不好笑的原因是？', options: ['笑點太冷', '根本沒理解「好笑」的定義', '說完還會自己解釋笑點', '缺乏幽默感'], correct: 1 },
+    { id: 19, question: 'AI說「這取決於多種因素」時，其實是？', options: ['真的在分析', '不知道答案的標準回答', '在爭取思考時間', '要你自己判斷'], correct: 1 }
   ],
 
   // 喝啤酒比賽設定

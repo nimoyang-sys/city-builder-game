@@ -171,8 +171,31 @@ io.on('connection', (socket) => {
 
   // 加入遊戲
   socket.on('player:join', async ({ name, password, tableNumber }) => {
+    // 驗證密碼
     if (!password) {
       socket.emit('player:error', { message: '請輸入密碼' });
+      return;
+    }
+
+    // 驗證名稱
+    if (!name || name.trim().length === 0) {
+      socket.emit('player:error', { message: '請輸入名稱' });
+      return;
+    }
+
+    const trimmedName = name.trim();
+
+    // 驗證名稱長度（中文4字、英文8字）
+    const nameLength = [...trimmedName].length; // 正確計算 emoji 和中文字數
+    const hasChineseChar = /[\u4e00-\u9fa5]/.test(trimmedName);
+
+    if (hasChineseChar && nameLength > 4) {
+      socket.emit('player:error', { message: '名稱過長！中文最多 4 個字' });
+      return;
+    }
+
+    if (!hasChineseChar && nameLength > 8) {
+      socket.emit('player:error', { message: '名稱過長！英文最多 8 個字' });
       return;
     }
 
@@ -180,10 +203,10 @@ io.on('connection', (socket) => {
     const passwordHash = hashPassword(password);
 
     // 根據名字+密碼生成固定的 playerId
-    const playerId = generatePlayerId(name, passwordHash);
+    const playerId = generatePlayerId(trimmedName, passwordHash);
 
     // 嘗試用 playerId 添加或恢復玩家
-    const player = await gameEngine.addPlayerWithPassword(socket.id, playerId, name, passwordHash, tableNumber);
+    const player = await gameEngine.addPlayerWithPassword(socket.id, playerId, trimmedName, passwordHash, tableNumber);
 
     if (!player) {
       socket.emit('player:error', { message: '密碼錯誤！請確認您的密碼' });
