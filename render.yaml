@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: city-builder-game
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: OPENAI_API_KEY
+        sync: false
+    healthCheckPath: /api/health

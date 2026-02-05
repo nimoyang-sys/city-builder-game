@@ -1,0 +1,2234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>創智動能 2026 城市建設 - 尾牙互動遊戲</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏙️</text></svg>">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+
+    :root {
+      /* 卡通可愛風配色 - 與投影介面一致 */
+      --primary: #FF6B9D;
+      --primary-dark: #E85A8A;
+      --secondary: #FFD93D;
+      --success: #6BCB77;
+      --danger: #FF6B6B;
+      --warning: #FFD93D;
+      --info: #4D96FF;
+      --purple: #C86BFA;
+      --bg: linear-gradient(180deg, #4FC3F7 0%, #81D4FA 30%, #B3E5FC 50%, #E1F5FE 70%);
+      --bg-solid: #E1F5FE;
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --bg-hover: rgba(255, 255, 255, 1);
+      --text: #4A4A4A;
+      --text-muted: #777777;
+      --border: #E0E0E0;
+      --shadow: rgba(0,0,0,0.1);
+    }
+
+    body {
+      font-family: 'Noto Sans TC', 'Microsoft JhengHei', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== 載入畫面 ===== */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(255,255,255,0.5);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    #loading-screen p {
+      color: var(--text);
+      font-weight: 600;
+      text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===== 加入遊戲畫面 ===== */
+    #join-screen {
+      display: none;
+      min-height: 100vh;
+      padding: 20px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .join-container {
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      background: var(--bg-card);
+      padding: 30px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px var(--shadow);
+    }
+
+    .game-logo {
+      font-size: 4rem;
+      margin-bottom: 10px;
+      filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.15));
+    }
+
+    .game-title {
+      font-size: 1.5rem;
+      font-weight: 900;
+      margin-bottom: 5px;
+      color: var(--text);
+    }
+
+    .game-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 30px;
+      font-weight: 500;
+    }
+
+    .input-group {
+      margin-bottom: 15px;
+    }
+
+    .input-group label {
+      display: block;
+      text-align: left;
+      margin-bottom: 5px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      background: #FFFFFF;
+      color: var(--text);
+      font-size: 1rem;
+      transition: all 0.2s;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.2);
+    }
+
+    .input-group input::placeholder {
+      color: #AAAAAA;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 107, 157, 0.4);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      background: var(--border);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ===== 遊戲主畫面 ===== */
+    #game-screen {
+      display: none;
+      min-height: 100vh;
+      padding-bottom: 20px;
+    }
+
+    /* 頂部狀態欄 */
+    .game-header {
+      background: var(--bg-card);
+      padding: 15px 20px;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .player-name-display {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .game-state {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: white;
+    }
+
+    .game-state.WAITING { background: #2196F3; }
+    .game-state.BUILDING { background: #4CAF50; }
+    .game-state.EVENT { background: #FF9800; color: #fff; }
+    .game-state.ENDED { background: #E91E63; }
+
+    /* 資源列 */
+    .resources {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .resource-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 12px;
+      border: 2px solid var(--border);
+    }
+
+    .resource-icon {
+      font-size: 1.3rem;
+    }
+
+    .resource-value {
+      font-weight: 900;
+      font-size: 1.2rem;
+      color: var(--text);
+    }
+
+    .resource-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* 主要內容區 */
+    .game-content {
+      padding: 20px;
+    }
+
+    /* 等待畫面 */
+    .waiting-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .waiting-screen.show {
+      display: block;
+    }
+
+    .waiting-emoji {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      animation: bounce 2s ease-in-out infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .waiting-text {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .player-count {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* 事件顯示區 */
+    .event-display {
+      display: none;
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 107, 157, 0.1) 100%);
+      border: 3px solid var(--primary);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 4px 16px rgba(255, 107, 157, 0.2);
+    }
+
+    .event-display.show {
+      display: block;
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .event-emoji {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+
+    .event-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .event-description {
+      color: var(--text-muted);
+      margin-bottom: 15px;
+      line-height: 1.5;
+    }
+
+    .event-effects {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .effect-tag {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: bold;
+    }
+
+    .effect-tag.positive {
+      background: rgba(107, 203, 119, 0.2);
+      color: #4CAF50;
+    }
+
+    .effect-tag.negative {
+      background: rgba(255, 107, 107, 0.2);
+      color: #FF6B6B;
+    }
+
+    .income-result {
+      margin-top: 15px;
+      padding: 15px;
+      background: rgba(255,255,255,0.8);
+      border-radius: 12px;
+      border: 2px solid var(--border);
+    }
+
+    .income-amount {
+      font-size: 1.5rem;
+      font-weight: 900;
+      color: var(--success);
+    }
+
+    .effect-hint {
+      width: 100%;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .event-close-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255,255,255,0.9);
+      border: 2px solid var(--border);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .event-close-btn:hover {
+      background: var(--danger);
+      color: white;
+      border-color: var(--danger);
+    }
+
+    .event-dismiss-hint {
+      margin-top: 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .event-dismiss-hint:hover {
+      color: var(--primary);
+    }
+
+    /* 建築選擇區 */
+    .building-section {
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      margin-bottom: 15px;
+      color: var(--text);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* 分類標籤 */
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+
+    .category-tab {
+      padding: 8px 16px;
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      background: rgba(255,255,255,0.9);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .category-tab:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .category-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+      box-shadow: 0 3px 10px rgba(255, 107, 157, 0.3);
+    }
+
+    .building-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .building-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 16px;
+      padding: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .building-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(255, 107, 157, 0.2);
+    }
+
+    .building-card.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .building-card.disabled:hover {
+      transform: none;
+      border-color: var(--border);
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+
+    .building-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .building-emoji {
+      font-size: 2rem;
+    }
+
+    .building-info {
+      flex: 1;
+    }
+
+    .building-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .building-category {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .building-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .building-cost {
+      color: #FF9800;
+    }
+
+    .building-income {
+      color: #4CAF50;
+    }
+
+    /* 我的建築 */
+    .my-buildings {
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    .my-buildings-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .my-buildings-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .my-building-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255,255,255,0.8);
+      padding: 6px 12px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      border: 2px solid var(--border);
+    }
+
+    .my-building-count {
+      background: var(--primary);
+      color: white;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+    }
+
+    .no-buildings {
+      color: var(--text-muted);
+      text-align: center;
+      padding: 10px;
+      font-weight: 500;
+    }
+
+    /* 角色顯示 */
+    .role-display {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 2px solid;
+      margin-bottom: 10px;
+    }
+
+    .role-emoji {
+      font-size: 1.5rem;
+    }
+
+    .role-name {
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .role-skill {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* 排行榜 */
+    .leaderboard {
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 15px;
+      box-shadow: 0 2px 12px var(--shadow);
+    }
+
+    .leaderboard-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text);
+    }
+
+    .leaderboard-list {
+      list-style: none;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .leaderboard-item:last-child {
+      border-bottom: none;
+    }
+
+    .leaderboard-item.is-me {
+      background: rgba(255, 107, 157, 0.15);
+      border-radius: 10px;
+      border: 2px solid var(--primary);
+    }
+
+    .leaderboard-rank {
+      width: 30px;
+      font-weight: 900;
+    }
+
+    .leaderboard-rank.top-1 { color: #ffd700; text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+    .leaderboard-rank.top-2 { color: #c0c0c0; text-shadow: 0 0 10px rgba(192,192,192,0.5); }
+    .leaderboard-rank.top-3 { color: #cd7f32; text-shadow: 0 0 10px rgba(205,127,50,0.5); }
+
+    .leaderboard-name {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .leaderboard-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .leaderboard-buildings {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .leaderboard-score {
+      font-weight: 900;
+      color: var(--primary);
+    }
+
+    /* 結果畫面 */
+    .result-screen {
+      display: none;
+      padding: 20px;
+    }
+
+    .result-screen.show {
+      display: block;
+    }
+
+    .result-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .result-score {
+      font-size: 3rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .result-label {
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    /* Toast 提示 */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      border-radius: 12px;
+      z-index: 1000;
+      animation: toastIn 0.3s ease-out;
+      font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    }
+
+    .toast.success {
+      background: var(--success);
+      color: white;
+    }
+
+    .toast.error {
+      background: var(--danger);
+      color: white;
+    }
+
+    .toast.info {
+      background: var(--info);
+      color: white;
+    }
+
+    @keyframes toastIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
+
+    @keyframes toastOut {
+      from {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+      to {
+        opacity: 0;
+        transform: translate(-50%, -20px);
+      }
+    }
+
+    /* 購買確認彈窗 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-card);
+      border-radius: 24px;
+      padding: 25px;
+      width: 100%;
+      max-width: 350px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .modal-emoji {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+
+    .modal-info {
+      background: rgba(255,255,255,0.6);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+      border: 2px solid var(--border);
+    }
+
+    .modal-info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .modal-info-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-btn.cancel {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .modal-btn.cancel:hover {
+      background: #CCCCCC;
+    }
+
+    .modal-btn.confirm {
+      background: linear-gradient(135deg, var(--success) 0%, #4CAF50 100%);
+      color: white;
+      box-shadow: 0 4px 12px rgba(107, 203, 119, 0.3);
+    }
+
+    .modal-btn.confirm:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(107, 203, 119, 0.4);
+    }
+
+    /* ===== 成就系統 ===== */
+
+    /* 成就按鈕 */
+    .achievements-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--secondary) 0%, #FFC107 100%);
+      border: 3px solid white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255, 217, 61, 0.5);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .achievements-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(255, 217, 61, 0.6);
+    }
+
+    .achievements-btn .badge {
+      position: absolute;
+      top: -5px;
+      right: -10px;
+      background: var(--danger);
+      color: white;
+      min-width: 22px;
+      height: 20px;
+      border-radius: 10px;
+      font-size: 0.65rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 5px;
+    }
+
+    /* 成就解鎖彈出動畫 */
+    .achievement-popup {
+      position: fixed;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1001;
+      animation: achievementSlideIn 0.5s ease-out;
+    }
+
+    .achievement-popup.fade-out {
+      animation: achievementSlideOut 0.5s ease-in forwards;
+    }
+
+    @keyframes achievementSlideIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -30px) scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+      }
+    }
+
+    @keyframes achievementSlideOut {
+      from {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translate(-50%, -30px) scale(0.9);
+      }
+    }
+
+    .achievement-popup-content {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 217, 61, 0.2) 100%);
+      border: 3px solid var(--secondary);
+      border-radius: 20px;
+      padding: 15px 20px;
+      box-shadow: 0 8px 32px rgba(255, 217, 61, 0.3);
+      max-width: 350px;
+    }
+
+    .achievement-popup-icon {
+      font-size: 2.5rem;
+      animation: achievementBounce 0.6s ease-in-out;
+    }
+
+    @keyframes achievementBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+    }
+
+    .achievement-popup-info {
+      flex: 1;
+    }
+
+    .achievement-popup-label {
+      font-size: 0.8rem;
+      color: #FF9800;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .achievement-popup-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .achievement-popup-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .achievement-popup-reward {
+      display: flex;
+      gap: 10px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: var(--success);
+    }
+
+    /* 成就列表 Modal */
+    #achievements-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      padding: 20px;
+      overflow-y: auto;
+      backdrop-filter: blur(4px);
+    }
+
+    #achievements-modal.show {
+      display: block;
+    }
+
+    .achievements-modal-content {
+      background: var(--bg-card);
+      border-radius: 24px;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .achievements-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .achievements-modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .achievements-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .achievement-category {
+      margin-bottom: 25px;
+    }
+
+    .achievement-category h4 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .achievement-items {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .achievement-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      opacity: 0.6;
+    }
+
+    .achievement-item.unlocked {
+      opacity: 1;
+      border-color: var(--success);
+      background: rgba(107, 203, 119, 0.15);
+    }
+
+    .achievement-item.claimed {
+      opacity: 0.4;
+    }
+
+    .achievement-icon {
+      font-size: 1.8rem;
+      width: 40px;
+      text-align: center;
+    }
+
+    .achievement-info {
+      flex: 1;
+    }
+
+    .achievement-name {
+      font-weight: bold;
+      font-size: 0.95rem;
+      margin-bottom: 3px;
+    }
+
+    .achievement-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .achievement-claimed-by {
+      font-size: 0.75rem;
+      color: var(--danger);
+      margin-top: 4px;
+    }
+
+    .achievement-reward {
+      text-align: right;
+      font-size: 0.85rem;
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    /* ===== 道具系統 ===== */
+
+    /* 道具按鈕組 */
+    .item-buttons {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 50;
+    }
+
+    .item-btn {
+      position: relative;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+
+    .item-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .item-btn.shop {
+      background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+      border: 3px solid white;
+    }
+
+    .item-btn.backpack {
+      background: linear-gradient(135deg, var(--info) 0%, #2196F3 100%);
+      border: 3px solid white;
+    }
+
+    .item-btn .badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background: var(--danger);
+      color: white;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
+    /* 道具掉落彈出 */
+    .item-drop-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1002;
+      animation: itemDropIn 0.5s ease-out;
+    }
+
+    .item-drop-popup.fade-out {
+      animation: itemDropOut 0.5s ease-in forwards;
+    }
+
+    @keyframes itemDropIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes itemDropOut {
+      from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+    }
+
+    .item-drop-content {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 217, 61, 0.2) 100%);
+      border: 3px solid var(--secondary);
+      border-radius: 24px;
+      padding: 30px 40px;
+      text-align: center;
+      box-shadow: 0 0 40px rgba(255, 217, 61, 0.4);
+    }
+
+    .item-drop-label {
+      font-size: 0.9rem;
+      color: var(--warning);
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .item-drop-icon {
+      font-size: 4rem;
+      animation: itemBounce 0.6s ease-in-out;
+    }
+
+    @keyframes itemBounce {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      25% { transform: scale(1.2) rotate(-10deg); }
+      50% { transform: scale(1.1) rotate(10deg); }
+      75% { transform: scale(1.15) rotate(-5deg); }
+    }
+
+    .item-drop-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin: 10px 0 5px;
+    }
+
+    .item-drop-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    /* 道具商店 Modal */
+    #item-shop-modal, #my-items-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      padding: 20px;
+      overflow-y: auto;
+      backdrop-filter: blur(4px);
+    }
+
+    #item-shop-modal.show, #my-items-modal.show {
+      display: block;
+    }
+
+    .item-modal-content {
+      background: var(--bg-card);
+      border-radius: 24px;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .item-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .item-modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .item-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .item-modal-coins {
+      font-size: 1rem;
+      color: var(--warning);
+    }
+
+    /* 道具商店卡片 */
+    .item-shop-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 2px solid var(--border);
+    }
+
+    .item-shop-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 107, 157, 0.2);
+    }
+
+    .item-shop-card.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .item-shop-card.disabled:hover {
+      border-color: var(--border);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .item-shop-icon {
+      font-size: 2rem;
+      width: 50px;
+      text-align: center;
+    }
+
+    .item-shop-info {
+      flex: 1;
+    }
+
+    .item-shop-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .item-shop-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .item-shop-cost {
+      font-weight: bold;
+      color: var(--warning);
+    }
+
+    /* 我的道具 */
+    .my-item-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 15px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 16px;
+      margin-bottom: 10px;
+      border: 2px solid var(--border);
+    }
+
+    .my-item-icon {
+      font-size: 2rem;
+      width: 50px;
+      text-align: center;
+    }
+
+    .my-item-info {
+      flex: 1;
+    }
+
+    .my-item-name {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .my-item-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .my-item-use-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+    }
+
+    .my-item-use-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 107, 157, 0.4);
+    }
+
+    .no-items {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 30px;
+    }
+
+    .active-effects-section {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border);
+    }
+
+    .active-effects-section h4 {
+      color: var(--success);
+      margin-bottom: 10px;
+    }
+
+    .active-effect-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: rgba(107, 203, 119, 0.15);
+      border-radius: 10px;
+      margin-bottom: 5px;
+      border: 2px solid rgba(107, 203, 119, 0.3);
+    }
+
+    .active-effect-source {
+      font-weight: bold;
+    }
+
+    .active-effect-status {
+      color: var(--success);
+      font-size: 0.85rem;
+    }
+
+    /* ===== 小事件系統 ===== */
+    .mini-event-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1003;
+      animation: miniEventIn 0.4s ease-out;
+    }
+
+    .mini-event-popup.fade-out {
+      animation: miniEventOut 0.4s ease-in forwards;
+    }
+
+    @keyframes miniEventIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8) rotate(-5deg);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      }
+    }
+
+    @keyframes miniEventOut {
+      from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(0.9);
+      }
+    }
+
+    .mini-event-content {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 20px 25px;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      max-width: 350px;
+    }
+
+    .mini-event-popup.positive .mini-event-content {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(107, 203, 119, 0.2) 100%);
+      border: 3px solid var(--success);
+    }
+
+    .mini-event-popup.negative .mini-event-content {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 107, 107, 0.2) 100%);
+      border: 3px solid var(--danger);
+    }
+
+    .mini-event-popup.neutral .mini-event-content {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(77, 150, 255, 0.2) 100%);
+      border: 3px solid var(--info);
+    }
+
+    .mini-event-icon {
+      font-size: 2.5rem;
+      animation: miniEventBounce 0.5s ease-in-out;
+    }
+
+    @keyframes miniEventBounce {
+      0%, 100% { transform: scale(1); }
+      30% { transform: scale(1.3); }
+      60% { transform: scale(0.9); }
+    }
+
+    .mini-event-info {
+      flex: 1;
+    }
+
+    .mini-event-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .mini-event-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .mini-event-result {
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .mini-event-popup.positive .mini-event-result {
+      color: var(--success);
+    }
+
+    .mini-event-popup.negative .mini-event-result {
+      color: var(--danger);
+    }
+
+    .mini-event-popup.neutral .mini-event-result {
+      color: var(--text-muted);
+    }
+
+    /* ===== 建築升級系統 ===== */
+
+    /* 升級按鈕 */
+    .upgrade-btn {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #22c55e 0%, #10b981 100%);
+      border: none;
+      font-size: 1.3rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+
+    .upgrade-btn:hover {
+      transform: scale(1.1);
+    }
+
+    /* 升級 Modal */
+    #upgrade-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 300;
+      padding: 20px;
+      overflow-y: auto;
+      backdrop-filter: blur(4px);
+    }
+
+    #upgrade-modal.show {
+      display: block;
+    }
+
+    .upgrade-modal-content {
+      background: var(--bg-card);
+      border-radius: 24px;
+      max-width: 450px;
+      margin: 0 auto;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .upgrade-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .upgrade-modal-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .upgrade-modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .no-upgrades {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .no-upgrades-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+    }
+
+    .no-upgrades-text {
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    .no-upgrades-hint {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .upgrade-card {
+      background: rgba(255,255,255,0.8);
+      border: 3px solid var(--success);
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 15px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .upgrade-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(107, 203, 119, 0.4);
+    }
+
+    .upgrade-from, .upgrade-to {
+      text-align: center;
+    }
+
+    .upgrade-building-icon {
+      font-size: 2.5rem;
+      margin-bottom: 5px;
+    }
+
+    .upgrade-building-name {
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .upgrade-building-count {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .upgrade-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 15px 0;
+    }
+
+    .upgrade-merge {
+      background: var(--primary);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    .upgrade-arrow-icon {
+      font-size: 1.5rem;
+      color: var(--success);
+    }
+
+    .upgrade-bonus {
+      color: var(--success);
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .upgrade-times {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* 升級動畫彈出 */
+    .upgrade-animation-popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1004;
+      animation: upgradePopIn 0.5s ease-out;
+    }
+
+    .upgrade-animation-popup.fade-out {
+      animation: upgradePopOut 0.5s ease-in forwards;
+    }
+
+    @keyframes upgradePopIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes upgradePopOut {
+      from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+      to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+      }
+    }
+
+    .upgrade-animation-content {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(107, 203, 119, 0.3) 100%);
+      border: 4px solid var(--success);
+      border-radius: 28px;
+      padding: 30px 50px;
+      text-align: center;
+      box-shadow: 0 0 50px rgba(107, 203, 119, 0.5);
+    }
+
+    .upgrade-animation-from {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      animation: upgradeShake 0.3s ease-in-out;
+    }
+
+    @keyframes upgradeShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .upgrade-animation-arrow {
+      font-size: 2rem;
+      margin: 10px 0;
+      animation: upgradeArrowBounce 0.5s ease-in-out 0.2s;
+    }
+
+    @keyframes upgradeArrowBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+
+    .upgrade-animation-to {
+      font-size: 4rem;
+      animation: upgradeNewBuilding 0.6s ease-out 0.4s both;
+    }
+
+    @keyframes upgradeNewBuilding {
+      from {
+        transform: scale(0);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .upgrade-animation-bonus {
+      margin-top: 15px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--success);
+      animation: upgradeBonusPulse 0.5s ease-in-out 0.8s both;
+    }
+
+    @keyframes upgradeBonusPulse {
+      from { transform: scale(0); }
+      50% { transform: scale(1.2); }
+      to { transform: scale(1); }
+    }
+
+    /* ===== 限時搶購系統 ===== */
+
+    .flash-sale-banner {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-120%);
+      z-index: 500;
+      width: calc(100% - 40px);
+      max-width: 400px;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .flash-sale-banner.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .flash-sale-content {
+      background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 107, 107, 0.2) 100%);
+      border: 3px solid var(--danger);
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4);
+      animation: flashSalePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes flashSalePulse {
+      0%, 100% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 8px 48px rgba(239, 68, 68, 0.6); }
+    }
+
+    .flash-sale-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .flash-sale-label {
+      font-size: 1rem;
+      font-weight: bold;
+      color: #ef4444;
+      animation: flashSaleLabelBlink 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes flashSaleLabelBlink {
+      from { opacity: 0.7; }
+      to { opacity: 1; }
+    }
+
+    .flash-sale-timer {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #FF9800;
+      background: rgba(255,255,255,0.9);
+      padding: 5px 12px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+    }
+
+    .flash-sale-timer.urgent {
+      color: #ef4444;
+      animation: timerUrgent 0.3s ease-in-out infinite alternate;
+    }
+
+    @keyframes timerUrgent {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+
+    .flash-sale-item {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .flash-sale-icon {
+      font-size: 2.5rem;
+      animation: flashItemBounce 1s ease-in-out infinite;
+    }
+
+    @keyframes flashItemBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    .flash-sale-name {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .flash-sale-price {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .flash-sale-original {
+      text-decoration: line-through;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .flash-sale-discount {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--success);
+    }
+
+    .flash-sale-off {
+      background: #ef4444;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+
+    .flash-sale-remaining {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 0.95rem;
+      color: var(--text-muted);
+    }
+
+    .flash-sale-remaining span {
+      color: var(--warning);
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+
+    .flash-sale-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--danger) 0%, #E53935 100%);
+      color: white;
+      transition: all 0.2s;
+      animation: flashBtnPulse 1s ease-in-out infinite;
+      box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4);
+    }
+
+    @keyframes flashBtnPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .flash-sale-btn:hover {
+      background: linear-gradient(135deg, #E53935 0%, #C62828 100%);
+      box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+    }
+
+    .flash-sale-btn.disabled {
+      background: var(--border);
+      cursor: not-allowed;
+      animation: none;
+      box-shadow: none;
+    }
+
+    /* 登入畫面隱藏遊戲功能按鈕 */
+    .achievements-btn,
+    .item-buttons {
+      display: none;
+    }
+
+    /* 只有遊戲畫面顯示時才顯示這些按鈕 */
+    .game-active .achievements-btn {
+      display: flex;
+    }
+
+    .game-active .item-buttons {
+      display: flex;
+    }
+  </style>
+</head>
+<body>
+  <!-- 載入畫面 -->
+  <div id="loading-screen">
+    <div class="loading-spinner"></div>
+    <p style="margin-top: 20px;">連線中...</p>
+  </div>
+
+  <!-- 加入遊戲畫面 -->
+  <div id="join-screen">
+    <div class="join-container">
+      <div class="game-logo">🏙️</div>
+      <h1 class="game-title">創智動能 2026</h1>
+      <p class="game-subtitle">城市建設 - 尾牙互動遊戲</p>
+
+      <form id="join-form">
+        <div class="input-group">
+          <label for="player-name">你的名字</label>
+          <input type="text" id="player-name" placeholder="請輸入名字" required maxlength="20">
+        </div>
+        <button type="submit" class="btn btn-primary" id="join-btn">加入遊戲</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 遊戲主畫面 -->
+  <div id="game-screen">
+    <!-- 頂部狀態欄 -->
+    <div class="game-header">
+      <div class="header-top">
+        <div class="player-name-display" id="player-name-display">玩家</div>
+        <div class="game-state WAITING" id="game-state">等待開始</div>
+      </div>
+      <div class="resources">
+        <div class="resource-item">
+          <div class="resource-icon">💰</div>
+          <div>
+            <div class="resource-value" id="res-coins">500</div>
+            <div class="resource-label">金幣</div>
+          </div>
+        </div>
+        <div class="resource-item">
+          <div class="resource-icon">⭐</div>
+          <div>
+            <div class="resource-value" id="res-score">0</div>
+            <div class="resource-label">貢獻分</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 等待開始 -->
+    <div class="waiting-screen show" id="waiting-screen">
+      <div class="waiting-emoji">🏗️</div>
+      <div class="waiting-text">等待遊戲開始</div>
+      <div class="player-count">目前 <span id="player-count">0</span> 位玩家</div>
+      <p style="margin-top: 20px; color: var(--text-muted); font-size: 0.9rem;">
+        齊心協力，打造創智動能的完美城市！
+      </p>
+    </div>
+
+    <!-- 遊戲內容 -->
+    <div class="game-content" id="game-content" style="display: none;">
+      <!-- 角色顯示 -->
+      <div class="role-display" id="role-display">
+        <!-- 動態生成 -->
+      </div>
+
+      <!-- 事件顯示 -->
+      <div class="event-display" id="event-display" onclick="hideEventDisplay()">
+        <button class="event-close-btn" onclick="event.stopPropagation(); hideEventDisplay();">✕</button>
+        <div class="event-emoji" id="event-emoji"></div>
+        <div class="event-title" id="event-title"></div>
+        <div class="event-description" id="event-description"></div>
+        <div class="event-effects" id="event-effects"></div>
+        <div class="income-result" id="income-result">
+          <div>本次營收（金幣＋貢獻分）</div>
+          <div class="income-amount" id="income-amount">+0</div>
+        </div>
+        <div class="event-dismiss-hint">點擊任意處關閉，繼續建造</div>
+      </div>
+
+      <!-- 我的建築 -->
+      <div class="my-buildings">
+        <div class="my-buildings-title">🏠 我的建築</div>
+        <div class="my-buildings-grid" id="my-buildings-grid">
+          <div class="no-buildings">尚未建造任何建築</div>
+        </div>
+      </div>
+
+      <!-- 建築選擇區 -->
+      <div class="building-section" id="building-section">
+        <h3 class="section-title">🏗️ 建造建築</h3>
+        <div class="category-tabs" id="category-tabs">
+          <!-- 動態生成 -->
+        </div>
+        <div class="building-grid" id="building-grid">
+          <!-- 動態生成 -->
+        </div>
+      </div>
+
+      <!-- 排行榜 -->
+      <div class="leaderboard">
+        <div class="leaderboard-title">🏆 排行榜</div>
+        <ul class="leaderboard-list" id="leaderboard-list">
+          <!-- 動態生成 -->
+        </ul>
+      </div>
+    </div>
+
+    <!-- 結果畫面 -->
+    <div class="result-screen" id="result-screen">
+      <div class="result-card">
+        <div class="result-label">你的總貢獻分</div>
+        <div class="result-score" id="final-score">0</div>
+      </div>
+      <div class="result-card">
+        <div class="result-label">你的抽獎層級</div>
+        <div class="result-score" id="lottery-tier">-</div>
+      </div>
+      <div class="leaderboard">
+        <div class="leaderboard-title">🏆 最終排行榜</div>
+        <ul class="leaderboard-list" id="final-leaderboard">
+          <!-- 動態生成 -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 成就按鈕 -->
+  <button class="achievements-btn" onclick="openAchievementsModal()" title="成就">
+    🏆
+    <span class="badge" id="achievement-count">0/0</span>
+  </button>
+
+  <!-- 道具按鈕組 -->
+  <div class="item-buttons">
+    <button class="item-btn shop" onclick="openItemShopModal()" title="道具商店">
+      🛒
+    </button>
+    <button class="item-btn backpack" onclick="openMyItemsModal()" title="我的道具">
+      🎒
+      <span class="badge" id="item-count">0</span>
+    </button>
+    <button class="upgrade-btn" onclick="openUpgradeModal()" title="建築升級">
+      ⬆️
+    </button>
+  </div>
+
+  <!-- 道具商店 Modal -->
+  <div id="item-shop-modal">
+    <div class="item-modal-content">
+      <div class="item-modal-header">
+        <div class="item-modal-title">🛒 道具商店</div>
+        <button class="item-modal-close" onclick="closeItemShopModal()">&times;</button>
+      </div>
+      <div class="item-modal-coins" id="shop-coins">💰 <span id="shop-coins-value">0</span></div>
+      <div id="item-shop-list">
+        <!-- 動態生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 我的道具 Modal -->
+  <div id="my-items-modal">
+    <div class="item-modal-content">
+      <div class="item-modal-header">
+        <div class="item-modal-title">🎒 我的道具</div>
+        <button class="item-modal-close" onclick="closeMyItemsModal()">&times;</button>
+      </div>
+      <div id="my-items-list">
+        <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+          載入中...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 成就列表 Modal -->
+  <div id="achievements-modal">
+    <div class="achievements-modal-content">
+      <div class="achievements-modal-header">
+        <div class="achievements-modal-title">🏆 成就</div>
+        <button class="achievements-modal-close" onclick="closeAchievementsModal()">&times;</button>
+      </div>
+      <div id="achievements-list">
+        <!-- 動態生成 -->
+        <div style="text-align: center; color: var(--text-muted); padding: 20px;">
+          載入中...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 建築升級 Modal -->
+  <div id="upgrade-modal">
+    <div class="upgrade-modal-content">
+      <div class="upgrade-modal-header">
+        <div class="upgrade-modal-title">⬆️ 建築升級</div>
+        <button class="upgrade-modal-close" onclick="closeUpgradeModal()">&times;</button>
+      </div>
+      <div id="upgrade-list">
+        <!-- 動態生成 -->
+        <div class="no-upgrades">
+          <div class="no-upgrades-icon">🏗️</div>
+          <div class="no-upgrades-text">載入中...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 購買確認彈窗 -->
+  <div class="modal-overlay" id="buy-modal">
+    <div class="modal">
+      <div class="modal-emoji" id="modal-emoji">🏠</div>
+      <div class="modal-title" id="modal-title">建造建築</div>
+      <div class="modal-info">
+        <div class="modal-info-row">
+          <span>建造費用</span>
+          <span id="modal-cost">💰 100</span>
+        </div>
+        <div class="modal-info-row">
+          <span>每回合營收</span>
+          <span id="modal-income">+15</span>
+        </div>
+        <div class="modal-info-row">
+          <span>建造後餘額</span>
+          <span id="modal-remaining">💰 400</span>
+        </div>
+      </div>
+      <div class="modal-buttons">
+        <button class="modal-btn cancel" onclick="closeBuyModal()">取消</button>
+        <button class="modal-btn confirm" id="modal-confirm-btn" onclick="confirmBuy()">確認建造</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="./client/player.js"></script>
+</body>
+</html>

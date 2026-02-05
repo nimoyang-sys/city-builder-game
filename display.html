@@ -1,0 +1,2984 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>創智動能 2026 - 城市建設</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+
+    :root {
+      /* 卡通可愛風配色 */
+      --primary: #FF6B9D;
+      --secondary: #FFD93D;
+      --success: #6BCB77;
+      --info: #4D96FF;
+      --danger: #FF6B6B;
+      --purple: #C86BFA;
+      --bg-sky: #87CEEB;
+      --bg-card: rgba(255,255,255,0.95);
+      --text: #4A4A4A;
+      --text-light: #FFFFFF;
+      --ground: #8BC34A;
+      --ground-dark: #689F38;
+      --shadow: rgba(0,0,0,0.15);
+    }
+
+    body {
+      font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+      background: linear-gradient(180deg, #4FC3F7 0%, #81D4FA 30%, #B3E5FC 50%, #E1F5FE 70%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .display-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== 頂部標題列 - 透明無背景 ===== */
+    .top-bar {
+      background: transparent;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      position: relative;
+    }
+
+    .game-title {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      width: 60px;
+      height: auto;
+      filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.2));
+    }
+
+    .title-text h1 {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #333;
+      letter-spacing: 2px;
+      text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+    }
+
+    .title-text .slogan {
+      font-size: 0.9rem;
+      color: #555;
+      font-weight: 600;
+      margin-top: 2px;
+      text-shadow: 1px 1px 1px rgba(255,255,255,0.8);
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .stat-item {
+      text-align: center;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 2px solid #e0e0e0;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #333;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .status-badge {
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 25px;
+      border: none;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    }
+
+    .status-badge.building {
+      background: #4CAF50;
+      color: #fff;
+    }
+    .status-badge.event {
+      background: #FF9800;
+      color: #fff;
+    }
+    .status-badge.waiting {
+      background: #2196F3;
+      color: #fff;
+    }
+    .status-badge.ended {
+      background: #E91E63;
+      color: #fff;
+    }
+
+    /* ===== 主要城市區域 ===== */
+    .city-area {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 天空背景 - 可愛藍天 */
+    .sky {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60%;
+      /* 移除背景，使用 body 的漸層背景，避免分界線 */
+      background: transparent;
+    }
+
+    /* 隱藏星星（白天不需要）*/
+    .stars {
+      display: none;
+    }
+
+    /* 可愛太陽 */
+    .sun {
+      position: absolute;
+      top: 8%;
+      right: 10%;
+      width: 120px;
+      height: 120px;
+      background: radial-gradient(circle, #FFF9C4 0%, #FFD93D 50%, #FFC107 100%);
+      border-radius: 50%;
+      box-shadow:
+        0 0 60px rgba(255,217,61,0.6),
+        0 0 100px rgba(255,193,7,0.4);
+      animation: sunHappy 3s ease-in-out infinite;
+    }
+
+    /* 太陽表情 */
+    .sun::before {
+      content: '◡‿◡';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      color: #FF9800;
+    }
+
+    @keyframes sunHappy {
+      0%, 100% {
+        transform: scale(1) rotate(0deg);
+        box-shadow: 0 0 60px rgba(255,217,61,0.6), 0 0 100px rgba(255,193,7,0.4);
+      }
+      50% {
+        transform: scale(1.05) rotate(5deg);
+        box-shadow: 0 0 80px rgba(255,217,61,0.7), 0 0 120px rgba(255,193,7,0.5);
+      }
+    }
+
+    /* 可愛雲朵 */
+    .clouds {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 250px;
+      overflow: hidden;
+    }
+
+    .cloud {
+      position: absolute;
+      background: white;
+      border-radius: 50px;
+      opacity: 0.95;
+      animation: cloudFloat 50s linear infinite;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .cloud::before, .cloud::after {
+      content: '';
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+    }
+
+    .cloud-1 {
+      width: 120px;
+      height: 50px;
+      top: 50px;
+      left: -150px;
+      animation-duration: 45s;
+    }
+    .cloud-1::before { width: 60px; height: 60px; top: -30px; left: 20px; }
+    .cloud-1::after { width: 45px; height: 45px; top: -20px; left: 65px; }
+
+    .cloud-2 {
+      width: 150px;
+      height: 60px;
+      top: 100px;
+      left: -200px;
+      animation-duration: 55s;
+      animation-delay: -20s;
+    }
+    .cloud-2::before { width: 70px; height: 70px; top: -35px; left: 30px; }
+    .cloud-2::after { width: 55px; height: 55px; top: -25px; left: 85px; }
+
+    .cloud-3 {
+      width: 100px;
+      height: 45px;
+      top: 160px;
+      left: -130px;
+      animation-duration: 60s;
+      animation-delay: -35s;
+    }
+    .cloud-3::before { width: 50px; height: 50px; top: -25px; left: 15px; }
+    .cloud-3::after { width: 40px; height: 40px; top: -18px; left: 55px; }
+
+    @keyframes cloudFloat {
+      from { transform: translateX(0); }
+      to { transform: translateX(calc(100vw + 250px)); }
+    }
+
+    /* 地面 - 可愛草地 */
+    .ground-area {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 38%;
+      background: linear-gradient(180deg,
+        #8BC34A 0%,
+        #7CB342 30%,
+        #689F38 60%,
+        #558B2F 100%
+      );
+      border-top: 6px solid #9CCC65;
+    }
+
+    /* 草地裝飾 - 小花 */
+    .ground-area::before {
+      content: '🌸 🌼 🌸 🌼 🌸 🌼 🌸 🌼 🌸 🌼 🌸 🌼 🌸 🌼 🌸 🌼 🌸 🌼 🌸 🌼';
+      position: absolute;
+      top: -5px;
+      left: 0;
+      right: 0;
+      font-size: 1.2rem;
+      letter-spacing: 30px;
+      opacity: 0.8;
+      animation: flowerSway 4s ease-in-out infinite;
+    }
+
+    @keyframes flowerSway {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    /* 道路 - 可愛風格 */
+    .road {
+      position: absolute;
+      bottom: 50px;
+      left: 0;
+      right: 0;
+      height: 55px;
+      background: linear-gradient(180deg, #78909C 0%, #607D8B 50%, #546E7A 100%);
+      border-top: 5px solid #90A4AE;
+      border-bottom: 5px solid #455A64;
+      border-radius: 0;
+    }
+
+    .road::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background: repeating-linear-gradient(90deg,
+        #FFFFFF 0px, #FFFFFF 50px,
+        transparent 50px, transparent 100px
+      );
+      transform: translateY(-50%);
+      border-radius: 4px;
+    }
+
+    /* 人行道 - 可愛磚塊 */
+    .sidewalk {
+      position: absolute;
+      bottom: 105px;
+      left: 0;
+      right: 0;
+      height: 30px;
+      background: linear-gradient(180deg, #FFCCBC 0%, #FFAB91 100%);
+      border-top: 4px solid #FFE0B2;
+      border-bottom: 4px solid #FF8A65;
+    }
+
+    .sidewalk::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(90deg,
+        transparent 0px, transparent 38px,
+        rgba(255,255,255,0.3) 38px, rgba(255,255,255,0.3) 40px
+      );
+    }
+
+    /* 建築物區域 - 多層由近而遠 */
+    .buildings-container {
+      position: absolute;
+      bottom: 135px;
+      left: 20px;
+      right: 340px;
+      top: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* 建築排 */
+    .building-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 10px;
+      flex-wrap: wrap;
+      position: relative;
+    }
+
+    /* 後排（遠處）- 最小 */
+    .building-row.row-back {
+      transform: scale(0.5);
+      transform-origin: bottom center;
+      filter: brightness(0.75) saturate(0.75);
+      z-index: 1;
+      margin-bottom: -40px;
+    }
+
+    /* 中排 */
+    .building-row.row-mid {
+      transform: scale(0.72);
+      transform-origin: bottom center;
+      filter: brightness(0.88) saturate(0.88);
+      z-index: 2;
+      margin-bottom: -20px;
+    }
+
+    /* 前排（近處）- 最大 */
+    .building-row.row-front {
+      transform: scale(1);
+      z-index: 3;
+    }
+
+    /* 單個建築 */
+    .building {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: buildPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      cursor: default;
+      pointer-events: auto;
+    }
+
+    /* 玩家名稱標籤 */
+    .building-owner {
+      margin-top: 4px;
+      padding: 2px 8px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #5D4037;
+      white-space: nowrap;
+      max-width: 70px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      border: 2px solid #FFB6C1;
+    }
+
+    @keyframes buildPop {
+      0% {
+        transform: scale(0) translateY(30px);
+        opacity: 0;
+      }
+      60% {
+        transform: scale(1.1) translateY(-10px);
+      }
+      100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* 已存在的建築不要動畫 */
+    .building.no-animation {
+      animation: none;
+    }
+
+    .building:hover .css-building {
+      transform: scale(1.1) translateY(-5px);
+    }
+
+    /* ===== CSS 卡通建築 - 固定尺寸不變形 ===== */
+    .css-building {
+      position: relative;
+      transition: transform 0.3s ease;
+      filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+    }
+
+    .building:hover .css-building {
+      transform: scale(1.1) translateY(-5px);
+    }
+
+    /* 前排建築尺寸 */
+    .building-row.row-front .css-building {
+      transform: scale(1);
+    }
+
+    /* 中排建築尺寸 */
+    .building-row.row-mid .css-building {
+      transform: scale(0.85);
+    }
+
+    /* 後排建築尺寸 */
+    .building-row.row-back .css-building {
+      transform: scale(0.7);
+    }
+
+    /* === 住宅 HOUSE === */
+    .b-house {
+      width: 50px;
+      height: 55px;
+    }
+    .b-house .body {
+      position: absolute;
+      bottom: 0;
+      left: 5px;
+      width: 40px;
+      height: 35px;
+      background: linear-gradient(135deg, #FFCDD2 0%, #EF9A9A 100%);
+      border-radius: 4px;
+    }
+    .b-house .roof {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      border-left: 25px solid transparent;
+      border-right: 25px solid transparent;
+      border-bottom: 25px solid #E57373;
+    }
+    .b-house .door {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 18px;
+      background: #8D6E63;
+      border-radius: 2px 2px 0 0;
+    }
+    .b-house .window {
+      position: absolute;
+      top: 25px;
+      width: 10px;
+      height: 10px;
+      background: #81D4FA;
+      border: 2px solid #fff;
+      border-radius: 2px;
+    }
+    .b-house .window.left { left: 10px; }
+    .b-house .window.right { right: 10px; }
+
+    /* === 公寓 APARTMENT === */
+    .b-apartment {
+      width: 45px;
+      height: 70px;
+    }
+    .b-apartment .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 45px;
+      height: 70px;
+      background: linear-gradient(135deg, #90CAF9 0%, #64B5F6 100%);
+      border-radius: 4px 4px 0 0;
+    }
+    .b-apartment .window-row {
+      position: absolute;
+      left: 5px;
+      right: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .b-apartment .window-row:nth-child(2) { top: 8px; }
+    .b-apartment .window-row:nth-child(3) { top: 24px; }
+    .b-apartment .window-row:nth-child(4) { top: 40px; }
+    .b-apartment .win {
+      width: 12px;
+      height: 12px;
+      background: #FFF9C4;
+      border-radius: 2px;
+    }
+    .b-apartment .door {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 16px;
+      background: #5D4037;
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* === 豪宅 MANSION === */
+    .b-mansion {
+      width: 65px;
+      height: 65px;
+    }
+    .b-mansion .body {
+      position: absolute;
+      bottom: 0;
+      left: 5px;
+      width: 55px;
+      height: 45px;
+      background: linear-gradient(135deg, #CE93D8 0%, #BA68C8 100%);
+      border-radius: 4px;
+    }
+    .b-mansion .roof {
+      position: absolute;
+      top: 5px;
+      left: 0;
+      width: 65px;
+      height: 20px;
+      background: #7B1FA2;
+      clip-path: polygon(10% 100%, 0% 0%, 100% 0%, 90% 100%);
+    }
+    .b-mansion .tower {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 15px;
+      height: 25px;
+      background: #9C27B0;
+      border-radius: 3px 3px 0 0;
+    }
+    .b-mansion .flag {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 6px solid #FFD93D;
+      border-top: 4px solid transparent;
+      border-bottom: 4px solid transparent;
+    }
+
+    /* === 商店 SHOP === */
+    .b-shop {
+      width: 50px;
+      height: 50px;
+    }
+    .b-shop .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 40px;
+      background: linear-gradient(135deg, #FFCC80 0%, #FFB74D 100%);
+      border-radius: 4px 4px 0 0;
+    }
+    .b-shop .awning {
+      position: absolute;
+      top: 0;
+      left: -3px;
+      width: 56px;
+      height: 15px;
+      background: repeating-linear-gradient(90deg, #F44336 0px, #F44336 8px, #fff 8px, #fff 16px);
+      border-radius: 0 0 8px 8px;
+    }
+    .b-shop .window-big {
+      position: absolute;
+      top: 18px;
+      left: 5px;
+      right: 5px;
+      height: 18px;
+      background: #E1F5FE;
+      border: 2px solid #fff;
+      border-radius: 2px;
+    }
+
+    /* === 餐廳 RESTAURANT === */
+    .b-restaurant {
+      width: 55px;
+      height: 55px;
+    }
+    .b-restaurant .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 55px;
+      height: 45px;
+      background: linear-gradient(135deg, #A5D6A7 0%, #81C784 100%);
+      border-radius: 4px 4px 0 0;
+    }
+    .b-restaurant .sign {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 35px;
+      height: 15px;
+      background: #C62828;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    .b-restaurant .window-big {
+      position: absolute;
+      top: 18px;
+      left: 8px;
+      right: 8px;
+      height: 15px;
+      background: #FFF8E1;
+      border: 2px solid #fff;
+      border-radius: 2px;
+    }
+    .b-restaurant .door {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 14px;
+      background: #5D4037;
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* === 飯店 HOTEL === */
+    .b-hotel {
+      width: 55px;
+      height: 80px;
+    }
+    .b-hotel .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 55px;
+      height: 80px;
+      background: linear-gradient(135deg, #FFAB91 0%, #FF8A65 100%);
+      border-radius: 4px 4px 0 0;
+    }
+    .b-hotel .top {
+      position: absolute;
+      top: 0;
+      left: 15px;
+      width: 25px;
+      height: 10px;
+      background: #E64A19;
+      border-radius: 3px 3px 0 0;
+    }
+    .b-hotel .h-sign {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 12px;
+      background: #FFD93D;
+      border-radius: 2px;
+      font-size: 9px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #E64A19;
+    }
+
+    /* === 百貨 MALL === */
+    .b-mall {
+      width: 70px;
+      height: 70px;
+    }
+    .b-mall .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 70px;
+      height: 60px;
+      background: linear-gradient(135deg, #F8BBD9 0%, #F48FB1 100%);
+      border-radius: 6px 6px 0 0;
+    }
+    .b-mall .roof-deco {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 15px;
+      background: #E91E63;
+      border-radius: 8px 8px 0 0;
+    }
+    .b-mall .windows {
+      position: absolute;
+      top: 20px;
+      left: 5px;
+      right: 5px;
+      height: 35px;
+      background: #E1F5FE;
+      border: 3px solid #fff;
+      border-radius: 3px;
+    }
+
+    /* === 工廠 FACTORY === */
+    .b-factory {
+      width: 65px;
+      height: 60px;
+    }
+    .b-factory .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 50px;
+      height: 45px;
+      background: linear-gradient(135deg, #B0BEC5 0%, #90A4AE 100%);
+      border-radius: 4px 4px 0 0;
+    }
+    .b-factory .chimney {
+      position: absolute;
+      bottom: 40px;
+      right: 0;
+      width: 15px;
+      height: 30px;
+      background: #78909C;
+      border-radius: 2px 2px 0 0;
+    }
+    .b-factory .smoke {
+      position: absolute;
+      top: -15px;
+      right: 2px;
+      width: 12px;
+      height: 12px;
+      background: #ECEFF1;
+      border-radius: 50%;
+      animation: smokeFloat 2s ease-in-out infinite;
+    }
+    @keyframes smokeFloat {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+      50% { transform: translateY(-8px) scale(1.2); opacity: 0.4; }
+    }
+
+    /* === 倉庫 WAREHOUSE === */
+    .b-warehouse {
+      width: 55px;
+      height: 45px;
+    }
+    .b-warehouse .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 55px;
+      height: 35px;
+      background: linear-gradient(135deg, #BCAAA4 0%, #A1887F 100%);
+      border-radius: 2px;
+    }
+    .b-warehouse .roof {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 55px;
+      height: 12px;
+      background: #795548;
+      clip-path: polygon(0% 100%, 5% 0%, 95% 0%, 100% 100%);
+    }
+    .b-warehouse .door-big {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 25px;
+      height: 25px;
+      background: #5D4037;
+      border-radius: 2px 2px 0 0;
+    }
+
+    /* === 科技園區 TECHPARK === */
+    .b-techpark {
+      width: 60px;
+      height: 65px;
+    }
+    .b-techpark .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 55px;
+      background: linear-gradient(135deg, #B2EBF2 0%, #80DEEA 100%);
+      border-radius: 8px 8px 0 0;
+    }
+    .b-techpark .glass {
+      position: absolute;
+      top: 10px;
+      left: 5px;
+      right: 5px;
+      bottom: 10px;
+      background: linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%);
+      border-radius: 4px;
+      border: 2px solid #4DD0E1;
+    }
+    .b-techpark .antenna {
+      position: absolute;
+      top: -10px;
+      right: 15px;
+      width: 4px;
+      height: 15px;
+      background: #00ACC1;
+    }
+    .b-techpark .antenna::after {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -3px;
+      width: 10px;
+      height: 10px;
+      background: #4DD0E1;
+      border-radius: 50%;
+      animation: blink 1.5s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* === 公園 PARK === */
+    .b-park {
+      width: 55px;
+      height: 55px;
+    }
+    .b-park .ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 55px;
+      height: 15px;
+      background: #A5D6A7;
+      border-radius: 8px;
+    }
+    .b-park .tree {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .b-park .trunk {
+      width: 8px;
+      height: 15px;
+      background: #8D6E63;
+      margin: 0 auto;
+      border-radius: 2px;
+    }
+    .b-park .leaves {
+      width: 35px;
+      height: 35px;
+      background: radial-gradient(circle, #81C784 0%, #66BB6A 50%, #4CAF50 100%);
+      border-radius: 50%;
+      margin-bottom: -5px;
+    }
+    .b-park .flower {
+      position: absolute;
+      bottom: 10px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+    .b-park .flower.f1 { left: 5px; background: #FF80AB; }
+    .b-park .flower.f2 { right: 5px; background: #FFD54F; }
+
+    /* === 學校 SCHOOL === */
+    .b-school {
+      width: 65px;
+      height: 55px;
+    }
+    .b-school .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 65px;
+      height: 45px;
+      background: linear-gradient(135deg, #FFF59D 0%, #FFF176 100%);
+      border-radius: 4px 4px 0 0;
+    }
+    .b-school .roof {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 65px;
+      height: 12px;
+      background: #FBC02D;
+      border-radius: 4px 4px 0 0;
+    }
+    .b-school .clock {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      border: 2px solid #F57F17;
+    }
+    .b-school .windows-row {
+      position: absolute;
+      top: 32px;
+      left: 5px;
+      right: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .b-school .win {
+      width: 14px;
+      height: 12px;
+      background: #E3F2FD;
+      border: 2px solid #fff;
+      border-radius: 2px;
+    }
+
+    /* === 醫院 HOSPITAL === */
+    .b-hospital {
+      width: 55px;
+      height: 70px;
+    }
+    .b-hospital .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 55px;
+      height: 70px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%);
+      border-radius: 4px 4px 0 0;
+      border: 2px solid #E0E0E0;
+    }
+    .b-hospital .cross {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 18px;
+      height: 18px;
+      background: #EF5350;
+      clip-path: polygon(35% 0%, 65% 0%, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0% 65%, 0% 35%, 35% 35%);
+    }
+    .b-hospital .entrance {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 20px;
+      background: #90CAF9;
+      border-radius: 4px 4px 0 0;
+    }
+
+    /* === 體育場 STADIUM === */
+    .b-stadium {
+      width: 75px;
+      height: 50px;
+    }
+    .b-stadium .body {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 75px;
+      height: 35px;
+      background: linear-gradient(135deg, #E1BEE7 0%, #CE93D8 100%);
+      border-radius: 50% 50% 4px 4px;
+    }
+    .b-stadium .field {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 50px;
+      height: 18px;
+      background: #81C784;
+      border-radius: 4px;
+      border: 2px solid #fff;
+    }
+    .b-stadium .lights {
+      position: absolute;
+      top: 0;
+      width: 6px;
+      height: 20px;
+      background: #9E9E9E;
+    }
+    .b-stadium .lights.l1 { left: 10px; }
+    .b-stadium .lights.l2 { right: 10px; }
+    .b-stadium .light-top {
+      position: absolute;
+      top: -5px;
+      left: -2px;
+      width: 10px;
+      height: 8px;
+      background: #FFEB3B;
+      border-radius: 2px;
+    }
+
+    /* === 地標 LANDMARK === */
+    .b-landmark {
+      width: 45px;
+      height: 85px;
+    }
+    .b-landmark .base {
+      position: absolute;
+      bottom: 0;
+      left: 5px;
+      width: 35px;
+      height: 25px;
+      background: linear-gradient(135deg, #FFCCBC 0%, #FFAB91 100%);
+      border-radius: 4px;
+    }
+    .b-landmark .tower {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 50px;
+      background: linear-gradient(135deg, #FF8A65 0%, #FF7043 100%);
+      border-radius: 2px;
+    }
+    .b-landmark .top {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 12px solid transparent;
+      border-right: 12px solid transparent;
+      border-bottom: 18px solid #E64A19;
+    }
+    .b-landmark .antenna {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      height: 12px;
+      background: #BF360C;
+    }
+
+    /* === 太空站 SPACEPORT === */
+    .b-spaceport {
+      width: 60px;
+      height: 80px;
+    }
+    .b-spaceport .base {
+      position: absolute;
+      bottom: 0;
+      left: 5px;
+      width: 50px;
+      height: 20px;
+      background: linear-gradient(135deg, #B0BEC5 0%, #90A4AE 100%);
+      border-radius: 4px;
+    }
+    .b-spaceport .rocket {
+      position: absolute;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 50px;
+      background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
+      border-radius: 10px 10px 0 0;
+    }
+    .b-spaceport .rocket-top {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-bottom: 15px solid #EF5350;
+    }
+    .b-spaceport .fin {
+      position: absolute;
+      bottom: 0;
+      width: 0;
+      height: 0;
+      border-top: 12px solid transparent;
+      border-bottom: 0 solid transparent;
+    }
+    .b-spaceport .fin.left {
+      left: -8px;
+      border-right: 10px solid #78909C;
+    }
+    .b-spaceport .fin.right {
+      right: -8px;
+      border-left: 10px solid #78909C;
+    }
+    .b-spaceport .window {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 10px;
+      background: #4FC3F7;
+      border-radius: 50%;
+      border: 2px solid #0288D1;
+    }
+    .b-spaceport .flame {
+      position: absolute;
+      bottom: -15px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 20px;
+      background: linear-gradient(180deg, #FF9800 0%, #FF5722 50%, transparent 100%);
+      border-radius: 0 0 6px 6px;
+      animation: flameFlicker 0.3s ease-in-out infinite alternate;
+    }
+    @keyframes flameFlicker {
+      0% { transform: translateX(-50%) scaleY(1); }
+      100% { transform: translateX(-50%) scaleY(0.8); }
+    }
+
+
+    /* 排行榜側邊欄 - 卡通可愛風格 */
+    .side-panel {
+      position: absolute;
+      top: 100px;
+      right: 20px;
+      width: 320px;
+      background: var(--bg-card);
+      border-radius: 25px;
+      border: 4px solid #FFD93D;
+      box-shadow: 0 8px 30px rgba(255,107,157,0.2), inset 0 2px 0 rgba(255,255,255,0.8);
+      padding: 20px;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+
+    .panel-title {
+      font-size: 1.3rem;
+      font-weight: 900;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #FF6B9D;
+      border-bottom: 3px dashed #FFB6C1;
+      padding-bottom: 12px;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 15px;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, #FFF5F8 0%, #FFE4EC 100%);
+      border-radius: 15px;
+      border: 3px solid #FFB6C1;
+      transition: all 0.3s ease;
+    }
+
+    .leaderboard-item:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 5px 15px rgba(255,107,157,0.3);
+    }
+
+    .leaderboard-item:nth-child(1) {
+      background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+      border-color: #FFD54F;
+      box-shadow: 0 4px 15px rgba(255,213,79,0.3);
+    }
+
+    .leaderboard-item:nth-child(2) {
+      background: linear-gradient(135deg, #F5F5F5 0%, #E0E0E0 100%);
+      border-color: #BDBDBD;
+    }
+
+    .leaderboard-item:nth-child(3) {
+      background: linear-gradient(135deg, #FFCCBC 0%, #FFAB91 100%);
+      border-color: #FF8A65;
+    }
+
+    .rank {
+      font-size: 1.4rem;
+      font-weight: 900;
+      width: 40px;
+      text-align: center;
+    }
+
+    .rank-1 { color: #FFC107; text-shadow: 1px 1px 0 #FF8F00; }
+    .rank-2 { color: #9E9E9E; text-shadow: 1px 1px 0 #616161; }
+    .rank-3 { color: #FF8A65; text-shadow: 1px 1px 0 #E64A19; }
+
+    .player-info {
+      flex: 1;
+      margin-left: 12px;
+    }
+
+    .player-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #5D4037;
+    }
+
+    .player-buildings {
+      font-size: 0.85rem;
+      color: #8D6E63;
+      margin-top: 3px;
+    }
+
+    .player-score {
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: #FF6B9D;
+      text-shadow: 1px 1px 0 rgba(255,107,157,0.3);
+    }
+
+    /* 事件公告 - 卡通可愛風格 */
+    .event-panel {
+      position: absolute;
+      top: 100px;
+      left: 20px;
+      width: 400px;
+      background: var(--bg-card);
+      border-radius: 25px;
+      border: 4px solid #FFD93D;
+      box-shadow: 0 8px 30px rgba(255,107,157,0.2), inset 0 2px 0 rgba(255,255,255,0.8);
+      padding: 22px;
+      display: none;
+    }
+
+    .event-panel.show {
+      display: block;
+      animation: eventPopIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    @keyframes eventPopIn {
+      0% { transform: scale(0.5) rotate(-10deg); opacity: 0; }
+      60% { transform: scale(1.1) rotate(3deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .event-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 15px;
+      border-bottom: 3px dashed #FFB6C1;
+      padding-bottom: 15px;
+    }
+
+    .event-icon {
+      font-size: 3rem;
+      filter: drop-shadow(2px 3px 0 rgba(0,0,0,0.15));
+      animation: eventIconWiggle 1s ease-in-out infinite;
+    }
+
+    @keyframes eventIconWiggle {
+      0%, 100% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
+    }
+
+    .event-title {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #FF6B9D;
+    }
+
+    .event-type {
+      font-size: 0.95rem;
+      color: #8D6E63;
+      font-weight: 500;
+    }
+
+    .event-description {
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      line-height: 1.6;
+      color: #5D4037;
+    }
+
+    .event-effects {
+      background: linear-gradient(135deg, #FFF5F8 0%, #FFE4EC 100%);
+      border-radius: 15px;
+      padding: 15px;
+      border: 2px solid #FFB6C1;
+    }
+
+    .effect-title {
+      font-size: 0.9rem;
+      color: #8D6E63;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .effect-text {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .effect-text.positive { color: #4CAF50; }
+    .effect-text.negative { color: #EF5350; }
+
+    /* 建築統計欄 - 卡通可愛風格 */
+    .stats-panel {
+      position: absolute;
+      bottom: 15px;
+      left: 20px;
+      right: 360px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .category-badge {
+      background: var(--bg-card);
+      border-radius: 20px;
+      border: 3px solid #4FC3F7;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.95rem;
+      transition: all 0.3s ease;
+      font-weight: 500;
+      color: #5D4037;
+    }
+
+    .category-badge:hover {
+      transform: translateY(-4px) scale(1.05);
+      box-shadow: 0 8px 20px rgba(79,195,247,0.3);
+      border-color: #29B6F6;
+    }
+
+    .category-badge .emoji {
+      font-size: 1.5rem;
+    }
+
+    .category-badge .count {
+      font-weight: 900;
+      color: #FF6B9D;
+      font-size: 1.2rem;
+    }
+
+    /* ===== 等待畫面 - 卡通可愛風格 ===== */
+    .waiting-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg,
+        #87CEEB 0%,
+        #B4E7FF 30%,
+        #E8F8FF 60%,
+        #FFF5F8 100%
+      );
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    /* 等待畫面裝飾 - 飄動的愛心和星星 */
+    .waiting-overlay::before {
+      content: '❤️ ⭐ 💖 ✨ 💕 🌟 💗 ⭐ ❤️ ✨ 💖 🌟';
+      position: absolute;
+      top: 50px;
+      left: 0;
+      right: 0;
+      font-size: 2rem;
+      text-align: center;
+      letter-spacing: 40px;
+      animation: floatDecor 4s ease-in-out infinite;
+      opacity: 0.6;
+    }
+
+    .waiting-overlay::after {
+      content: '🏠 🏢 🏪 🏭 🏫 🏥 🏟️ 🗼 🚀';
+      position: absolute;
+      bottom: 80px;
+      left: 0;
+      right: 0;
+      font-size: 2.5rem;
+      text-align: center;
+      letter-spacing: 30px;
+      animation: floatBuildings 3s ease-in-out infinite;
+    }
+
+    @keyframes floatDecor {
+      0%, 100% { transform: translateY(0) rotate(-2deg); }
+      50% { transform: translateY(-15px) rotate(2deg); }
+    }
+
+    @keyframes floatBuildings {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .waiting-overlay.hidden {
+      display: none;
+    }
+
+    .waiting-logo {
+      font-size: 10rem;
+      margin-bottom: 30px;
+      filter: drop-shadow(4px 6px 0 rgba(255,107,157,0.4));
+      animation: logoHop 0.8s ease-in-out infinite;
+      position: relative;
+      z-index: 1;
+    }
+
+    @keyframes logoHop {
+      0%, 100% { transform: translateY(0) scale(1) rotate(-3deg); }
+      50% { transform: translateY(-25px) scale(1.05) rotate(3deg); }
+    }
+
+    .waiting-title {
+      font-size: 3rem;
+      font-weight: 900;
+      color: #FF6B9D;
+      text-shadow: 3px 3px 0 #fff, 6px 6px 0 rgba(255,107,157,0.3);
+      margin-bottom: 15px;
+      position: relative;
+      z-index: 1;
+      letter-spacing: 5px;
+    }
+
+    .waiting-subtitle {
+      font-size: 1.3rem;
+      color: #8B5A8B;
+      margin-bottom: 50px;
+      position: relative;
+      z-index: 1;
+      font-weight: 500;
+    }
+
+    .waiting-players {
+      font-size: 1.2rem;
+      color: #5D4037;
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      padding: 25px 50px;
+      border-radius: 25px;
+      border: 4px solid #FFD93D;
+      box-shadow: 0 8px 30px rgba(255,107,157,0.2);
+      font-weight: 500;
+    }
+
+    .waiting-players span {
+      color: #FF6B9D;
+      font-weight: 900;
+      font-size: 2.5rem;
+    }
+
+    .qr-hint {
+      margin-top: 40px;
+      padding: 30px 60px;
+      background: var(--bg-card);
+      border-radius: 30px;
+      border: 4px solid #4FC3F7;
+      box-shadow: 0 8px 30px rgba(79,195,247,0.2);
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .qr-hint p {
+      color: #5D4037;
+      margin-bottom: 18px;
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    .qr-url {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: #4FC3F7;
+    }
+
+    /* ===== 結束畫面 - 卡通可愛風格 ===== */
+    .end-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg,
+        #FFE4EC 0%,
+        #FFF5F8 30%,
+        #E8F8FF 60%,
+        #E1F5FE 100%
+      );
+      display: none;
+      flex-direction: column;
+      padding: 40px;
+      z-index: 100;
+    }
+
+    .end-overlay.show {
+      display: flex;
+    }
+
+    .end-title {
+      font-size: 3.5rem;
+      font-weight: 900;
+      text-align: center;
+      margin-bottom: 30px;
+      color: #FF6B9D;
+      text-shadow: 3px 3px 0 #fff, 6px 6px 0 rgba(255,107,157,0.3);
+      animation: celebrateBounce 1s ease-in-out infinite;
+    }
+
+    @keyframes celebrateBounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.03); }
+    }
+
+    .end-content {
+      flex: 1;
+      display: flex;
+      gap: 30px;
+    }
+
+    .final-city {
+      flex: 2;
+      background: var(--bg-card);
+      border-radius: 30px;
+      border: 4px solid #FFD93D;
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(255,107,157,0.15);
+    }
+
+    .final-city-ground {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      background: linear-gradient(180deg, #8BC34A 0%, #689F38 100%);
+      border-radius: 0 0 26px 26px;
+    }
+
+    .final-buildings {
+      position: absolute;
+      bottom: 100px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .final-leaderboard {
+      flex: 1;
+      background: var(--bg-card);
+      border-radius: 30px;
+      border: 4px solid #4FC3F7;
+      padding: 30px;
+      overflow-y: auto;
+      box-shadow: 0 8px 30px rgba(79,195,247,0.15);
+    }
+
+    /* ===== 結束畫面影片與文案區域 ===== */
+    .end-video-section {
+      margin-top: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      background: linear-gradient(135deg, rgba(255,107,157,0.1) 0%, rgba(79,195,247,0.1) 100%);
+      border-radius: 30px;
+      padding: 30px;
+      border: 3px solid rgba(255,215,61,0.5);
+    }
+
+    .end-video-container {
+      flex: 1;
+      max-width: 500px;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      border: 4px solid #FFD93D;
+    }
+
+    .end-video-container video {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .end-slogan {
+      flex: 1;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .end-slogan p {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #5D4037;
+      margin: 15px 0;
+      text-shadow: 2px 2px 0 #fff;
+    }
+
+    .end-slogan .highlight {
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: #FF6B9D;
+      background: linear-gradient(90deg, #FF6B9D, #4FC3F7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.9; transform: scale(1.02); }
+    }
+
+    .final-leaderboard h2 {
+      margin-bottom: 20px;
+      color: #FF6B9D;
+      font-weight: 900;
+      font-size: 1.5rem;
+    }
+
+    /* ===== 抽獎畫面 ===== */
+    .lottery-overlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .lottery-overlay.show {
+      display: flex;
+    }
+
+    .lottery-title {
+      font-size: 3rem;
+      font-weight: 900;
+      color: #FFD93D;
+      text-shadow: 0 0 20px rgba(255,217,61,0.5), 3px 3px 0 rgba(0,0,0,0.3);
+      margin-bottom: 20px;
+      animation: lotteryTitlePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes lotteryTitlePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+
+    .lottery-prize-label {
+      font-size: 1.5rem;
+      color: #4FC3F7;
+      margin-bottom: 30px;
+    }
+
+    .lottery-spinner {
+      width: 600px;
+      height: 200px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      border: 4px solid #FFD93D;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 50px rgba(255,217,61,0.3), inset 0 0 30px rgba(0,0,0,0.5);
+    }
+
+    .lottery-spinner::before,
+    .lottery-spinner::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100px;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .lottery-spinner::before {
+      left: 0;
+      background: linear-gradient(90deg, rgba(26,26,46,1) 0%, rgba(26,26,46,0) 100%);
+    }
+
+    .lottery-spinner::after {
+      right: 0;
+      background: linear-gradient(90deg, rgba(26,26,46,0) 0%, rgba(26,26,46,1) 100%);
+    }
+
+    .lottery-names-track {
+      display: flex;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: transform 0.1s linear;
+    }
+
+    .lottery-names-track.stopping {
+      transition: transform 3s cubic-bezier(0.1, 0.7, 0.1, 1);
+    }
+
+    .lottery-name-item {
+      flex-shrink: 0;
+      width: 200px;
+      height: 120px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 10px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+      border-radius: 15px;
+      border: 2px solid rgba(255,255,255,0.2);
+      color: white;
+    }
+
+    .lottery-name-item.winner {
+      background: linear-gradient(135deg, #FFD93D 0%, #FFC107 100%);
+      border-color: #FF9800;
+      color: #1a1a2e;
+      transform: scale(1.1);
+      box-shadow: 0 0 30px rgba(255,217,61,0.8);
+    }
+
+    .lottery-name-item .name {
+      font-size: 1.8rem;
+      font-weight: 900;
+    }
+
+    .lottery-name-item .score {
+      font-size: 1rem;
+      opacity: 0.8;
+      margin-top: 5px;
+    }
+
+    .lottery-pointer {
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-top: 30px solid #FF6B9D;
+      filter: drop-shadow(0 3px 5px rgba(0,0,0,0.3));
+      z-index: 20;
+    }
+
+    .lottery-pointer-bottom {
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 20px solid transparent;
+      border-right: 20px solid transparent;
+      border-bottom: 30px solid #FF6B9D;
+      filter: drop-shadow(0 -3px 5px rgba(0,0,0,0.3));
+      z-index: 20;
+    }
+
+    .lottery-winner-display {
+      margin-top: 40px;
+      text-align: center;
+      min-height: 150px;
+    }
+
+    .lottery-winner-name {
+      font-size: 4rem;
+      font-weight: 900;
+      color: #FFD93D;
+      text-shadow: 0 0 30px rgba(255,217,61,0.8);
+      animation: winnerCelebrate 0.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes winnerCelebrate {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.05); }
+    }
+
+    .lottery-winner-score {
+      font-size: 1.5rem;
+      color: #4FC3F7;
+      margin-top: 10px;
+    }
+
+    .lottery-hint {
+      margin-top: 30px;
+      font-size: 1.2rem;
+      color: rgba(255,255,255,0.6);
+    }
+
+    .lottery-winners-list {
+      position: absolute;
+      right: 40px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 280px;
+      max-height: 70vh;
+      background: rgba(0,0,0,0.4);
+      border-radius: 20px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .lottery-winners-list h3 {
+      color: #FFD93D;
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .lottery-winner-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      margin-bottom: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px;
+      color: white;
+    }
+
+    .lottery-winner-item .rank {
+      width: 30px;
+      height: 30px;
+      background: #FF6B9D;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    .lottery-winner-item .rank.gold { background: #FFD93D; color: #1a1a2e; }
+    .lottery-winner-item .rank.silver { background: #C0C0C0; color: #1a1a2e; }
+    .lottery-winner-item .rank.bronze { background: #CD7F32; color: white; }
+
+    .lottery-confetti {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      width: 10px;
+      height: 20px;
+      opacity: 0;
+    }
+
+    .confetti-piece.animate {
+      animation: confettiFall 3s ease-out forwards;
+    }
+
+    @keyframes confettiFall {
+      0% {
+        opacity: 1;
+        transform: translateY(-100px) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(100vh) rotate(720deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="display-container">
+    <!-- 頂部標題列 -->
+    <div class="top-bar">
+      <div class="game-title">
+        <img src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/logo%2F%E8%B3%87%E7%94%A2%208.png?alt=media&token=7519dfc2-7df3-4dd7-bb82-000c27ed3f67" alt="Logo" class="logo">
+        <div class="title-text">
+          <h1>創智動能 2026</h1>
+          <p class="slogan">✨ 眾志成城・築夢成真 ✨</p>
+        </div>
+      </div>
+
+      <div class="stats-bar">
+        <div class="stat-item">
+          <div class="stat-value" id="total-buildings">0</div>
+          <div class="stat-label">建築總數</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="total-players">0</div>
+          <div class="stat-label">參與人數</div>
+        </div>
+      </div>
+
+      <div class="status-badge waiting" id="status-badge">等待中</div>
+    </div>
+
+    <!-- 城市區域 -->
+    <div class="city-area">
+      <!-- 天空 -->
+      <div class="sky"></div>
+      <div class="stars"></div>
+
+      <!-- 太陽 -->
+      <div class="sun"></div>
+
+      <!-- 雲朵 -->
+      <div class="clouds">
+        <div class="cloud cloud-1"></div>
+        <div class="cloud cloud-2"></div>
+        <div class="cloud cloud-3"></div>
+      </div>
+
+      <!-- 地面 -->
+      <div class="ground-area"></div>
+
+      <!-- 人行道 -->
+      <div class="sidewalk"></div>
+
+      <!-- 道路 -->
+      <div class="road"></div>
+
+      <!-- 建築物 -->
+      <div class="buildings-container" id="buildings-container">
+        <!-- 動態生成建築 -->
+      </div>
+
+      <!-- 事件公告 -->
+      <div class="event-panel" id="event-panel" onclick="hideEvent()" style="cursor: pointer;">
+        <div class="event-header">
+          <span class="event-icon" id="event-icon">📢</span>
+          <div>
+            <div class="event-type" id="event-type">事件</div>
+            <div class="event-title" id="event-title">--</div>
+          </div>
+        </div>
+        <div class="event-description" id="event-description">--</div>
+        <div class="event-effects">
+          <div class="effect-title">營收加成（金幣＋貢獻分）</div>
+          <div class="effect-text" id="event-effects">--</div>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.8rem; color: rgba(255,255,255,0.6);">點擊關閉</div>
+      </div>
+
+      <!-- 排行榜 -->
+      <div class="side-panel">
+        <div class="panel-title">🏆 貢獻排行榜</div>
+        <div id="leaderboard">
+          <!-- 動態生成 -->
+        </div>
+      </div>
+
+      <!-- 建築統計 -->
+      <div class="stats-panel" id="stats-panel">
+        <!-- 動態生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 等待畫面 -->
+  <div class="waiting-overlay" id="waiting-overlay">
+    <div class="waiting-logo">🏗️</div>
+    <div class="waiting-title">創智動能 2026</div>
+    <div class="waiting-subtitle">✨ 眾志成城・築夢成真 ✨</div>
+    <div class="waiting-players">
+      目前 <span id="waiting-player-count">0</span> 位夥伴已就位
+    </div>
+    <div class="qr-hint">
+      <p>掃描 QR Code 或輸入網址加入遊戲</p>
+      <div id="qr-code" style="margin: 20px auto; background: white; padding: 15px; border-radius: 8px; width: fit-content;"></div>
+      <div class="qr-url" id="game-url">--</div>
+    </div>
+  </div>
+
+  <!-- 抽獎畫面 -->
+  <div class="lottery-overlay" id="lottery-overlay">
+    <div class="lottery-confetti" id="lottery-confetti"></div>
+    <div class="lottery-title">🎰 幸運大抽獎 🎰</div>
+    <div class="lottery-prize-label" id="lottery-prize-label">準備抽出幸運兒...</div>
+
+    <div class="lottery-spinner">
+      <div class="lottery-pointer"></div>
+      <div class="lottery-pointer-bottom"></div>
+      <div class="lottery-names-track" id="lottery-names-track">
+        <!-- 動態生成名字 -->
+      </div>
+    </div>
+
+    <div class="lottery-winner-display" id="lottery-winner-display">
+      <!-- 中獎者顯示 -->
+    </div>
+
+    <div class="lottery-hint" id="lottery-hint">等待主持人開始抽獎...</div>
+
+    <div class="lottery-winners-list" id="lottery-winners-list">
+      <h3>🏆 已抽出得獎者</h3>
+      <div id="lottery-winners-container">
+        <p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem;">尚未抽出</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 結束畫面 -->
+  <div class="end-overlay" id="end-overlay">
+    <div class="end-title">🎉 創智城 建設完成！🎉</div>
+    <div class="end-content">
+      <div class="final-city">
+        <h2 style="margin-bottom: 20px; color: white;">🏙️ 創智城 最終風貌</h2>
+        <div class="final-buildings" id="final-buildings"></div>
+        <div class="final-city-ground"></div>
+      </div>
+      <div class="final-leaderboard">
+        <h2 style="color: white;">🏆 最終排行榜</h2>
+        <div id="final-leaderboard"></div>
+      </div>
+    </div>
+    <!-- 影片與文案區域 -->
+    <div class="end-video-section">
+      <div class="end-video-container">
+        <video id="end-video" autoplay loop muted playsinline>
+          <source src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/VIDEO%2Fgrok-video-b0490a7f-5814-4ead-b9d8-f9aa65d51e30%20(1).mp4?alt=media&token=e954da8d-33cc-4bd6-9f1b-ceddb604ab24" type="video/mp4">
+        </video>
+      </div>
+      <div class="end-slogan">
+        <p>🌟 未來，大家各自扮演不同角色發揮所長</p>
+        <p class="highlight">2026 齊心協力，創造創智亞太企業版圖！</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR Code Library -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    // 遊戲設定
+    let gameConfig = null;
+    let socket = null;
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 取得設定
+      const configRes = await fetch('/api/config');
+      gameConfig = await configRes.json();
+
+      // 設定遊戲網址並產生 QR Code
+      const url = window.location.origin;
+      document.getElementById('game-url').textContent = url;
+
+      // 產生 QR Code
+      QRCode.toCanvas(document.createElement('canvas'), url, {
+        width: 200,
+        margin: 0,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      }, function (error, canvas) {
+        if (error) {
+          console.error('QR Code generation failed:', error);
+          return;
+        }
+        document.getElementById('qr-code').appendChild(canvas);
+      });
+
+      // 連接 Socket
+      socket = io();
+
+      socket.on('connect', () => {
+        console.log('Display connected');
+        fetchGameState();
+      });
+
+      // 遊戲事件
+      socket.on('game:started', handleGameStarted);
+      socket.on('game:buildingPhase', handleBuildingPhase);
+      socket.on('game:buildingPurchased', handleBuildingPurchased);
+      socket.on('game:eventTriggered', handleEventTriggered);
+      socket.on('game:scoreAdded', handleScoreAdded);
+      socket.on('game:ended', handleGameEnded);
+      socket.on('game:playerJoined', handlePlayerJoined);
+      socket.on('game:reset', handleReset);
+    });
+
+    // 取得遊戲狀態
+    async function fetchGameState() {
+      const res = await fetch('/api/game/state');
+      const state = await res.json();
+      updateDisplay(state);
+    }
+
+    // 更新畫面
+    function updateDisplay(state) {
+      // 更新統計
+      document.getElementById('total-buildings').textContent = state.totalBuildings || 0;
+      document.getElementById('total-players').textContent = state.playerCount || 0;
+      document.getElementById('waiting-player-count').textContent = state.playerCount || 0;
+
+      // 更新狀態標籤
+      updateStatusBadge(state.state);
+
+      // 更新建築視覺化（使用建築列表）
+      renderCityBuildings(state.cityBuildings, state.cityBuildingList);
+
+      // 更新排行榜
+      renderLeaderboard(state.leaderboard);
+
+      // 顯示/隱藏等待畫面
+      const waitingOverlay = document.getElementById('waiting-overlay');
+      if (state.state === 'WAITING') {
+        waitingOverlay.classList.remove('hidden');
+      } else {
+        waitingOverlay.classList.add('hidden');
+      }
+
+      // 顯示事件
+      if (state.currentEvent && state.state === 'EVENT') {
+        showEvent(state.currentEvent);
+      }
+    }
+
+    // 更新狀態標籤
+    function updateStatusBadge(state) {
+      const badge = document.getElementById('status-badge');
+      const stateMap = {
+        'WAITING': { text: '等待中', class: 'waiting' },
+        'BUILDING': { text: '建設中', class: 'building' },
+        'EVENT': { text: '事件發生', class: 'event' },
+        'ENDED': { text: '已結束', class: 'ended' }
+      };
+      const info = stateMap[state] || stateMap.WAITING;
+      badge.textContent = info.text;
+      badge.className = `status-badge ${info.class}`;
+    }
+
+    // CSS 建築模板
+    function createCSSBuilding(buildingId) {
+      switch(buildingId) {
+        case 'HOUSE':
+          return `<div class="css-building b-house">
+            <div class="roof"></div>
+            <div class="body">
+              <div class="window left"></div>
+              <div class="window right"></div>
+              <div class="door"></div>
+            </div>
+          </div>`;
+        case 'APARTMENT':
+          return `<div class="css-building b-apartment">
+            <div class="body">
+              <div class="window-row"><div class="win"></div><div class="win"></div><div class="win"></div></div>
+              <div class="window-row"><div class="win"></div><div class="win"></div><div class="win"></div></div>
+              <div class="window-row"><div class="win"></div><div class="win"></div><div class="win"></div></div>
+              <div class="door"></div>
+            </div>
+          </div>`;
+        case 'MANSION':
+          return `<div class="css-building b-mansion">
+            <div class="tower"><div class="flag"></div></div>
+            <div class="roof"></div>
+            <div class="body"></div>
+          </div>`;
+        case 'SHOP':
+          return `<div class="css-building b-shop">
+            <div class="awning"></div>
+            <div class="body">
+              <div class="window-big"></div>
+            </div>
+          </div>`;
+        case 'RESTAURANT':
+          return `<div class="css-building b-restaurant">
+            <div class="sign">🍜</div>
+            <div class="body">
+              <div class="window-big"></div>
+              <div class="door"></div>
+            </div>
+          </div>`;
+        case 'HOTEL':
+          return `<div class="css-building b-hotel">
+            <div class="top"></div>
+            <div class="body">
+              <div class="h-sign">H</div>
+            </div>
+          </div>`;
+        case 'MALL':
+          return `<div class="css-building b-mall">
+            <div class="roof-deco"></div>
+            <div class="body">
+              <div class="windows"></div>
+            </div>
+          </div>`;
+        case 'FACTORY':
+          return `<div class="css-building b-factory">
+            <div class="chimney"><div class="smoke"></div></div>
+            <div class="body"></div>
+          </div>`;
+        case 'WAREHOUSE':
+          return `<div class="css-building b-warehouse">
+            <div class="roof"></div>
+            <div class="body">
+              <div class="door-big"></div>
+            </div>
+          </div>`;
+        case 'TECHPARK':
+          return `<div class="css-building b-techpark">
+            <div class="antenna"></div>
+            <div class="body">
+              <div class="glass"></div>
+            </div>
+          </div>`;
+        case 'PARK':
+          return `<div class="css-building b-park">
+            <div class="tree">
+              <div class="leaves"></div>
+              <div class="trunk"></div>
+            </div>
+            <div class="ground"></div>
+            <div class="flower f1"></div>
+            <div class="flower f2"></div>
+          </div>`;
+        case 'SCHOOL':
+          return `<div class="css-building b-school">
+            <div class="roof"></div>
+            <div class="body">
+              <div class="clock"></div>
+              <div class="windows-row">
+                <div class="win"></div><div class="win"></div><div class="win"></div><div class="win"></div>
+              </div>
+            </div>
+          </div>`;
+        case 'HOSPITAL':
+          return `<div class="css-building b-hospital">
+            <div class="body">
+              <div class="cross"></div>
+              <div class="entrance"></div>
+            </div>
+          </div>`;
+        case 'STADIUM':
+          return `<div class="css-building b-stadium">
+            <div class="lights l1"><div class="light-top"></div></div>
+            <div class="lights l2"><div class="light-top"></div></div>
+            <div class="body">
+              <div class="field"></div>
+            </div>
+          </div>`;
+        case 'LANDMARK':
+          return `<div class="css-building b-landmark">
+            <div class="antenna"></div>
+            <div class="top"></div>
+            <div class="tower"></div>
+            <div class="base"></div>
+          </div>`;
+        case 'SPACEPORT':
+          return `<div class="css-building b-spaceport">
+            <div class="base"></div>
+            <div class="rocket">
+              <div class="rocket-top"></div>
+              <div class="window"></div>
+              <div class="fin left"></div>
+              <div class="fin right"></div>
+              <div class="flame"></div>
+            </div>
+          </div>`;
+        default:
+          return `<div class="css-building b-house">
+            <div class="roof"></div>
+            <div class="body"><div class="door"></div></div>
+          </div>`;
+      }
+    }
+
+    // 追蹤目前建築狀態，避免重複渲染導致閃爍
+    let currentBuildingKey = '';
+
+    // 每排最多幾棟建築
+    const BUILDINGS_PER_ROW = 10;
+
+    // 渲染城市建築（使用建築列表，含玩家名稱）
+    function renderCityBuildings(cityBuildings, buildingList) {
+      const container = document.getElementById('buildings-container');
+      const statsPanel = document.getElementById('stats-panel');
+
+      console.log('renderCityBuildings called:', { cityBuildings, buildingList });
+
+      // 只使用有玩家名稱的 buildingList，不從 stats 重建
+      // 這樣可以確保每棟建築都顯示正確的玩家名稱
+
+      // 如果沒有建築列表，清空
+      if (!buildingList || buildingList.length === 0) {
+        if (currentBuildingKey !== '') {
+          container.innerHTML = '';
+          currentBuildingKey = '';
+        }
+        statsPanel.innerHTML = '';
+        return;
+      }
+
+      // 建立建築 key 來比較是否有變化
+      const newKey = buildingList.map(b => b.id).join(',');
+
+      // 只有建築有變化時才重新渲染
+      if (newKey !== currentBuildingKey) {
+        const oldCount = currentBuildingKey ? currentBuildingKey.split(',').filter(x => x).length : 0;
+        currentBuildingKey = newKey;
+
+        // 將建築分成多排（由近而遠）
+        const rows = [];
+        for (let i = 0; i < buildingList.length; i += BUILDINGS_PER_ROW) {
+          rows.push(buildingList.slice(i, i + BUILDINGS_PER_ROW));
+        }
+
+        // 渲染多排建築
+        let html = '';
+        rows.forEach((rowBuildings, rowIndex) => {
+          // 決定層次：最後排是前排，最前排是後排
+          let rowClass = 'row-front';
+          if (rows.length > 1) {
+            const fromEnd = rows.length - 1 - rowIndex;
+            if (fromEnd >= 2) rowClass = 'row-back';
+            else if (fromEnd === 1) rowClass = 'row-mid';
+            else rowClass = 'row-front';
+          }
+
+          html += `<div class="building-row ${rowClass}">`;
+          rowBuildings.forEach((b, indexInRow) => {
+            const globalIndex = rowIndex * BUILDINGS_PER_ROW + indexInRow;
+            const isNew = globalIndex >= oldCount;
+            // 截取玩家名字（最多4個字）
+            const shortName = b.playerName.length > 4 ? b.playerName.substring(0, 4) + '..' : b.playerName;
+            html += `
+              <div class="building ${isNew ? '' : 'no-animation'}" style="${isNew ? `animation-delay: ${(globalIndex - oldCount) * 0.08}s` : ''}" title="${b.playerName}">
+                ${createCSSBuilding(b.buildingId)}
+                <div class="building-owner">${shortName}</div>
+              </div>
+            `;
+          });
+          html += '</div>';
+        });
+
+        container.innerHTML = html;
+      }
+
+      // 渲染分類統計
+      statsPanel.innerHTML = '';
+      if (cityBuildings && cityBuildings.categories) {
+        for (const [catId, cat] of Object.entries(cityBuildings.categories)) {
+          if (cat.count === 0) continue;
+
+          const badge = document.createElement('div');
+          badge.className = 'category-badge';
+          badge.innerHTML = `
+            <span class="emoji">${cat.emoji}</span>
+            <span>${cat.name}</span>
+            <span class="count">${cat.count}</span>
+          `;
+          statsPanel.appendChild(badge);
+        }
+      }
+    }
+
+    // 渲染排行榜
+    function renderLeaderboard(leaderboard, targetId = 'leaderboard') {
+      const list = document.getElementById(targetId);
+      if (!leaderboard || leaderboard.length === 0) {
+        list.innerHTML = '<p style="color: rgba(255,255,255,0.5); text-align: center; padding: 20px;">等待玩家加入...</p>';
+        return;
+      }
+
+      list.innerHTML = leaderboard.slice(0, 10).map((player, index) => `
+        <div class="leaderboard-item">
+          <div class="rank rank-${index + 1}">${index + 1}</div>
+          <div class="player-info">
+            <div class="player-name">${player.name}</div>
+            <div class="player-buildings">${player.buildingCount || 0} 棟建築</div>
+          </div>
+          <div class="player-score">${player.score}</div>
+        </div>
+      `).join('');
+    }
+
+    // 事件自動隱藏計時器
+    let eventAutoHideTimer = null;
+
+    // 顯示事件
+    function showEvent(event) {
+      const panel = document.getElementById('event-panel');
+      const typeMap = {
+        'BOOM': '景氣繁榮',
+        'RECESSION': '景氣衰退',
+        'DISASTER': '災難事件',
+        'POLICY': '政策利多',
+        'SPECIAL': '特殊事件'
+      };
+
+      document.getElementById('event-icon').textContent = event.emoji || '📢';
+      document.getElementById('event-type').textContent = typeMap[event.type] || '事件';
+      document.getElementById('event-title').textContent = event.title;
+      document.getElementById('event-description').textContent = event.description;
+
+      const effectsEl = document.getElementById('event-effects');
+      effectsEl.textContent = event.display?.affected || '--';
+      effectsEl.className = `effect-text ${event.display?.mood || ''}`;
+
+      panel.classList.add('show');
+
+      // 清除舊計時器並設定新的自動隱藏（8秒後）
+      if (eventAutoHideTimer) {
+        clearTimeout(eventAutoHideTimer);
+      }
+      eventAutoHideTimer = setTimeout(() => {
+        hideEvent();
+      }, 8000);
+    }
+
+    // 隱藏事件
+    function hideEvent() {
+      document.getElementById('event-panel').classList.remove('show');
+      if (eventAutoHideTimer) {
+        clearTimeout(eventAutoHideTimer);
+        eventAutoHideTimer = null;
+      }
+    }
+
+    // 事件處理
+    function handleGameStarted(data) {
+      document.getElementById('waiting-overlay').classList.add('hidden');
+      updateStatusBadge('BUILDING');
+    }
+
+    function handleBuildingPhase(data) {
+      hideEvent();
+      updateStatusBadge('BUILDING');
+      // 重新取得完整狀態（包含建築列表）
+      fetchGameState();
+    }
+
+    function handleBuildingPurchased(data) {
+      // 重新渲染建築（使用建築列表）
+      renderCityBuildings(data.cityBuildings, data.cityBuildingList);
+
+      // 更新建築總數
+      const total = data.cityBuildingList ? data.cityBuildingList.length : 0;
+      document.getElementById('total-buildings').textContent = total;
+    }
+
+    function handleEventTriggered(data) {
+      updateStatusBadge('EVENT');
+      showEvent(data.event);
+      // 重新取得完整狀態（包含建築列表）
+      fetchGameState();
+      renderLeaderboard(data.leaderboard);
+    }
+
+    function handleScoreAdded(data) {
+      fetchGameState();
+    }
+
+    function handleGameEnded(data) {
+      updateStatusBadge('ENDED');
+
+      // 顯示結束畫面
+      document.getElementById('end-overlay').classList.add('show');
+
+      // 渲染最終城市（使用建築列表，含玩家名稱）
+      const finalBuildings = document.getElementById('final-buildings');
+      const buildingList = data.cityBuildingList || [];
+
+      finalBuildings.innerHTML = buildingList.map(b => {
+        const shortName = b.playerName.length > 4 ? b.playerName.substring(0, 4) + '..' : b.playerName;
+        return `
+          <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.6);">
+            ${createCSSBuilding(b.buildingId)}
+            <div class="building-owner" style="font-size: 0.6rem;">${shortName}</div>
+          </div>
+        `;
+      }).join('');
+
+      // 渲染最終排行榜
+      renderLeaderboard(data.leaderboard, 'final-leaderboard');
+    }
+
+    function handlePlayerJoined(player) {
+      fetchGameState();
+    }
+
+    function handleReset() {
+      document.getElementById('end-overlay').classList.remove('show');
+      document.getElementById('waiting-overlay').classList.remove('hidden');
+      hideEvent();
+      fetchGameState();
+    }
+
+    // 定期刷新
+    setInterval(fetchGameState, 5000);
+
+    // ========== 抽獎系統 ==========
+    let lotteryPlayers = [];       // 可抽獎的玩家列表
+    let lotteryWinners = [];       // 已中獎的玩家
+    let isSpinning = false;        // 是否正在轉動
+    let spinInterval = null;       // 轉動計時器
+    let currentPrizeIndex = 1;     // 目前獎項編號
+
+    // 開始抽獎模式
+    function startLotteryMode(players) {
+      lotteryPlayers = players.filter(p => !lotteryWinners.some(w => w.id === p.id));
+      if (lotteryPlayers.length === 0) {
+        alert('沒有可抽獎的玩家了！');
+        return;
+      }
+
+      document.getElementById('lottery-overlay').classList.add('show');
+      document.getElementById('lottery-prize-label').textContent = `第 ${currentPrizeIndex} 位幸運兒`;
+      document.getElementById('lottery-hint').textContent = '等待主持人點擊抽獎...';
+      document.getElementById('lottery-winner-display').innerHTML = '';
+
+      // 建立名字軌道
+      buildNamesTrack();
+      updateWinnersList();
+    }
+
+    // 建立名字軌道（重複多次以產生無限滾動效果）
+    function buildNamesTrack() {
+      const track = document.getElementById('lottery-names-track');
+      const repeatCount = 10; // 重複次數
+      let html = '';
+
+      for (let i = 0; i < repeatCount; i++) {
+        lotteryPlayers.forEach(player => {
+          html += `
+            <div class="lottery-name-item" data-id="${player.id}">
+              <div class="name">${player.name}</div>
+              <div class="score">${player.score} 分</div>
+            </div>
+          `;
+        });
+      }
+
+      track.innerHTML = html;
+      track.style.transform = 'translateX(0)';
+      track.classList.remove('stopping');
+    }
+
+    // 開始轉動
+    function startSpin() {
+      if (isSpinning || lotteryPlayers.length === 0) return;
+
+      isSpinning = true;
+      document.getElementById('lottery-hint').textContent = '抽獎中...';
+      document.getElementById('lottery-winner-display').innerHTML = '';
+
+      const track = document.getElementById('lottery-names-track');
+      track.classList.remove('stopping');
+
+      // 移除之前的 winner 標記
+      track.querySelectorAll('.lottery-name-item').forEach(item => {
+        item.classList.remove('winner');
+      });
+
+      let position = 0;
+      const speed = 30; // 速度（每幀移動的像素）
+      const itemWidth = 220; // 每個項目寬度（200px + 20px margin）
+
+      spinInterval = setInterval(() => {
+        position -= speed;
+        track.style.transform = `translateX(${position}px)`;
+
+        // 無限循環
+        const totalWidth = lotteryPlayers.length * itemWidth;
+        if (Math.abs(position) >= totalWidth * 3) {
+          position += totalWidth;
+        }
+      }, 16);
+    }
+
+    // 停止轉動（選中贏家）
+    function stopSpin() {
+      if (!isSpinning) return;
+
+      clearInterval(spinInterval);
+
+      // 隨機選擇一個贏家（可以加入權重）
+      const winnerIndex = Math.floor(Math.random() * lotteryPlayers.length);
+      const winner = lotteryPlayers[winnerIndex];
+
+      const track = document.getElementById('lottery-names-track');
+      const itemWidth = 220;
+      const containerCenter = 300; // 容器寬度的一半
+
+      // 計算停止位置（讓贏家在中間）
+      // 找到第5組的贏家位置
+      const targetPosition = -(winnerIndex * itemWidth + lotteryPlayers.length * 4 * itemWidth) + containerCenter - itemWidth / 2;
+
+      track.classList.add('stopping');
+      track.style.transform = `translateX(${targetPosition}px)`;
+
+      // 等待動畫完成
+      setTimeout(() => {
+        isSpinning = false;
+
+        // 標記贏家
+        const winnerItems = track.querySelectorAll(`[data-id="${winner.id}"]`);
+        winnerItems.forEach(item => item.classList.add('winner'));
+
+        // 顯示贏家
+        showWinner(winner);
+
+        // 添加到已中獎列表
+        lotteryWinners.push({
+          ...winner,
+          prizeIndex: currentPrizeIndex
+        });
+
+        // 從可抽獎列表移除
+        lotteryPlayers = lotteryPlayers.filter(p => p.id !== winner.id);
+
+        currentPrizeIndex++;
+        updateWinnersList();
+
+        // 放彩帶
+        launchConfetti();
+
+        // 更新提示
+        if (lotteryPlayers.length > 0) {
+          document.getElementById('lottery-hint').textContent = '點擊繼續抽下一位...';
+        } else {
+          document.getElementById('lottery-hint').textContent = '🎊 所有獎項已抽完！';
+        }
+
+        // 發送中獎結果到伺服器
+        socket.emit('lottery:winner', {
+          winner: winner,
+          prizeIndex: currentPrizeIndex - 1
+        });
+      }, 3000);
+    }
+
+    // 顯示贏家
+    function showWinner(winner) {
+      const display = document.getElementById('lottery-winner-display');
+      display.innerHTML = `
+        <div class="lottery-winner-name">🎉 ${winner.name} 🎉</div>
+        <div class="lottery-winner-score">積分：${winner.score} 分</div>
+      `;
+    }
+
+    // 更新已中獎列表
+    function updateWinnersList() {
+      const container = document.getElementById('lottery-winners-container');
+
+      if (lotteryWinners.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem;">尚未抽出</p>';
+        return;
+      }
+
+      container.innerHTML = lotteryWinners.map((winner, index) => {
+        let rankClass = '';
+        if (index === 0) rankClass = 'gold';
+        else if (index === 1) rankClass = 'silver';
+        else if (index === 2) rankClass = 'bronze';
+
+        return `
+          <div class="lottery-winner-item">
+            <span class="rank ${rankClass}">${index + 1}</span>
+            <span style="flex: 1; margin-left: 10px;">${winner.name}</span>
+            <span style="color: #FFD93D;">${winner.score}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 放彩帶效果
+    function launchConfetti() {
+      const container = document.getElementById('lottery-confetti');
+      const colors = ['#FFD93D', '#FF6B9D', '#4FC3F7', '#6BCB77', '#FF6B6B', '#C86BFA'];
+
+      for (let i = 0; i < 100; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-piece';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 0.5 + 's';
+        container.appendChild(confetti);
+
+        setTimeout(() => confetti.classList.add('animate'), 10);
+
+        // 清理
+        setTimeout(() => confetti.remove(), 3500);
+      }
+    }
+
+    // 關閉抽獎模式
+    function closeLotteryMode() {
+      document.getElementById('lottery-overlay').classList.remove('show');
+    }
+
+    // 重置抽獎
+    function resetLottery() {
+      lotteryWinners = [];
+      currentPrizeIndex = 1;
+      isSpinning = false;
+      if (spinInterval) clearInterval(spinInterval);
+    }
+
+    // 監聽抽獎事件（從主持人端）
+    socket.on('lottery:start', (data) => {
+      resetLottery();
+      startLotteryMode(data.players);
+    });
+
+    socket.on('lottery:spin', () => {
+      if (!isSpinning && lotteryPlayers.length > 0) {
+        startSpin();
+      }
+    });
+
+    socket.on('lottery:stop', () => {
+      if (isSpinning) {
+        stopSpin();
+      }
+    });
+
+    socket.on('lottery:next', () => {
+      if (!isSpinning && lotteryPlayers.length > 0) {
+        document.getElementById('lottery-prize-label').textContent = `第 ${currentPrizeIndex} 位幸運兒`;
+        document.getElementById('lottery-winner-display').innerHTML = '';
+        buildNamesTrack();
+      }
+    });
+
+    socket.on('lottery:close', () => {
+      closeLotteryMode();
+    });
+
+    // ========== 新版頒獎典禮（依排名順序） ==========
+    let awardPlayers = [];        // 所有玩家（依排名）
+    let awardWinners = [];        // 已頒獎的得獎者
+    let awardPrizeCount = 0;      // 總獎品數
+    let currentAwardRank = 0;     // 目前頒到第幾名
+    let isRevealing = false;      // 是否正在揭曉動畫中
+
+    // 開始頒獎典禮
+    socket.on('award:start', (data) => {
+      console.log('Award ceremony started', data);
+      awardPlayers = data.players;
+      awardPrizeCount = data.prizeCount;
+      awardWinners = [];
+      currentAwardRank = 0;
+      isRevealing = false;
+
+      // 顯示頒獎畫面
+      document.getElementById('lottery-overlay').classList.add('show');
+      document.getElementById('lottery-prize-label').textContent = `🏆 頒獎典禮 - 共 ${awardPrizeCount} 份獎品`;
+      document.getElementById('lottery-hint').textContent = '等待主持人揭曉得獎者...';
+      document.getElementById('lottery-winner-display').innerHTML = '';
+
+      // 建立名字軌道（用於動畫）
+      buildAwardTrack();
+      updateAwardWinnersList();
+    });
+
+    // 揭曉得獎者
+    socket.on('award:reveal', (data) => {
+      if (isRevealing) return;
+      isRevealing = true;
+
+      const { rank, winner } = data;
+      currentAwardRank = rank;
+
+      document.getElementById('lottery-hint').textContent = `正在揭曉第 ${rank} 名...`;
+
+      // 播放跑馬燈動畫，然後停在得獎者上
+      playRevealAnimation(winner, rank);
+    });
+
+    // 關閉頒獎
+    socket.on('award:close', () => {
+      document.getElementById('lottery-overlay').classList.remove('show');
+      awardPlayers = [];
+      awardWinners = [];
+      currentAwardRank = 0;
+    });
+
+    // 建立頒獎名字軌道
+    function buildAwardTrack() {
+      const track = document.getElementById('lottery-names-track');
+      const repeatCount = 10;
+      let html = '';
+
+      for (let i = 0; i < repeatCount; i++) {
+        awardPlayers.forEach((player, index) => {
+          html += `
+            <div class="lottery-name-item" data-id="${player.id}" data-rank="${index + 1}">
+              <div class="name">${player.name}</div>
+              <div class="score">${player.score} 分</div>
+            </div>
+          `;
+        });
+      }
+
+      track.innerHTML = html;
+      track.style.transform = 'translateX(0)';
+      track.classList.remove('stopping');
+    }
+
+    // 播放揭曉動畫
+    function playRevealAnimation(winner, rank) {
+      const track = document.getElementById('lottery-names-track');
+      const itemWidth = 220;
+
+      // 移除之前的 winner 標記
+      track.querySelectorAll('.lottery-name-item').forEach(item => {
+        item.classList.remove('winner');
+      });
+
+      // 先快速滾動
+      let position = 0;
+      const speed = 35;
+      track.classList.remove('stopping');
+
+      const spinDuration = 2000 + Math.random() * 1000; // 2-3秒滾動
+      const startTime = Date.now();
+
+      const animate = () => {
+        const elapsed = Date.now() - startTime;
+
+        if (elapsed < spinDuration) {
+          position -= speed;
+          track.style.transform = `translateX(${position}px)`;
+
+          // 無限循環
+          const totalWidth = awardPlayers.length * itemWidth;
+          if (Math.abs(position) >= totalWidth * 3) {
+            position += totalWidth;
+          }
+
+          requestAnimationFrame(animate);
+        } else {
+          // 停止並定位到得獎者
+          const winnerIndex = awardPlayers.findIndex(p => p.id === winner.id);
+          const containerCenter = 300;
+          const targetPosition = -(winnerIndex * itemWidth + awardPlayers.length * 4 * itemWidth) + containerCenter - itemWidth / 2;
+
+          track.classList.add('stopping');
+          track.style.transform = `translateX(${targetPosition}px)`;
+
+          // 等待動畫完成
+          setTimeout(() => {
+            // 標記得獎者
+            const winnerItems = track.querySelectorAll(`[data-id="${winner.id}"]`);
+            winnerItems.forEach(item => item.classList.add('winner'));
+
+            // 顯示得獎者資訊
+            showAwardWinner(winner, rank);
+
+            // 添加到已得獎列表
+            awardWinners.push({ ...winner, rank });
+            updateAwardWinnersList();
+
+            // 放彩帶
+            launchConfetti();
+
+            // 更新提示
+            if (currentAwardRank < awardPrizeCount) {
+              document.getElementById('lottery-hint').textContent = '等待揭曉下一位得獎者...';
+            } else {
+              document.getElementById('lottery-hint').textContent = '🎊 頒獎典禮圓滿結束！';
+            }
+
+            isRevealing = false;
+          }, 3000);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }
+
+    // 顯示得獎者
+    function showAwardWinner(winner, rank) {
+      const display = document.getElementById('lottery-winner-display');
+      let rankEmoji = '🎖️';
+      if (rank === 1) rankEmoji = '🥇';
+      else if (rank === 2) rankEmoji = '🥈';
+      else if (rank === 3) rankEmoji = '🥉';
+
+      display.innerHTML = `
+        <div class="lottery-winner-name">${rankEmoji} 第 ${rank} 名 ${rankEmoji}</div>
+        <div class="lottery-winner-name" style="font-size: 3rem; margin-top: 10px;">${winner.name}</div>
+        <div class="lottery-winner-score">積分：${winner.score} 分</div>
+      `;
+    }
+
+    // 更新已得獎列表
+    function updateAwardWinnersList() {
+      const container = document.getElementById('lottery-winners-container');
+
+      if (awardWinners.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.5); font-size: 0.9rem;">等待揭曉...</p>';
+        return;
+      }
+
+      container.innerHTML = awardWinners.map((winner) => {
+        let rankClass = '';
+        if (winner.rank === 1) rankClass = 'gold';
+        else if (winner.rank === 2) rankClass = 'silver';
+        else if (winner.rank === 3) rankClass = 'bronze';
+
+        return `
+          <div class="lottery-winner-item">
+            <span class="rank ${rankClass}">${winner.rank}</span>
+            <span style="flex: 1; margin-left: 10px;">${winner.name}</span>
+            <span style="color: #FFD93D;">${winner.score}</span>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

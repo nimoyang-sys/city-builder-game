@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>主持人控制台 - 創智動能 2026</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #6366f1;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --info: #3b82f6;
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --bg-hover: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    h1 .subtitle {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      font-weight: normal;
+      margin-top: 5px;
+    }
+
+    /* 登入區 */
+    #login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+    }
+
+    .login-form {
+      background: var(--bg-card);
+      padding: 40px;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-form h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--text-muted);
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    /* 控制台 */
+    #control-panel {
+      display: none;
+    }
+
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 1200px) {
+      .panel-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 800px) {
+      .panel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 20px;
+    }
+
+    .panel-card h3 {
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 1.1rem;
+    }
+
+    .panel-card.full-width {
+      grid-column: span 3;
+    }
+
+    @media (max-width: 1200px) {
+      .panel-card.full-width {
+        grid-column: span 2;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .panel-card.full-width {
+        grid-column: span 1;
+      }
+    }
+
+    /* 狀態顯示 */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .status-item {
+      background: var(--bg);
+      padding: 15px 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .status-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .status-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* 按鈕 */
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 5px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning);
+      color: black;
+    }
+
+    .btn-info {
+      background: var(--info);
+      color: white;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-block {
+      display: block;
+      width: 100%;
+      margin: 5px 0;
+    }
+
+    .btn-sm {
+      padding: 8px 16px;
+      font-size: 0.85rem;
+    }
+
+    /* 事件選擇區 */
+    .event-select-container {
+      margin-bottom: 15px;
+    }
+
+    .event-select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .event-select option {
+      padding: 10px;
+    }
+
+    .event-preview {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 10px;
+    }
+
+    .event-preview-title {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+    }
+
+    .event-preview-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+
+    .event-preview-effects {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .effect-tag {
+      background: var(--bg-card);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+
+    .effect-tag.positive {
+      background: rgba(16, 185, 129, 0.2);
+      color: #10b981;
+    }
+
+    .effect-tag.negative {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+    }
+
+    /* 玩家列表 - 可收合區塊 */
+    .player-list-section {
+      margin-top: 15px;
+    }
+
+    .player-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 15px;
+      background: var(--bg);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .player-list-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .player-list-header h4 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .player-list-toggle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .player-list-toggle .arrow {
+      transition: transform 0.2s;
+    }
+
+    .player-list-section.collapsed .player-list-toggle .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .player-list-section.collapsed .player-list {
+      display: none;
+    }
+
+    /* 玩家網格 */
+    .player-list {
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 10px;
+      background: var(--bg);
+      border-radius: 0 0 8px 8px;
+      margin-top: 2px;
+    }
+
+    .player-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    .player-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+    }
+
+    .player-chip:hover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .player-chip.selected {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--primary);
+    }
+
+    .player-chip .rank {
+      width: 20px;
+      height: 20px;
+      background: var(--bg);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .player-chip .rank.top-3 {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: black;
+    }
+
+    .player-chip .name {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 500;
+    }
+
+    .player-chip .score {
+      color: var(--primary);
+      font-weight: bold;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .player-chip .check {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.7rem;
+    }
+
+    .player-chip.selected .check {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    /* 已選玩家顯示區 */
+    .selected-players-display {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      min-height: 32px;
+    }
+
+    .selected-player-tag {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: var(--primary);
+      color: white;
+      border-radius: 20px;
+      font-size: 0.8rem;
+    }
+
+    .selected-player-tag .remove {
+      cursor: pointer;
+      opacity: 0.7;
+      font-size: 0.9rem;
+    }
+
+    .selected-player-tag .remove:hover {
+      opacity: 1;
+    }
+
+    .no-selection {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 6px 0;
+    }
+
+    /* 加分區 */
+    .score-add-section {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+    }
+
+    .score-add-section h4 {
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    .score-input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .score-input-row input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-card);
+      color: var(--text);
+      font-size: 1rem;
+    }
+
+    .score-input-row input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .score-presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .score-preset-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-card);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .score-preset-btn:hover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.1);
+    }
+
+    .score-preset-btn.active {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+
+    .selected-players-info {
+      background: rgba(99, 102, 241, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+    }
+
+    /* 事件結算明細 */
+    .settlement-panel {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      display: none;
+    }
+
+    .settlement-panel.show {
+      display: block;
+    }
+
+    .settlement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .settlement-header h4 {
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .settlement-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .settlement-close:hover {
+      color: var(--danger);
+    }
+
+    .settlement-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .settlement-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .settlement-item:last-child {
+      border-bottom: none;
+    }
+
+    .settlement-item .player-name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .settlement-item .income-detail {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+
+    .settlement-item .income {
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .settlement-item .income.negative {
+      color: var(--danger);
+    }
+
+    .settlement-item .coins, .settlement-item .score {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .settlement-total {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 2px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+    }
+
+    /* 事件日誌 */
+    .event-log {
+      max-height: 250px;
+      overflow-y: auto;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px;
+    }
+
+    .log-item {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.85rem;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .log-time {
+      color: var(--text-muted);
+      margin-right: 10px;
+      font-size: 0.75rem;
+    }
+
+    .log-item.success {
+      color: var(--success);
+    }
+
+    .log-item.error {
+      color: var(--danger);
+    }
+
+    .log-item.warning {
+      color: var(--warning);
+    }
+
+    /* 抽獎區 */
+    .lottery-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    /* 城市統計 */
+    .city-stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    @media (max-width: 600px) {
+      .city-stats {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .city-stat-item {
+      background: var(--bg);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .city-stat-emoji {
+      font-size: 1.5rem;
+    }
+
+    .city-stat-count {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: var(--primary);
+    }
+
+    .city-stat-name {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    /* 動畫 */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    /* 滾動條 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <!-- 登入畫面 -->
+  <div id="login-screen">
+    <div class="login-form">
+      <h2>🎮 主持人登入</h2>
+      <form id="login-form">
+        <div class="form-group">
+          <label>密碼</label>
+          <input type="password" id="host-password" placeholder="請輸入主持人密碼" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">登入</button>
+      </form>
+      <p style="text-align: center; margin-top: 15px; color: var(--text-muted); font-size: 0.9rem;">
+        預設密碼：banquet2024
+      </p>
+    </div>
+  </div>
+
+  <!-- 控制台 -->
+  <div id="control-panel" class="container">
+    <h1>
+      🏙️ 創智動能 2026 城市建設
+      <span class="subtitle">主持人控制台</span>
+    </h1>
+
+    <div class="panel-grid">
+      <!-- 遊戲狀態 -->
+      <div class="panel-card">
+        <h3>📊 遊戲狀態</h3>
+        <div class="status-grid">
+          <div class="status-item">
+            <div class="status-value" id="status-state">等待中</div>
+            <div class="status-label">目前狀態</div>
+          </div>
+          <div class="status-item">
+            <div class="status-value" id="status-players">0</div>
+            <div class="status-label">玩家人數</div>
+          </div>
+          <div class="status-item">
+            <div class="status-value" id="status-buildings">0</div>
+            <div class="status-label">建築總數</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 遊戲控制 -->
+      <div class="panel-card">
+        <h3>🎯 遊戲控制</h3>
+        <button class="btn btn-primary btn-block" id="btn-assign-roles" onclick="assignRoles()">
+          🎭 分配角色
+        </button>
+        <button class="btn btn-success btn-block" id="btn-start" onclick="startGame()">
+          ▶️ 開始遊戲
+        </button>
+        <button class="btn btn-danger btn-block" id="btn-end" onclick="endGame()" disabled>
+          🏁 結束遊戲
+        </button>
+        <button class="btn btn-warning btn-block" id="btn-reset" onclick="resetGame()">
+          🔄 重置遊戲
+        </button>
+        <p style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">
+          遊戲開始後玩家可隨時建築<br>發布事件 = 回合結算
+        </p>
+      </div>
+
+      <!-- 事件發布 -->
+      <div class="panel-card">
+        <h3>📢 發布事件</h3>
+        <button class="btn btn-warning btn-block" id="btn-random-event" onclick="triggerRandomEvent()" style="margin-bottom: 15px;">
+          🎲 隨機發布事件
+        </button>
+        <div class="event-select-container">
+          <select class="event-select" id="event-select" onchange="previewEvent()">
+            <option value="">-- 或選擇指定事件 --</option>
+          </select>
+        </div>
+        <div class="event-preview" id="event-preview" style="display: none;">
+          <div class="event-preview-title" id="preview-title"></div>
+          <div class="event-preview-desc" id="preview-desc"></div>
+          <div class="event-preview-effects" id="preview-effects"></div>
+        </div>
+        <button class="btn btn-primary btn-block" id="btn-trigger-event" onclick="triggerSelectedEvent()" disabled>
+          📣 發布選定事件
+        </button>
+
+        <!-- 結算明細 -->
+        <div class="settlement-panel" id="settlement-panel">
+          <div class="settlement-header">
+            <h4>📊 本次結算明細</h4>
+            <button class="settlement-close" onclick="hideSettlement()">✕</button>
+          </div>
+          <div class="settlement-event-info" id="settlement-event-info"></div>
+          <div class="settlement-list" id="settlement-list">
+            <!-- 動態生成 -->
+          </div>
+          <div class="settlement-total" id="settlement-total"></div>
+        </div>
+      </div>
+
+      <!-- 玩家列表與加分 -->
+      <div class="panel-card" style="grid-column: span 2;">
+        <h3>👥 玩家管理</h3>
+
+        <div class="score-add-section">
+          <h4>🎮 小遊戲加分</h4>
+
+          <!-- 已選玩家顯示 -->
+          <div class="selected-players-info" id="selected-info">
+            已選擇 <strong id="selected-count">0</strong> 位玩家
+            <div class="selected-players-display" id="selected-display">
+              <span class="no-selection">點擊下方玩家來選擇</span>
+            </div>
+          </div>
+
+          <!-- 分數設定 -->
+          <div class="score-presets">
+            <button class="score-preset-btn" onclick="setScoreAmount(50)">+50</button>
+            <button class="score-preset-btn" onclick="setScoreAmount(100)">+100</button>
+            <button class="score-preset-btn" onclick="setScoreAmount(200)">+200</button>
+            <button class="score-preset-btn" onclick="setScoreAmount(500)">+500</button>
+            <button class="score-preset-btn" onclick="setScoreAmount(1000)">+1000</button>
+          </div>
+          <div class="score-input-row">
+            <input type="number" id="score-amount" placeholder="自訂分數" value="100">
+            <input type="text" id="score-reason" placeholder="原因（選填）" value="小遊戲獎勵">
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-success" style="flex: 1;" onclick="addScoreToSelected()">
+              ✨ 為選中玩家加分
+            </button>
+            <button class="btn btn-info btn-sm" onclick="selectAllPlayers()">全選</button>
+            <button class="btn btn-sm" style="background: var(--border);" onclick="deselectAllPlayers()">取消</button>
+          </div>
+        </div>
+
+        <!-- 可收合玩家列表 -->
+        <div class="player-list-section" id="player-list-section">
+          <div class="player-list-header" onclick="togglePlayerListSection()">
+            <h4>📋 玩家列表 (<span id="player-total">0</span>人)</h4>
+            <span class="player-list-toggle">
+              點擊展開/收合 <span class="arrow">▼</span>
+            </span>
+          </div>
+          <div class="player-list" id="player-list">
+            <p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 城市建築統計 -->
+      <div class="panel-card">
+        <h3>🏘️ 城市建築</h3>
+        <div class="city-stats" id="city-stats">
+          <p style="color: var(--text-muted); text-align: center; grid-column: span 5;">尚無建築</p>
+        </div>
+      </div>
+
+      <!-- 限時搶購控制 -->
+      <div class="panel-card">
+        <h3>⚡ 限時搶購</h3>
+        <div id="flash-sale-control">
+          <div class="form-group">
+            <label>選擇建築</label>
+            <select id="flash-sale-building" class="event-select">
+              <!-- 動態填充 -->
+            </select>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>特價金額</label>
+              <input type="number" id="flash-sale-price" value="100" min="1" style="width: 100%;">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label>數量</label>
+              <input type="number" id="flash-sale-quantity" value="3" min="1" max="20" style="width: 100%;">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>持續時間（秒）</label>
+            <input type="number" id="flash-sale-duration" value="60" min="10" max="300" style="width: 100%;">
+          </div>
+          <button class="btn btn-danger btn-block" id="btn-flash-sale-start" onclick="startFlashSale()">
+            ⚡ 開始限時搶購
+          </button>
+        </div>
+        <div id="flash-sale-active" style="display: none;">
+          <div style="background: var(--bg); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <span style="font-weight: bold;">進行中的搶購</span>
+              <span id="flash-sale-timer" style="color: var(--warning); font-weight: bold;">--</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span id="flash-sale-item-display" style="font-size: 1.5rem;"></span>
+              <div>
+                <div id="flash-sale-name-display" style="font-weight: bold;"></div>
+                <div style="font-size: 0.9rem;">
+                  <span style="color: var(--text-muted); text-decoration: line-through;" id="flash-sale-original"></span>
+                  <span style="color: var(--success); margin-left: 5px;" id="flash-sale-discount"></span>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top: 10px; text-align: center;">
+              剩餘：<span id="flash-sale-remaining" style="color: var(--warning); font-weight: bold;">0</span> / <span id="flash-sale-total">0</span>
+            </div>
+          </div>
+          <button class="btn btn-warning btn-block" onclick="endFlashSale()">
+            ⏹️ 結束搶購
+          </button>
+        </div>
+      </div>
+
+      <!-- 頒獎控制 -->
+      <div class="panel-card">
+        <h3>🏆 頒獎典禮（依積分排名）</h3>
+        <p id="lottery-hint" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px;">
+          需先「結束遊戲」才能進行頒獎
+        </p>
+
+        <!-- 獎品數量設定 -->
+        <div id="prize-count-section" style="margin-bottom: 15px;">
+          <label style="display: block; margin-bottom: 5px; color: var(--text-muted);">獎品數量（前幾名得獎）</label>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <input type="number" id="prize-count" min="1" max="100" value="10"
+                   style="width: 80px; padding: 8px; border: 2px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); font-size: 1rem;">
+            <span style="color: var(--text-muted);">位</span>
+          </div>
+        </div>
+
+        <div class="lottery-controls">
+          <button class="btn btn-primary" onclick="startAwardCeremony()" id="btn-lottery-start" disabled>
+            🎉 開始頒獎
+          </button>
+          <button class="btn btn-warning" onclick="revealNextWinner()" id="btn-lottery-next" disabled style="display: none;">
+            🎊 揭曉下一位得獎者
+          </button>
+          <button class="btn btn-danger" onclick="closeAwardCeremony()" id="btn-lottery-close" style="display: none;">
+            ❌ 結束頒獎
+          </button>
+        </div>
+        <div id="lottery-status" style="margin-top: 15px; display: none;">
+          <p style="color: var(--info);">🎯 頒獎進行中... <span id="award-progress"></span></p>
+          <div id="lottery-winners-list" style="margin-top: 10px; max-height: 200px; overflow-y: auto; font-size: 0.9rem;"></div>
+        </div>
+      </div>
+
+      <!-- 事件日誌 -->
+      <div class="panel-card full-width">
+        <h3>📝 事件日誌</h3>
+        <div class="event-log" id="event-log">
+          <div class="log-item">
+            <span class="log-time">[系統]</span>
+            <span>主持人控制台已就緒</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let socket = null;
+    let isHost = false;
+    let events = [];
+    let players = [];
+    let selectedPlayers = new Set();
+    let gameState = null;
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+      socket = io();
+
+      socket.on('connect', () => {
+        addLog('已連線到伺服器');
+      });
+
+      socket.on('disconnect', () => {
+        addLog('連線中斷', 'error');
+      });
+
+      // 主持人事件
+      socket.on('host:registered', handleHostRegistered);
+      socket.on('host:error', (data) => {
+        alert(data.error);
+        addLog(data.error, 'error');
+      });
+      socket.on('host:result', (result) => {
+        if (result.success) {
+          addLog('操作成功', 'success');
+        } else {
+          addLog(result.error || '操作失敗', 'error');
+        }
+        refreshGameState();
+      });
+      socket.on('host:eventResult', (result) => {
+        if (result.success) {
+          addLog(`事件「${result.event.title}」已發布`, 'success');
+        } else {
+          addLog(result.error || '事件發布失敗', 'error');
+        }
+        refreshGameState();
+      });
+
+      // 遊戲事件
+      socket.on('game:started', handleGameStarted);
+      socket.on('game:buildingPhase', handleBuildingPhase);
+      socket.on('game:eventTriggered', handleEventTriggered);
+      socket.on('game:ended', handleGameEnded);
+      socket.on('game:playerJoined', handlePlayerJoined);
+      socket.on('game:playerLeft', handlePlayerLeft);
+      socket.on('game:reset', handleGameReset);
+      socket.on('game:buildingPurchased', handleBuildingPurchased);
+      socket.on('game:scoreAdded', handleScoreAdded);
+      socket.on('game:scoreBatchAdded', handleScoreBatchAdded);
+
+      // 抽獎事件
+      socket.on('lottery:results', handleLotteryResults);
+      socket.on('lottery:status', handleLotteryStatus);
+
+      // 角色事件
+      socket.on('game:rolesAssigned', handleRolesAssigned);
+
+      // 新版抽獎中獎事件
+      socket.on('lottery:winnerAnnounced', handleLotteryWinner);
+
+      // 限時搶購事件
+      socket.on('game:flashSaleStarted', handleFlashSaleStarted);
+      socket.on('game:flashSalePurchased', handleFlashSalePurchased);
+      socket.on('game:flashSaleEnded', handleFlashSaleEnded);
+
+      // 登入表單
+      document.getElementById('login-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const password = document.getElementById('host-password').value;
+        socket.emit('host:register', { password });
+      });
+    });
+
+    // 主持人登入成功
+    function handleHostRegistered(data) {
+      if (data.success) {
+        isHost = true;
+        events = data.events || [];
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('control-panel').style.display = 'block';
+        addLog('主持人登入成功');
+        populateEventSelect();
+        populateBuildingSelect();
+        refreshGameState();
+      } else {
+        alert(data.error || '登入失敗');
+      }
+    }
+
+    // 填充建築選擇（限時搶購用）
+    async function populateBuildingSelect() {
+      try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        const select = document.getElementById('flash-sale-building');
+
+        if (!config.buildings) return;
+
+        select.innerHTML = '';
+        for (const [id, building] of Object.entries(config.buildings)) {
+          const option = document.createElement('option');
+          option.value = id;
+          option.textContent = `${building.emoji} ${building.name} (原價 ${building.cost})`;
+          option.dataset.cost = building.cost;
+          select.appendChild(option);
+        }
+
+        // 預設特價為原價的一半
+        select.addEventListener('change', () => {
+          const selected = select.options[select.selectedIndex];
+          if (selected) {
+            const originalCost = parseInt(selected.dataset.cost);
+            document.getElementById('flash-sale-price').value = Math.floor(originalCost / 2);
+          }
+        });
+
+        // 觸發初始值
+        if (select.options.length > 0) {
+          const firstOption = select.options[0];
+          document.getElementById('flash-sale-price').value = Math.floor(parseInt(firstOption.dataset.cost) / 2);
+        }
+      } catch (error) {
+        console.error('Failed to populate building select:', error);
+      }
+    }
+
+    // 填充事件選擇下拉
+    function populateEventSelect() {
+      const select = document.getElementById('event-select');
+
+      // 按類型分組
+      const eventsByType = {};
+      events.forEach(event => {
+        if (!eventsByType[event.type]) {
+          eventsByType[event.type] = [];
+        }
+        eventsByType[event.type].push(event);
+      });
+
+      const typeNames = {
+        'BOOM': '🚀 景氣繁榮',
+        'RECESSION': '📉 經濟衰退',
+        'DISASTER': '🌊 天災',
+        'POLICY': '📜 政策',
+        'SPECIAL': '✨ 特殊事件'
+      };
+
+      for (const [type, typeEvents] of Object.entries(eventsByType)) {
+        const group = document.createElement('optgroup');
+        group.label = typeNames[type] || type;
+
+        typeEvents.forEach(event => {
+          const option = document.createElement('option');
+          option.value = event.id;
+          option.textContent = `${event.emoji || ''} ${event.title}`;
+          group.appendChild(option);
+        });
+
+        select.appendChild(group);
+      }
+    }
+
+    // 預覽事件
+    function previewEvent() {
+      const select = document.getElementById('event-select');
+      const preview = document.getElementById('event-preview');
+      const eventId = select.value;
+
+      if (!eventId) {
+        preview.style.display = 'none';
+        document.getElementById('btn-trigger-event').disabled = true;
+        return;
+      }
+
+      const event = events.find(e => e.id === eventId);
+      if (!event) return;
+
+      preview.style.display = 'block';
+      document.getElementById('preview-title').textContent = `${event.emoji || ''} ${event.title}`;
+      document.getElementById('preview-desc').textContent = event.description;
+
+      const effectsHtml = event.effects.map(effect => {
+        if (effect.building) {
+          const multiplier = effect.multiplier;
+          const isPositive = multiplier > 1;
+          const percent = isPositive
+            ? `+${Math.round((multiplier - 1) * 100)}%`
+            : `-${Math.round((1 - multiplier) * 100)}%`;
+          return `<span class="effect-tag ${isPositive ? 'positive' : 'negative'}">${effect.building}: ${percent}</span>`;
+        }
+        if (effect.type === 'all_multiplier') {
+          const isPositive = effect.multiplier > 1;
+          const percent = isPositive
+            ? `+${Math.round((effect.multiplier - 1) * 100)}%`
+            : `-${Math.round((1 - effect.multiplier) * 100)}%`;
+          return `<span class="effect-tag ${isPositive ? 'positive' : 'negative'}">全體: ${percent}</span>`;
+        }
+        if (effect.type === 'bonus_coins') {
+          return `<span class="effect-tag positive">+${effect.amount} 金幣</span>`;
+        }
+        if (effect.type === 'bonus_score') {
+          return `<span class="effect-tag positive">+${effect.amount} 分數</span>`;
+        }
+        return '';
+      }).join('');
+
+      document.getElementById('preview-effects').innerHTML = effectsHtml;
+      document.getElementById('btn-trigger-event').disabled = false;
+    }
+
+    // 刷新遊戲狀態
+    async function refreshGameState() {
+      try {
+        const response = await fetch('/api/game/state');
+        gameState = await response.json();
+        updateStatusDisplay(gameState);
+      } catch (error) {
+        console.error('Failed to fetch game state:', error);
+      }
+    }
+
+    // 更新狀態顯示
+    function updateStatusDisplay(state) {
+      const stateNames = {
+        'WAITING': '等待中',
+        'BUILDING': '建設中',
+        'EVENT': '事件結算',
+        'ENDED': '已結束'
+      };
+
+      document.getElementById('status-state').textContent = stateNames[state.state] || state.state;
+      document.getElementById('status-players').textContent = state.playerCount || 0;
+      document.getElementById('status-buildings').textContent = state.totalBuildings || 0;
+
+      // 更新按鈕狀態
+      const isWaiting = state.state === 'WAITING';
+      const isEnded = state.state === 'ENDED';
+      const isPlaying = state.state === 'BUILDING' || state.state === 'EVENT';
+
+      document.getElementById('btn-start').disabled = !isWaiting;
+      document.getElementById('btn-end').disabled = !isPlaying;
+      // 更新抽獎按鈕狀態
+      if (!lotteryActive) {
+        document.getElementById('btn-lottery-start').disabled = !isEnded;
+      }
+
+      // 更新抽獎提示
+      const lotteryHint = document.getElementById('lottery-hint');
+      if (isEnded) {
+        const playerCount = state.playerCount || 0;
+        if (playerCount > 0) {
+          lotteryHint.textContent = `✅ 可以開始抽獎！共 ${playerCount} 位玩家參與`;
+          lotteryHint.style.color = 'var(--success)';
+        } else {
+          lotteryHint.textContent = '⚠️ 沒有玩家參與，無法抽獎';
+          lotteryHint.style.color = 'var(--warning)';
+        }
+      } else {
+        lotteryHint.textContent = '需先「結束遊戲」才能進行抽獎';
+        lotteryHint.style.color = 'var(--text-muted)';
+      }
+
+      // 更新排行榜
+      if (state.leaderboard) {
+        players = state.leaderboard;
+        updatePlayerList(state.leaderboard);
+      }
+
+      // 更新城市建築統計
+      if (state.cityBuildings && state.cityBuildings.stats) {
+        updateCityStats(state.cityBuildings.stats);
+      }
+    }
+
+    // 更新城市統計
+    function updateCityStats(stats) {
+      const container = document.getElementById('city-stats');
+      const entries = Object.entries(stats);
+
+      if (entries.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-muted); text-align: center; grid-column: span 5;">尚無建築</p>';
+        return;
+      }
+
+      container.innerHTML = entries.map(([id, info]) => `
+        <div class="city-stat-item">
+          <div class="city-stat-emoji">${info.emoji}</div>
+          <div class="city-stat-count">${info.count}</div>
+          <div class="city-stat-name">${info.name}</div>
+        </div>
+      `).join('');
+    }
+
+    // 更新玩家列表 - 網格式佈局
+    function updatePlayerList(leaderboard) {
+      const list = document.getElementById('player-list');
+      const totalSpan = document.getElementById('player-total');
+
+      if (!leaderboard || leaderboard.length === 0) {
+        list.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>';
+        totalSpan.textContent = '0';
+        return;
+      }
+
+      totalSpan.textContent = leaderboard.length;
+
+      list.innerHTML = `
+        <div class="player-grid">
+          ${leaderboard.map((player, index) => `
+            <div class="player-chip ${selectedPlayers.has(player.id) ? 'selected' : ''}"
+                 onclick="togglePlayerSelection('${player.id}')"
+                 title="${player.name} - ${player.score}分 - 🏠${player.buildingCount || 0}${player.role ? ` - ${player.role.name}` : ''}">
+              <span class="rank ${index < 3 ? 'top-3' : ''}">${index + 1}</span>
+              ${player.role ? `<span style="font-size: 1rem;">${player.role.emoji}</span>` : ''}
+              <span class="name">${player.name}</span>
+              <span class="score">${player.score}</span>
+              <span class="check">${selectedPlayers.has(player.id) ? '✓' : ''}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      document.getElementById('status-players').textContent = leaderboard.length;
+      updateSelectedInfo();
+    }
+
+    // 切換玩家選擇
+    function togglePlayerSelection(playerId) {
+      if (selectedPlayers.has(playerId)) {
+        selectedPlayers.delete(playerId);
+      } else {
+        selectedPlayers.add(playerId);
+      }
+      updatePlayerList(players);
+    }
+
+    // 全選玩家
+    function selectAllPlayers() {
+      players.forEach(p => selectedPlayers.add(p.id));
+      updatePlayerList(players);
+    }
+
+    // 取消全選
+    function deselectAllPlayers() {
+      selectedPlayers.clear();
+      updatePlayerList(players);
+    }
+
+    // 切換玩家列表展開/收合
+    function togglePlayerListSection() {
+      const section = document.getElementById('player-list-section');
+      section.classList.toggle('collapsed');
+    }
+
+    // 更新選中資訊與已選玩家標籤
+    function updateSelectedInfo() {
+      document.getElementById('selected-count').textContent = selectedPlayers.size;
+
+      const display = document.getElementById('selected-display');
+      if (selectedPlayers.size === 0) {
+        display.innerHTML = '<span class="no-selection">點擊下方玩家來選擇</span>';
+        return;
+      }
+
+      const selectedList = players.filter(p => selectedPlayers.has(p.id));
+      display.innerHTML = selectedList.map(p => `
+        <span class="selected-player-tag">
+          ${p.name}
+          <span class="remove" onclick="event.stopPropagation(); removeSelectedPlayer('${p.id}')">✕</span>
+        </span>
+      `).join('');
+    }
+
+    // 移除單一已選玩家
+    function removeSelectedPlayer(playerId) {
+      selectedPlayers.delete(playerId);
+      updatePlayerList(players);
+    }
+
+    // 設定分數數量
+    function setScoreAmount(amount) {
+      document.getElementById('score-amount').value = amount;
+      document.querySelectorAll('.score-preset-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent === `+${amount}`) {
+          btn.classList.add('active');
+        }
+      });
+    }
+
+    // 為選中玩家加分
+    function addScoreToSelected() {
+      if (selectedPlayers.size === 0) {
+        alert('請先選擇玩家');
+        return;
+      }
+
+      const amount = parseInt(document.getElementById('score-amount').value);
+      const reason = document.getElementById('score-reason').value || '小遊戲獎勵';
+
+      if (isNaN(amount) || amount <= 0) {
+        alert('請輸入有效的分數');
+        return;
+      }
+
+      const playerIds = Array.from(selectedPlayers);
+
+      if (confirm(`確定要為 ${playerIds.length} 位玩家各加 ${amount} 分嗎？\n原因：${reason}`)) {
+        socket.emit('host:addScoreBatch', { playerIds, amount, reason });
+        addLog(`為 ${playerIds.length} 位玩家加分 +${amount}（${reason}）`, 'success');
+        selectedPlayers.clear();
+        updatePlayerList(players);
+      }
+    }
+
+    // 事件處理
+    function handleGameStarted(data) {
+      addLog(`遊戲開始！共 ${data.playerCount} 位玩家`, 'success');
+      refreshGameState();
+    }
+
+    function handleBuildingPhase(data) {
+      addLog('進入建設階段', 'success');
+      refreshGameState();
+    }
+
+    function handleEventTriggered(data) {
+      addLog(`事件「${data.event.title}」已結算，影響 ${data.results.length} 位玩家`);
+      showSettlement(data.event, data.results);
+      refreshGameState();
+    }
+
+    // 顯示結算明細
+    function showSettlement(event, results) {
+      const panel = document.getElementById('settlement-panel');
+      const eventInfo = document.getElementById('settlement-event-info');
+      const list = document.getElementById('settlement-list');
+      const total = document.getElementById('settlement-total');
+
+      // 顯示事件資訊
+      eventInfo.innerHTML = `
+        <div style="margin-bottom: 10px; padding: 10px; background: var(--bg-card); border-radius: 8px;">
+          <div style="font-size: 1.1rem; margin-bottom: 5px;">${event.emoji || '📢'} ${event.title}</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">${event.display?.affected || ''}</div>
+        </div>
+      `;
+
+      // 按營收排序
+      const sortedResults = [...results].sort((a, b) => b.income - a.income);
+
+      // 計算總營收
+      const totalIncome = results.reduce((sum, r) => sum + r.income, 0);
+
+      // 生成列表
+      list.innerHTML = sortedResults.map((r, index) => {
+        const incomeClass = r.income > 0 ? '' : (r.income < 0 ? 'negative' : '');
+        const incomeSign = r.income >= 0 ? '+' : '';
+        return `
+          <div class="settlement-item">
+            <span class="player-name">
+              <span style="color: var(--text-muted); margin-right: 5px;">#${index + 1}</span>
+              ${r.playerName}
+              ${r.luckyTriggered ? '<span style="color: var(--warning);" title="幸運觸發">🍀</span>' : ''}
+              ${r.itemIncomeBonus ? '<span style="color: var(--info);" title="道具加成">📦</span>' : ''}
+            </span>
+            <span class="income-detail">
+              <span class="income ${incomeClass}">${incomeSign}${r.income}</span>
+              <span class="coins" title="金幣">💰 ${r.newCoins}</span>
+              <span class="score" title="貢獻分">⭐ ${r.newScore}</span>
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      // 總計
+      total.innerHTML = `
+        <span>共 ${results.length} 位玩家</span>
+        <span style="color: var(--success);">總營收 +${totalIncome}</span>
+      `;
+
+      panel.classList.add('show');
+    }
+
+    // 隱藏結算明細
+    function hideSettlement() {
+      document.getElementById('settlement-panel').classList.remove('show');
+    }
+
+    function handleGameEnded(data) {
+      addLog('遊戲結束！', 'warning');
+      refreshGameState();
+    }
+
+    function handlePlayerJoined(player) {
+      addLog(`玩家加入：${player.name}`);
+      refreshGameState();
+    }
+
+    function handlePlayerLeft(data) {
+      addLog(`玩家離線：${data.id}`);
+      refreshGameState();
+    }
+
+    function handleGameReset() {
+      addLog('遊戲已重置', 'warning');
+      selectedPlayers.clear();
+      refreshGameState();
+    }
+
+    function handleBuildingPurchased(data) {
+      addLog(`${data.playerName} 建造了 ${data.building.emoji} ${data.building.name}`);
+      refreshGameState();
+    }
+
+    function handleScoreAdded(data) {
+      addLog(`${data.playerName} 獲得 +${data.amount} 分（${data.reason}）`, 'success');
+    }
+
+    function handleScoreBatchAdded(data) {
+      addLog(`${data.playerIds.length} 位玩家獲得 +${data.amount} 分（${data.reason}）`, 'success');
+      refreshGameState();
+    }
+
+    function handleLotteryResults(results) {
+      addLog(`抽獎完成，共 ${results.length} 位得獎者`, 'success');
+
+      // 顯示結果區域
+      const resultsContainer = document.getElementById('lottery-results');
+      const resultsList = document.getElementById('lottery-results-list');
+      resultsContainer.style.display = 'block';
+
+      let html = '';
+      results.forEach(result => {
+        if (result.success) {
+          addLog(`🎉 ${result.record.player.name} 獲得 ${result.prize.name}`);
+          html += `<div style="padding: 8px; margin-bottom: 5px; background: var(--bg); border-radius: 8px; display: flex; justify-content: space-between;">
+            <span>${result.record.player.name}</span>
+            <span style="color: var(--success);">🎁 ${result.prize.name}</span>
+          </div>`;
+        } else {
+          html += `<div style="padding: 8px; margin-bottom: 5px; background: var(--bg); border-radius: 8px; color: var(--text-muted);">
+            ${result.player?.name || '未知玩家'} - 無獎品可抽
+          </div>`;
+        }
+      });
+
+      if (results.length === 0) {
+        html = '<p style="color: var(--text-muted); text-align: center;">沒有抽獎結果</p>';
+      }
+
+      resultsList.innerHTML = html;
+    }
+
+    function handleLotteryStatus(status) {
+      console.log('Lottery status:', status);
+    }
+
+    // 角色分配處理
+    function handleRolesAssigned(data) {
+      addLog(`角色分配完成！共 ${data.assignments.length} 位玩家`, 'success');
+      data.assignments.forEach(a => {
+        addLog(`${a.playerName} → ${a.role.emoji} ${a.role.name}`);
+      });
+      refreshGameState();
+    }
+
+    // 分配角色
+    function assignRoles() {
+      if (players.length === 0) {
+        alert('目前沒有玩家，無法分配角色');
+        return;
+      }
+      if (confirm(`確定要為 ${players.length} 位玩家隨機分配角色嗎？`)) {
+        socket.emit('host:assignRoles');
+        addLog('正在分配角色...');
+      }
+    }
+
+    // 控制函數
+    function startGame() {
+      if (confirm('確定要開始遊戲嗎？')) {
+        socket.emit('host:startGame');
+      }
+    }
+
+    function startBuildingPhase() {
+      socket.emit('host:startBuilding');
+      addLog('開始建設階段');
+    }
+
+    function triggerRandomEvent() {
+      if (confirm('確定要隨機發布一個事件嗎？')) {
+        socket.emit('host:triggerEvent', { eventId: null });
+        addLog('發布隨機事件...');
+      }
+    }
+
+    function triggerSelectedEvent() {
+      const eventId = document.getElementById('event-select').value;
+      if (!eventId) {
+        alert('請選擇事件');
+        return;
+      }
+
+      const eventName = events.find(e => e.id === eventId)?.title || eventId;
+
+      if (confirm(`確定要發布「${eventName}」嗎？`)) {
+        socket.emit('host:triggerEvent', { eventId });
+      }
+    }
+
+    function endGame() {
+      if (confirm('確定要結束遊戲嗎？')) {
+        socket.emit('host:endGame');
+      }
+    }
+
+    function resetGame() {
+      if (confirm('確定要重置遊戲嗎？所有玩家資料將被清除！')) {
+        socket.emit('host:reset');
+      }
+    }
+
+    // ========== 頒獎典禮控制（依排名順序） ==========
+    let awardActive = false;
+    let awardWinners = [];      // 得獎者列表（依排名）
+    let currentAwardIndex = 0;  // 目前頒到第幾位
+    let totalPrizes = 0;        // 總獎品數
+
+    function startAwardCeremony() {
+      // 檢查是否有玩家
+      if (!players || players.length === 0) {
+        alert('沒有玩家參與，無法進行頒獎！');
+        return;
+      }
+
+      const prizeCount = parseInt(document.getElementById('prize-count').value) || 10;
+      if (prizeCount < 1) {
+        alert('獎品數量至少要 1 份！');
+        return;
+      }
+
+      const actualPrizeCount = Math.min(prizeCount, players.length);
+      if (actualPrizeCount < prizeCount) {
+        alert(`玩家人數不足，將頒發 ${actualPrizeCount} 份獎品`);
+      }
+
+      if (confirm(`確定要開始頒獎嗎？\n將頒發前 ${actualPrizeCount} 名的獎品`)) {
+        // 依積分排序玩家
+        const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
+        awardWinners = sortedPlayers.slice(0, actualPrizeCount);
+        totalPrizes = actualPrizeCount;
+        currentAwardIndex = 0;
+
+        // 發送給投影畫面
+        socket.emit('host:awardStart', {
+          players: sortedPlayers,
+          prizeCount: actualPrizeCount
+        });
+
+        awardActive = true;
+        updateAwardButtons('ready');
+
+        document.getElementById('prize-count-section').style.display = 'none';
+        document.getElementById('lottery-status').style.display = 'block';
+        document.getElementById('lottery-winners-list').innerHTML = '';
+        updateAwardProgress();
+        addLog(`開始頒獎，共 ${actualPrizeCount} 份獎品`);
+      }
+    }
+
+    function revealNextWinner() {
+      if (!awardActive || currentAwardIndex >= totalPrizes) return;
+
+      // 發送揭曉下一位的指令
+      socket.emit('host:awardReveal', {
+        rank: currentAwardIndex + 1,
+        winner: awardWinners[currentAwardIndex]
+      });
+
+      // 本地顯示
+      const winner = awardWinners[currentAwardIndex];
+      const list = document.getElementById('lottery-winners-list');
+      const item = document.createElement('div');
+      item.style.cssText = 'padding: 8px; margin-bottom: 5px; background: var(--bg-hover); border-radius: 6px; display: flex; justify-content: space-between;';
+
+      const rank = currentAwardIndex + 1;
+      let rankEmoji = '🎖️';
+      if (rank === 1) rankEmoji = '🥇';
+      else if (rank === 2) rankEmoji = '🥈';
+      else if (rank === 3) rankEmoji = '🥉';
+
+      item.innerHTML = `
+        <span>${rankEmoji} 第 ${rank} 名：<strong>${winner.name}</strong></span>
+        <span style="color: var(--warning);">${winner.score} 分</span>
+      `;
+      list.insertBefore(item, list.firstChild);
+      addLog(`${rankEmoji} 第 ${rank} 名：${winner.name}（${winner.score} 分）`, 'success');
+
+      currentAwardIndex++;
+      updateAwardProgress();
+
+      // 檢查是否還有下一位
+      if (currentAwardIndex >= totalPrizes) {
+        updateAwardButtons('finished');
+        addLog('🎊 頒獎完成！', 'success');
+      }
+    }
+
+    function closeAwardCeremony() {
+      const message = currentAwardIndex < totalPrizes
+        ? `還有 ${totalPrizes - currentAwardIndex} 位未頒獎，確定要結束嗎？`
+        : '確定要結束頒獎典禮嗎？';
+
+      if (confirm(message)) {
+        socket.emit('host:awardClose');
+        awardActive = false;
+        awardWinners = [];
+        currentAwardIndex = 0;
+        totalPrizes = 0;
+        updateAwardButtons('closed');
+        document.getElementById('lottery-status').style.display = 'none';
+        document.getElementById('prize-count-section').style.display = 'block';
+        addLog('頒獎結束');
+      }
+    }
+
+    function updateAwardProgress() {
+      const progress = document.getElementById('award-progress');
+      progress.textContent = `(${currentAwardIndex}/${totalPrizes})`;
+    }
+
+    function updateAwardButtons(state) {
+      const btnStart = document.getElementById('btn-lottery-start');
+      const btnNext = document.getElementById('btn-lottery-next');
+      const btnClose = document.getElementById('btn-lottery-close');
+
+      // 先全部隱藏
+      btnStart.style.display = 'none';
+      btnNext.style.display = 'none';
+      btnClose.style.display = 'none';
+
+      switch (state) {
+        case 'ready': // 頒獎中，可揭曉下一位
+          btnNext.style.display = 'inline-block';
+          btnNext.disabled = false;
+          btnClose.style.display = 'inline-block';
+          break;
+        case 'finished': // 已全部頒完
+          btnClose.style.display = 'inline-block';
+          break;
+        case 'closed': // 已結束
+        default:
+          btnStart.style.display = 'inline-block';
+          btnStart.disabled = gameState !== 'ENDED';
+          break;
+      }
+    }
+
+    // 處理頒獎事件（從投影畫面回傳）
+    function handleLotteryWinner(data) {
+      // 保留相容性，但主要由本地處理
+      console.log('Award winner:', data);
+    }
+
+    // 舊版抽獎函數（保留相容性）
+    function executeLottery(type) {
+      alert('請使用新版頒獎功能');
+    }
+
+    // ========== 限時搶購控制 ==========
+    let flashSaleTimer = null;
+
+    function startFlashSale() {
+      const buildingId = document.getElementById('flash-sale-building').value;
+      const salePrice = parseInt(document.getElementById('flash-sale-price').value);
+      const quantity = parseInt(document.getElementById('flash-sale-quantity').value);
+      const duration = parseInt(document.getElementById('flash-sale-duration').value);
+
+      if (!buildingId) {
+        alert('請選擇建築');
+        return;
+      }
+
+      if (isNaN(salePrice) || salePrice < 1) {
+        alert('請輸入有效的特價金額');
+        return;
+      }
+
+      if (isNaN(quantity) || quantity < 1) {
+        alert('請輸入有效的數量');
+        return;
+      }
+
+      const selected = document.getElementById('flash-sale-building').options[
+        document.getElementById('flash-sale-building').selectedIndex
+      ];
+      const buildingName = selected.textContent;
+
+      if (confirm(`確定要開始限時搶購嗎？\n${buildingName}\n特價: ${salePrice} 金幣\n數量: ${quantity}\n持續: ${duration} 秒`)) {
+        socket.emit('host:startFlashSale', {
+          buildingId,
+          salePrice,
+          quantity,
+          duration
+        });
+        addLog(`開始限時搶購：${buildingName} x${quantity}`, 'success');
+      }
+    }
+
+    function endFlashSale() {
+      if (confirm('確定要提前結束限時搶購嗎？')) {
+        socket.emit('host:endFlashSale');
+        addLog('限時搶購已結束', 'warning');
+      }
+    }
+
+    function handleFlashSaleStarted(data) {
+      addLog(`⚡ 限時搶購開始！${data.building.emoji} ${data.building.name} ${data.salePrice}金幣 x${data.quantity}`, 'success');
+
+      // 更新 UI
+      document.getElementById('flash-sale-control').style.display = 'none';
+      document.getElementById('flash-sale-active').style.display = 'block';
+
+      document.getElementById('flash-sale-item-display').textContent = data.building.emoji;
+      document.getElementById('flash-sale-name-display').textContent = data.building.name;
+      document.getElementById('flash-sale-original').textContent = data.originalPrice + ' 金幣';
+      document.getElementById('flash-sale-discount').textContent = data.salePrice + ' 金幣 (-' + data.discount + '%)';
+      document.getElementById('flash-sale-remaining').textContent = data.remaining;
+      document.getElementById('flash-sale-total').textContent = data.quantity;
+
+      // 開始倒計時
+      startFlashSaleCountdown(data.endTime);
+    }
+
+    function handleFlashSalePurchased(data) {
+      addLog(`${data.playerName} 搶購成功！剩餘 ${data.remaining} 個`);
+      document.getElementById('flash-sale-remaining').textContent = data.remaining;
+    }
+
+    function handleFlashSaleEnded(data) {
+      addLog(`限時搶購結束！售出 ${data ? data.totalSold : 0}/${data ? data.totalQuantity : 0}`, 'warning');
+
+      // 更新 UI
+      document.getElementById('flash-sale-control').style.display = 'block';
+      document.getElementById('flash-sale-active').style.display = 'none';
+
+      if (flashSaleTimer) {
+        clearInterval(flashSaleTimer);
+        flashSaleTimer = null;
+      }
+    }
+
+    function startFlashSaleCountdown(endTime) {
+      if (flashSaleTimer) {
+        clearInterval(flashSaleTimer);
+      }
+
+      const updateTimer = () => {
+        const remaining = Math.max(0, endTime - Date.now());
+        const seconds = Math.ceil(remaining / 1000);
+
+        document.getElementById('flash-sale-timer').textContent = seconds + 's';
+
+        if (remaining <= 0) {
+          clearInterval(flashSaleTimer);
+          flashSaleTimer = null;
+        }
+      };
+
+      updateTimer();
+      flashSaleTimer = setInterval(updateTimer, 1000);
+    }
+
+    // 添加日誌
+    function addLog(message, type = 'info') {
+      const log = document.getElementById('event-log');
+      const time = new Date().toLocaleTimeString();
+      const item = document.createElement('div');
+      item.className = `log-item fade-in ${type}`;
+      item.innerHTML = `<span class="log-time">[${time}]</span><span>${message}</span>`;
+      log.insertBefore(item, log.firstChild);
+
+      // 限制日誌數量
+      while (log.children.length > 100) {
+        log.removeChild(log.lastChild);
+      }
+    }
+
+    // 定時刷新
+    setInterval(() => {
+      if (isHost) {
+        refreshGameState();
+      }
+    }, 3000);
+  </script>
+</body>
+</html>
