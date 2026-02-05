@@ -3375,6 +3375,10 @@
       socket.on('minigame:pokerStarted', handlePokerStarted);
       socket.on('minigame:pokerEnded', handlePokerEnded);
 
+      socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
+      socket.on('minigame:songGuessPlayerSubmitted', handleSongGuessPlayerSubmitted);
+      socket.on('minigame:songGuessRoundEnded', handleSongGuessRoundEnded);
+
       // 抽獎事件監聽
       socket.on('lottery:start', (data) => {
         resetLottery();
