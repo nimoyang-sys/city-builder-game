@@ -1616,10 +1616,10 @@
 
     .waiting-content-wrapper {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 60px;
+      gap: 40px;
       max-width: 1400px;
       width: 100%;
       height: 100%;
@@ -1627,8 +1627,15 @@
       z-index: 1;
     }
 
+    .waiting-top-section {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 60px;
+    }
+
     .waiting-left-section {
-      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -1636,10 +1643,18 @@
     }
 
     .waiting-right-section {
-      flex: 1;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+    }
+
+    .waiting-bottom-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
     }
 
     /* 等待畫面裝飾 - 飄動的愛心和星星 */
@@ -1885,8 +1900,8 @@
     }
 
     .waiting-logo {
-      font-size: 8rem;  /* 從 6rem 放大到 8rem */
-      margin-bottom: 30px;  /* 從 20px 增加到 30px */
+      font-size: 12rem;  /* 放大跳動 icon */
+      margin: 0;
       filter: drop-shadow(6px 8px 0 rgba(255,107,157,0.4));
       animation: logoHop 0.8s ease-in-out infinite;
       position: relative;
@@ -1899,10 +1914,10 @@
     }
 
     .waiting-logo-img {
-      max-width: 400px;  /* 從 300px 放大到 400px */
+      max-width: 500px;  /* 放大 Logo */
       width: 100%;
       height: auto;
-      margin-bottom: 25px;  /* 從 15px 增加到 25px */
+      margin: 0;
       filter: drop-shadow(6px 8px 0 rgba(255,107,157,0.25));
       position: relative;
       z-index: 1;
@@ -1920,18 +1935,18 @@
     }
 
     .waiting-subtitle {
-      font-size: 1.8rem;  /* 從 1.3rem 放大到 1.8rem */
+      font-size: 2.2rem;  /* 放大副標題 */
       color: #8B5A8B;
-      margin-bottom: 35px;  /* 從 25px 增加到 35px */
+      margin-bottom: 20px;
       position: relative;
       z-index: 1;
-      font-weight: 700;  /* 從 600 增加到 700 */
+      font-weight: 700;
       text-align: center;
       text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
     }
 
     .waiting-players {
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       color: #5D4037;
       position: relative;
       z-index: 1;
@@ -1942,12 +1957,19 @@
       box-shadow: 0 8px 30px rgba(255,107,157,0.2);
       font-weight: 500;
       text-align: center;
+      margin-bottom: 20px;
     }
 
     .waiting-players span {
       color: #FF6B9D;
       font-weight: 900;
       font-size: 2.5rem;
+    }
+
+    .waiting-qr-section {
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .qr-hint {
@@ -2663,20 +2685,31 @@
   <!-- 等待畫面 -->
   <div class="waiting-overlay" id="waiting-overlay">
     <div class="waiting-content-wrapper">
-      <!-- 左側：Logo + 副標題 -->
-      <div class="waiting-left-section">
-        <div class="waiting-logo">🏗️</div>
-        <img src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/logo%2F%E8%B3%87%E7%94%A2%2081.png?alt=media&token=46ed0dd8-94a3-414a-8e07-b253908e08ec"
-             alt="創智動能 Logo"
-             class="waiting-logo-img">
+      <!-- 上方：跳動 icon（左）+ Logo（右） -->
+      <div class="waiting-top-section">
+        <!-- 左側：跳動 icon -->
+        <div class="waiting-left-section">
+          <div class="waiting-logo">🏗️</div>
+        </div>
+
+        <!-- 右側：Logo -->
+        <div class="waiting-right-section">
+          <img src="https://firebasestorage.googleapis.com/v0/b/christmas-tree-3fe6b.firebasestorage.app/o/logo%2F%E8%B3%87%E7%94%A2%2071.png?alt=media&token=dd82561c-60dc-4ffb-b478-5c5621bfa2a0"
+               alt="創智動能 Logo"
+               class="waiting-logo-img">
+        </div>
+      </div>
+
+      <!-- 下方：副標題 + 玩家數 -->
+      <div class="waiting-bottom-section">
         <div class="waiting-subtitle">✨ 眾志成城・築夢成真 ✨</div>
         <div class="waiting-players">
           目前 <span id="waiting-player-count">0</span> 位夥伴已就位
         </div>
       </div>
 
-      <!-- 右側：QR Code -->
-      <div class="waiting-right-section">
+      <!-- QR Code 區域 -->
+      <div class="waiting-qr-section">
         <div class="qr-hint">
           <p>掃描 QR Code 或輸入網址加入遊戲</p>
           <div id="qr-code" style="margin: 20px auto; background: white; padding: 15px; border-radius: 8px; display: inline-block;"></div>
