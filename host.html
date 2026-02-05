@@ -1457,7 +1457,7 @@
     }
 
     // 切換玩家管理分頁
-    function switchPlayerTab(tabName) {
+    async function switchPlayerTab(tabName) {
       // 移除所有 active 類別
       document.querySelectorAll('.player-tab-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -1473,6 +1473,8 @@
       } else if (tabName === 'roles') {
         document.querySelector('.player-tab-btn:nth-child(2)').classList.add('active');
         document.getElementById('player-tab-roles').classList.add('active');
+        // 先刷新遊戲狀態以確保有最新的玩家數據
+        await refreshGameState();
         updateRolesOverview();
       }
     }

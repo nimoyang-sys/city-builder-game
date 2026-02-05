@@ -103,6 +103,8 @@ export class GameEngine extends EventEmitter {
         console.log('📥 Loaded game state from database');
         this.state = dbGameState.state || 'WAITING';
         this.cityBuildings = dbGameState.cityBuildings instanceof Map ? Object.fromEntries(dbGameState.cityBuildings) : (dbGameState.cityBuildings || {});
+        this.cityBuildingList = dbGameState.cityBuildingList || [];
+        console.log(`📥 Loaded ${this.cityBuildingList.length} buildings from database`);
       }
 
       console.log('✅ Game state loaded successfully');
@@ -140,6 +142,7 @@ export class GameEngine extends EventEmitter {
         cityPollution: 0,
         cityTech: 0,
         cityBuildings: this.cityBuildings,
+        cityBuildingList: this.cityBuildingList,
         startedAt: this.startTime,
         endedAt: this.state === 'ENDED' ? new Date() : null,
         totalPlayers: this.players.size,

@@ -993,6 +993,11 @@ function renderItemShop() {
 }
 
 function buyItem(itemId) {
+  // 檢查遊戲是否已開始
+  if (gameState.state === 'WAITING') {
+    showToast('遊戲尚未開始，無法購買道具', 'error');
+    return;
+  }
   socket.emit('player:buyItem', { itemId });
 }
 
@@ -1058,6 +1063,11 @@ function renderItemsModal() {
 }
 
 function useItem(itemId) {
+  // 檢查遊戲是否已開始
+  if (gameState.state === 'WAITING') {
+    showToast('遊戲尚未開始，無法使用道具', 'error');
+    return;
+  }
   socket.emit('player:useItem', { itemId });
 }
 

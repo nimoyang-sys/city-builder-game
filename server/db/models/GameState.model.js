@@ -74,6 +74,23 @@ const gameStateSchema = new mongoose.Schema({
     default: () => new Map()
   },
 
+  // 城市建築列表（包含擁有者資訊）
+  cityBuildingList: {
+    type: [
+      {
+        id: String,
+        buildingId: String,
+        playerName: String,
+        playerId: String,
+        timestamp: Number,
+        isUpgrade: Boolean,
+        upgradedFrom: String,
+        isFlashSale: Boolean
+      }
+    ],
+    default: []
+  },
+
   // 遊戲開始時間
   startedAt: {
     type: Date,
