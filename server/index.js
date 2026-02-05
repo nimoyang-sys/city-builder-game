@@ -1205,10 +1205,12 @@ miniGameManager.on('beer:ended', (data) => {
 
 // 比大小事件
 miniGameManager.on('poker:gameStarted', () => {
+  console.log('[Server] 比大小遊戲開始');
   io.emit('minigame:pokerGameStarted');
 });
 
 miniGameManager.on('poker:roundStarted', (data) => {
+  console.log('[Server] 比大小第', data.roundNumber, '局開始');
   io.emit('minigame:pokerRoundStarted', data);
 });
 

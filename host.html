@@ -2824,10 +2824,12 @@
     let pokerBetSmallCount = 0;
 
     socket.on('minigame:pokerGameStarted', () => {
+      console.log('🃏 收到 pokerGameStarted 事件');
       addLog('比大小遊戲已開始', 'success');
     });
 
     socket.on('minigame:pokerRoundStarted', (data) => {
+      console.log('🃏 收到 pokerRoundStarted 事件', data);
       pokerBetBigCount = 0;
       pokerBetSmallCount = 0;
 

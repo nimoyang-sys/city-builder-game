@@ -564,6 +564,8 @@ function handleCoinsUpdated(data) {
 function updateResourceDisplay() {
   document.getElementById('res-coins').textContent = playerState.coins;
   document.getElementById('res-score').textContent = playerState.score;
+  // 更新建築卡片的可購買狀態
+  updateBuildingCards();
 }
 
 function updatePlayerNameDisplay() {
@@ -671,14 +673,17 @@ function renderBuildingCards() {
         </div>
       </div>
       <div class="building-stats">
-        <span class="building-cost">💰 ${building.cost} 金幣</span>
-        <span class="building-income" style="color: #4FC3F7;">📈 每回合 +${building.income}</span>
+        <span class="building-cost">💰 ${building.cost}元</span>
+        <span class="building-income" style="color: #4FC3F7;">💰 每回合 +${building.income}元</span>
       </div>
     `;
 
-    if (canAfford) {
-      card.addEventListener('click', () => openBuyModal(id));
-    }
+    // 總是綁定點擊事件，但在 disabled 時不執行
+    card.addEventListener('click', () => {
+      if (!card.classList.contains('disabled')) {
+        openBuyModal(id);
+      }
+    });
 
     grid.appendChild(card);
   }

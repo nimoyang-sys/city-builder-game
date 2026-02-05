@@ -2297,11 +2297,14 @@
     /* 猜歌曲前奏樣式 */
     .song-guess-container {
       display: grid;
-      grid-template-columns: 1fr 1.5fr;
+      grid-template-columns: 400px 1fr;
       gap: 30px;
-      max-width: 1200px;
+      max-width: 100%;
+      width: 100%;
       margin: 0 auto;
-      padding: 20px;
+      padding: 30px;
+      height: 100vh;
+      box-sizing: border-box;
     }
 
     .song-info {
@@ -2314,6 +2317,7 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+      height: fit-content;
     }
 
     .song-icon {
@@ -2363,6 +2367,10 @@
       padding: 30px;
       border-radius: 20px;
       border: 3px solid rgba(155, 89, 182, 0.3);
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 60px);
+      overflow: hidden;
     }
 
     .song-players-title {
@@ -2371,27 +2379,53 @@
       color: var(--primary);
       margin-bottom: 20px;
       text-align: center;
+      flex-shrink: 0;
     }
 
     .song-players-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
-      max-height: 600px;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 15px;
       overflow-y: auto;
+      flex: 1;
+      padding-right: 10px;
+    }
+
+    .song-players-grid::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .song-players-grid::-webkit-scrollbar-track {
+      background: rgba(155, 89, 182, 0.1);
+      border-radius: 4px;
+    }
+
+    .song-players-grid::-webkit-scrollbar-thumb {
+      background: rgba(155, 89, 182, 0.5);
+      border-radius: 4px;
+    }
+
+    .song-players-grid::-webkit-scrollbar-thumb:hover {
+      background: rgba(155, 89, 182, 0.7);
     }
 
     .song-player-item {
       background: rgba(255, 255, 255, 0.1);
-      padding: 12px 16px;
-      border-radius: 10px;
+      padding: 16px 20px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
-      border: 2px solid transparent;
+      gap: 15px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
       transition: all 0.3s ease;
       animation: playerFadeIn 0.4s ease-out;
+      min-height: 60px;
+    }
+
+    .song-player-item.not-submitted {
+      opacity: 0.6;
+      border-color: rgba(255, 255, 255, 0.1);
     }
 
     @keyframes playerFadeIn {
@@ -2401,27 +2435,31 @@
 
     .song-player-item.submitted {
       border-color: var(--warning);
-      background: rgba(241, 196, 15, 0.2);
+      background: rgba(241, 196, 15, 0.25);
+      opacity: 1;
     }
 
     .song-player-item.correct {
       border-color: var(--success);
-      background: rgba(46, 213, 115, 0.2);
+      background: rgba(46, 213, 115, 0.25);
+      opacity: 1;
     }
 
     .song-player-item.wrong {
       border-color: var(--danger);
-      background: rgba(231, 76, 60, 0.2);
+      background: rgba(231, 76, 60, 0.25);
+      opacity: 1;
     }
 
     .song-player-name {
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       font-weight: 600;
       flex: 1;
     }
 
     .song-player-status {
-      font-size: 1.5rem;
+      font-size: 2rem;
+      flex-shrink: 0;
     }
 
     .song-player-answer {
@@ -4368,17 +4406,20 @@
     let pokerCurrentRound = 0;
 
     function handlePokerGameStarted() {
+      console.log('🃏 Display: 收到 pokerGameStarted');
       pokerBetsData = { big: [], small: [] };
       pokerCurrentRound = 0;
       // 遊戲開始，等待第一局
     }
 
     function handlePokerRoundStarted(data) {
+      console.log('🃏 Display: 收到 pokerRoundStarted', data);
       pokerBetsData = { big: [], small: [] };
       pokerCurrentRound = data.roundNumber;
 
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
+        <div class="minigame-content" style="max-width: 1400px; padding: 30px;">
         <div class="poker-game-container">
           <!-- 左側：標題+撲克牌 -->
           <div class="poker-left-section">
@@ -4410,6 +4451,7 @@
               </div>
             </div>
           </div>
+        </div>
         </div>
       `;
       overlay.classList.add('show');
@@ -4525,6 +4567,7 @@
 
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
+        <div class="minigame-content" style="max-width: 1400px; padding: 30px;">
         <div class="poker-game-container">
           <!-- 左側：撲克牌結果 -->
           <div class="poker-left-section">
@@ -4576,6 +4619,7 @@
             </div>
           </div>
         </div>
+        </div>
       `;
     }
 
@@ -4598,6 +4642,7 @@
 
     // ===== 猜歌曲前奏 =====
     let songGuessState = {
+      allPlayers: [], // 所有玩家列表
       players: new Map(), // playerId -> { name, submitted, answer, isCorrect }
       correctAnswer: null,
       currentRound: 0
@@ -4635,6 +4680,7 @@
     }
 
     function handleSongGuessRoundStarted(data) {
+      songGuessState.allPlayers = data.allPlayers || [];
       songGuessState.players.clear();
       songGuessState.correctAnswer = null;
       songGuessState.currentRound = data.round;
@@ -4654,15 +4700,14 @@
             <div class="song-players-section">
               <div class="song-players-title">🎤 玩家答題狀態</div>
               <div class="song-players-grid" id="song-players-grid">
-                <div style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;">
-                  等待玩家提交答案...
-                </div>
+                <!-- 動態生成 -->
               </div>
             </div>
           </div>
         </div>
       `;
       overlay.classList.add('show');
+      updateSongPlayersDisplay();
     }
 
     function handleSongGuessPlayerSubmitted(data) {
@@ -4734,23 +4779,45 @@
       const grid = document.getElementById('song-players-grid');
       if (!grid) return;
 
-      if (songGuessState.players.size === 0) {
+      if (songGuessState.allPlayers.length === 0) {
         grid.innerHTML = `
           <div style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;">
-            等待玩家提交答案...
+            等待玩家加入...
           </div>
         `;
         return;
       }
 
-      grid.innerHTML = Array.from(songGuessState.players.values()).map(player => `
-        <div class="song-player-item ${player.submitted ? 'submitted' : ''}">
-          <div class="song-player-name">${player.name}</div>
-          <div class="song-player-status">
-            ${player.submitted ? '✓' : '⏳'}
+      // 顯示所有玩家，並標記哪些已提交
+      grid.innerHTML = songGuessState.allPlayers.map(player => {
+        const playerData = songGuessState.players.get(player.id);
+        const submitted = playerData && playerData.submitted;
+        const isCorrect = playerData && playerData.isCorrect;
+
+        let className = 'song-player-item';
+        let statusIcon = '⏳';
+
+        if (isCorrect !== null && isCorrect !== undefined) {
+          // 已公布結果
+          className += isCorrect ? ' correct' : ' wrong';
+          statusIcon = isCorrect ? '✓' : '✗';
+        } else if (submitted) {
+          // 已提交但未公布
+          className += ' submitted';
+          statusIcon = '✓';
+        } else {
+          // 未提交
+          className += ' not-submitted';
+          statusIcon = '⏳';
+        }
+
+        return `
+          <div class="${className}">
+            <div class="song-player-name">${player.name}</div>
+            <div class="song-player-status">${statusIcon}</div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
     // ========== 抽獎系統 ==========

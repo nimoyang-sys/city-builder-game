@@ -724,8 +724,15 @@ export class MiniGameManager extends EventEmitter {
     this.songGuessState.playerAnswers.clear();
     this.songGuessState.correctAnswer = null;
 
+    // 獲取所有玩家列表
+    const allPlayers = Array.from(this.gameEngine.players.values()).map(p => ({
+      id: p.id,
+      name: p.name
+    }));
+
     this.emit('songGuess:roundStarted', {
-      round: this.songGuessState.currentRound
+      round: this.songGuessState.currentRound,
+      allPlayers
     });
 
     return { success: true, round: this.songGuessState.currentRound };
