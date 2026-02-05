@@ -1663,6 +1663,8 @@
       align-items: center;
       justify-content: center;
       text-align: center;
+      width: 100%;  /* 確保寬度與上方一致 */
+      max-width: 760px;  /* 限制最大寬度以匹配上方 icon + logo 的總寬度 */
     }
 
     .waiting-right-section {
@@ -1915,7 +1917,7 @@
     }
 
     .waiting-logo {
-      font-size: 12rem;  /* 放大跳動 icon */
+      font-size: 9rem;  /* 縮小跳動 icon 從 12rem 到 9rem */
       margin: 0;
       filter: drop-shadow(6px 8px 0 rgba(255,107,157,0.4));
       animation: logoHop 0.8s ease-in-out infinite;
@@ -1929,7 +1931,7 @@
     }
 
     .waiting-logo-img {
-      max-width: 500px;  /* 放大 Logo */
+      max-width: 600px;  /* 放大 Logo 從 500px 到 600px */
       width: 100%;
       height: auto;
       margin: 0;
