@@ -770,6 +770,26 @@ export const MINI_GAMES = {
     betTime: 20, // 下注時間（秒）
     bigReward: 100, // 押對的獎勵
     penalty: 0  // 押錯不扣分，只是要喝酒
+  },
+
+  // 猜歌曲前奏設定
+  SONG_GUESS_GAME: {
+    songList: [
+      '大海',
+      '姐妹',
+      '七里香',
+      '癡心絕對',
+      '修練愛情',
+      'Sugar',
+      '青蘋果樂園',
+      '特務J',
+      '幹大事',
+      '愛人錯過',
+      '月亮惹的禍',
+      '派對動物'
+    ],
+    correctReward: 100, // 答對獎勵
+    maxRounds: 10 // 最多局數
   }
 };
 

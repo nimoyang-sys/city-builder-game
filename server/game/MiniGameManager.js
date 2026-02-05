@@ -41,6 +41,17 @@ export class MiniGameManager extends EventEmitter {
       timer: null,
       endTime: null
     };
+
+    // 猜歌曲前奏狀態
+    this.songGuessState = {
+      active: false,
+      roundActive: false, // 當前局是否進行中
+      currentRound: 0,
+      totalRounds: 0,
+      playerAnswers: new Map(), // playerId -> { playerName, answer, timestamp }
+      correctAnswer: null,
+      roundResults: [] // 每局的結果記錄
+    };
   }
 
   // ========== 快問快答 ==========
@@ -540,6 +551,127 @@ export class MiniGameManager extends EventEmitter {
     }
 
     return activeGames;
+  }
+
+  // ========== 猜歌曲前奏 ==========
+
+  startSongGuessGame() {
+    if (this.songGuessState.active) {
+      return { success: false, error: '猜歌遊戲已在進行中' };
+    }
+
+    this.songGuessState = {
+      active: true,
+      roundActive: false,
+      currentRound: 0,
+      totalRounds: 0,
+      playerAnswers: new Map(),
+      correctAnswer: null,
+      roundResults: []
+    };
+
+    this.emit('songGuess:gameStarted');
+    return { success: true };
+  }
+
+  startSongRound() {
+    if (!this.songGuessState.active) {
+      return { success: false, error: '猜歌遊戲未開始' };
+    }
+
+    if (this.songGuessState.roundActive) {
+      return { success: false, error: '當前局已在進行中' };
+    }
+
+    this.songGuessState.currentRound++;
+    this.songGuessState.roundActive = true;
+    this.songGuessState.playerAnswers.clear();
+    this.songGuessState.correctAnswer = null;
+
+    this.emit('songGuess:roundStarted', {
+      round: this.songGuessState.currentRound
+    });
+
+    return { success: true, round: this.songGuessState.currentRound };
+  }
+
+  submitSongAnswer(playerId, playerName, answer) {
+    if (!this.songGuessState.active || !this.songGuessState.roundActive) {
+      return { success: false, error: '當前沒有進行中的猜歌局' };
+    }
+
+    // 記錄玩家答案
+    this.songGuessState.playerAnswers.set(playerId, {
+      playerId,
+      playerName,
+      answer: answer.trim(),
+      timestamp: Date.now()
+    });
+
+    // 通知所有人該玩家已提交答案（不透露答案內容）
+    this.emit('songGuess:playerSubmitted', {
+      playerId,
+      playerName,
+      totalSubmitted: this.songGuessState.playerAnswers.size
+    });
+
+    return { success: true };
+  }
+
+  endSongRound(correctAnswer, customAnswer = null) {
+    if (!this.songGuessState.active || !this.songGuessState.roundActive) {
+      return { success: false, error: '當前沒有進行中的猜歌局' };
+    }
+
+    // 如果選擇「其他」，使用自定義答案
+    const finalAnswer = correctAnswer === '其他' ? customAnswer : correctAnswer;
+    this.songGuessState.correctAnswer = finalAnswer;
+    this.songGuessState.roundActive = false;
+
+    // 比對答案
+    const results = [];
+    for (const [playerId, data] of this.songGuessState.playerAnswers) {
+      const isCorrect = data.answer.toLowerCase() === finalAnswer.toLowerCase();
+      results.push({
+        playerId: data.playerId,
+        playerName: data.playerName,
+        answer: data.answer,
+        isCorrect,
+        reward: isCorrect ? MINI_GAMES.SONG_GUESS_GAME.correctReward : 0
+      });
+    }
+
+    // 記錄這一局的結果
+    this.songGuessState.roundResults.push({
+      round: this.songGuessState.currentRound,
+      correctAnswer: finalAnswer,
+      results
+    });
+
+    this.emit('songGuess:roundEnded', {
+      round: this.songGuessState.currentRound,
+      correctAnswer: finalAnswer,
+      results
+    });
+
+    return { success: true, results };
+  }
+
+  endSongGuessGame() {
+    if (!this.songGuessState.active) {
+      return { success: false, error: '猜歌遊戲未開始' };
+    }
+
+    const finalResults = {
+      totalRounds: this.songGuessState.currentRound,
+      roundResults: this.songGuessState.roundResults
+    };
+
+    this.songGuessState.active = false;
+
+    this.emit('songGuess:gameEnded', finalResults);
+
+    return { success: true, finalResults };
   }
 }
 

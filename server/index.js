@@ -791,6 +791,70 @@ io.on('connection', (socket) => {
     }
   });
 
+  // 猜歌曲前奏 - 主持人開始遊戲
+  socket.on('host:startSongGuessGame', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.startSongGuessGame();
+    socket.emit('host:result', result);
+  });
+
+  // 猜歌曲前奏 - 主持人開始新一局
+  socket.on('host:startSongRound', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.startSongRound();
+    socket.emit('host:result', result);
+  });
+
+  // 猜歌曲前奏 - 玩家提交答案
+  socket.on('player:submitSongAnswer', ({ answer }) => {
+    const player = gameEngine.getPlayerBySocketId(socket.id);
+    if (!player) {
+      socket.emit('player:error', { message: '玩家不存在' });
+      return;
+    }
+
+    const result = miniGameManager.submitSongAnswer(player.id, player.name, answer);
+    socket.emit('player:songAnswerResult', result);
+  });
+
+  // 猜歌曲前奏 - 主持人結束本局並公布答案
+  socket.on('host:endSongRound', ({ correctAnswer, customAnswer }) => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+
+    const result = miniGameManager.endSongRound(correctAnswer, customAnswer);
+
+    if (result.success) {
+      // 發放獎勵給答對的玩家
+      result.results.forEach(r => {
+        if (r.isCorrect && r.reward > 0) {
+          gameEngine.addCoins(r.playerId, r.reward);
+          gameEngine.addScore(r.playerId, r.reward);
+        }
+      });
+    }
+
+    socket.emit('host:result', result);
+  });
+
+  // 猜歌曲前奏 - 主持人結束整個遊戲
+  socket.on('host:endSongGuessGame', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.endSongGuessGame();
+    socket.emit('host:result', result);
+  });
+
   // 比大小 - 主持人結束（提前結算）
   socket.on('host:endPoker', () => {
     if (socket.id !== hostSocketId) {
@@ -1101,6 +1165,27 @@ miniGameManager.on('poker:ended', (data) => {
 
 miniGameManager.on('poker:roundEnd', () => {
   io.emit('minigame:pokerRoundEnd');
+});
+
+// 猜歌曲前奏事件
+miniGameManager.on('songGuess:gameStarted', () => {
+  io.emit('minigame:songGuessGameStarted');
+});
+
+miniGameManager.on('songGuess:roundStarted', (data) => {
+  io.emit('minigame:songGuessRoundStarted', data);
+});
+
+miniGameManager.on('songGuess:playerSubmitted', (data) => {
+  io.emit('minigame:songGuessPlayerSubmitted', data);
+});
+
+miniGameManager.on('songGuess:roundEnded', (data) => {
+  io.emit('minigame:songGuessRoundEnded', data);
+});
+
+miniGameManager.on('songGuess:gameEnded', (data) => {
+  io.emit('minigame:songGuessGameEnded', data);
 });
 
 // ========== 啟動伺服器 ==========
