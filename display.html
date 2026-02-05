@@ -2167,21 +2167,36 @@
       const url = window.location.origin;
       document.getElementById('game-url').textContent = url;
 
-      // 產生 QR Code
-      QRCode.toCanvas(document.createElement('canvas'), url, {
-        width: 200,
-        margin: 0,
-        color: {
-          dark: '#FF6B9D',  // 粉紅色，符合 UI 主題
-          light: '#ffffff'
-        }
-      }, function (error, canvas) {
-        if (error) {
-          console.error('QR Code generation failed:', error);
+      // 產生 QR Code - 確保 QRCode 已載入
+      const generateQRCode = () => {
+        if (typeof QRCode === 'undefined') {
+          console.error('QRCode library not loaded yet, retrying...');
+          setTimeout(generateQRCode, 100);
           return;
         }
-        document.getElementById('qr-code').appendChild(canvas);
-      });
+
+        QRCode.toCanvas(document.createElement('canvas'), url, {
+          width: 200,
+          margin: 0,
+          color: {
+            dark: '#FF6B9D',  // 粉紅色，符合 UI 主題
+            light: '#ffffff'
+          }
+        }, function (error, canvas) {
+          if (error) {
+            console.error('QR Code generation failed:', error);
+            return;
+          }
+          const qrContainer = document.getElementById('qr-code');
+          if (qrContainer) {
+            qrContainer.innerHTML = ''; // 清空容器
+            qrContainer.appendChild(canvas);
+            console.log('QR Code generated successfully');
+          }
+        });
+      };
+
+      generateQRCode();
 
       // 連接 Socket
       socket = io();
@@ -2201,6 +2216,55 @@
       socket.on('game:ended', handleGameEnded);
       socket.on('game:playerJoined', handlePlayerJoined);
       socket.on('game:reset', handleReset);
+
+      // 抽獎事件監聽
+      socket.on('lottery:start', (data) => {
+        resetLottery();
+        startLotteryMode(data.players);
+      });
+
+      socket.on('lottery:spin', () => {
+        if (!isSpinning && lotteryPlayers.length > 0) {
+          startSpin();
+        }
+      });
+
+      socket.on('lottery:stop', () => {
+        if (isSpinning) {
+          stopSpin();
+        }
+      });
+
+      socket.on('lottery:next', () => {
+        if (!isSpinning && lotteryPlayers.length > 0) {
+          document.getElementById('lottery-prize-label').textContent = `第 ${currentPrizeIndex} 位幸運兒`;
+          document.getElementById('lottery-winner-display').innerHTML = '';
+          buildNamesTrack();
+        }
+      });
+
+      socket.on('lottery:close', () => {
+        closeLotteryMode();
+      });
+
+      // 頒獎事件監聽
+      socket.on('award:start', (data) => {
+        awardPlayers = data.players.sort((a, b) => (b.score || 0) - (a.score || 0));
+        awardPrizeCount = data.prizeCount;
+        awardWinners = [];
+        currentAwardRank = 0;
+        startAwardMode();
+      });
+
+      socket.on('award:reveal', (data) => {
+        if (currentAwardRank < awardPlayers.length && !isRevealing) {
+          revealWinner();
+        }
+      });
+
+      socket.on('award:close', () => {
+        closeAwardMode();
+      });
     });
 
     // 取得遊戲狀態
@@ -2591,10 +2655,18 @@
     }
 
     function handleGameEnded(data) {
+      console.log('=== handleGameEnded called ===');
+      console.log('Received data:', data);
+      console.log('cityBuildingList:', data.cityBuildingList);
+      console.log('leaderboard:', data.leaderboard);
+
       updateStatusBadge('ENDED');
 
       // 顯示結束畫面
-      document.getElementById('end-overlay').classList.add('show');
+      const endOverlay = document.getElementById('end-overlay');
+      console.log('end-overlay element:', endOverlay);
+      endOverlay.classList.add('show');
+      console.log('Added show class, classList:', endOverlay.classList);
 
       // 渲染最終城市（使用建築列表，含玩家名稱）
       const finalBuildings = document.getElementById('final-buildings');
@@ -2836,35 +2908,7 @@
       if (spinInterval) clearInterval(spinInterval);
     }
 
-    // 監聽抽獎事件（從主持人端）
-    socket.on('lottery:start', (data) => {
-      resetLottery();
-      startLotteryMode(data.players);
-    });
-
-    socket.on('lottery:spin', () => {
-      if (!isSpinning && lotteryPlayers.length > 0) {
-        startSpin();
-      }
-    });
-
-    socket.on('lottery:stop', () => {
-      if (isSpinning) {
-        stopSpin();
-      }
-    });
-
-    socket.on('lottery:next', () => {
-      if (!isSpinning && lotteryPlayers.length > 0) {
-        document.getElementById('lottery-prize-label').textContent = `第 ${currentPrizeIndex} 位幸運兒`;
-        document.getElementById('lottery-winner-display').innerHTML = '';
-        buildNamesTrack();
-      }
-    });
-
-    socket.on('lottery:close', () => {
-      closeLotteryMode();
-    });
+    // 抽獎事件監聽器已移至 DOMContentLoaded 內
 
     // ========== 新版頒獎典禮（依排名順序） ==========
     let awardPlayers = [];        // 所有玩家（依排名）
@@ -2873,15 +2917,10 @@
     let currentAwardRank = 0;     // 目前頒到第幾名
     let isRevealing = false;      // 是否正在揭曉動畫中
 
-    // 開始頒獎典禮
-    socket.on('award:start', (data) => {
-      console.log('Award ceremony started', data);
-      awardPlayers = data.players;
-      awardPrizeCount = data.prizeCount;
-      awardWinners = [];
-      currentAwardRank = 0;
-      isRevealing = false;
+    // 頒獎事件監聽器已移至 DOMContentLoaded 內
 
+    // 開始頒獎典禮
+    function startAwardMode() {
       // 顯示頒獎畫面
       document.getElementById('lottery-overlay').classList.add('show');
       document.getElementById('lottery-prize-label').textContent = `🏆 頒獎典禮 - 共 ${awardPrizeCount} 份獎品`;
@@ -2891,29 +2930,29 @@
       // 建立名字軌道（用於動畫）
       buildAwardTrack();
       updateAwardWinnersList();
-    });
+    }
 
     // 揭曉得獎者
-    socket.on('award:reveal', (data) => {
-      if (isRevealing) return;
+    function revealWinner() {
+      if (isRevealing || currentAwardRank >= awardPlayers.length) return;
       isRevealing = true;
 
-      const { rank, winner } = data;
-      currentAwardRank = rank;
+      const winner = awardPlayers[currentAwardRank];
+      const rank = currentAwardRank + 1;
 
       document.getElementById('lottery-hint').textContent = `正在揭曉第 ${rank} 名...`;
 
       // 播放跑馬燈動畫，然後停在得獎者上
       playRevealAnimation(winner, rank);
-    });
+    }
 
     // 關閉頒獎
-    socket.on('award:close', () => {
+    function closeAwardMode() {
       document.getElementById('lottery-overlay').classList.remove('show');
       awardPlayers = [];
       awardWinners = [];
       currentAwardRank = 0;
-    });
+    }
 
     // 建立頒獎名字軌道
     function buildAwardTrack() {

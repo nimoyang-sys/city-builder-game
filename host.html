@@ -1104,6 +1104,10 @@
     let players = [];
     let selectedPlayers = new Set();
     let gameState = null;
+    let awardActive = false;
+    let awardWinners = [];
+    let currentAwardIndex = 0;
+    let totalPrizes = 0;
 
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
@@ -1365,8 +1369,11 @@
       }
 
       // 更新排行榜
+      console.log('updateStatusDisplay - state:', state);
+      console.log('updateStatusDisplay - leaderboard:', state.leaderboard);
       if (state.leaderboard) {
         players = state.leaderboard;
+        console.log('Updated players array:', players);
         updatePlayerList(state.leaderboard);
       }
 
@@ -1484,6 +1491,10 @@
     // 更新角色與積分總覽
     function updateRolesOverview() {
       const container = document.getElementById('roles-overview-list');
+
+      console.log('updateRolesOverview called, players:', players);
+      console.log('players length:', players ? players.length : 'null');
+      console.log('gameState:', gameState);
 
       if (!players || players.length === 0) {
         container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 20px;">等待玩家加入...</p>';
@@ -1801,11 +1812,6 @@
     }
 
     // ========== 頒獎典禮控制（依排名順序） ==========
-    let awardActive = false;
-    let awardWinners = [];      // 得獎者列表（依排名）
-    let currentAwardIndex = 0;  // 目前頒到第幾位
-    let totalPrizes = 0;        // 總獎品數
-
     function startAwardCeremony() {
       // 檢查是否有玩家
       if (!players || players.length === 0) {
