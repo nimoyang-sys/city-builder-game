@@ -970,6 +970,19 @@ export class GameEngine extends EventEmitter {
       delete this.cityBuildings[buildingId];
     }
 
+    // 從建築列表中移除被合併的舊建築（移除該玩家的N棟舊建築）
+    let removedCount = 0;
+    this.cityBuildingList = this.cityBuildingList.filter(building => {
+      if (removedCount >= upgradeInfo.mergeCount) return true;
+      if (building.playerId === player.id && building.buildingId === buildingId && !building.isUpgrade) {
+        removedCount++;
+        return false; // 移除這棟建築
+      }
+      return true; // 保留
+    });
+
+    console.log(`🔄 Removed ${removedCount} old buildings (${fromBuilding.name}) from cityBuildingList`);
+
     // 增加新建築
     player.buildings[upgradeInfo.upgradeTo] = (player.buildings[upgradeInfo.upgradeTo] || 0) + 1;
     this.cityBuildings[upgradeInfo.upgradeTo] = (this.cityBuildings[upgradeInfo.upgradeTo] || 0) + 1;
@@ -980,7 +993,7 @@ export class GameEngine extends EventEmitter {
     // 獲得升級獎勵分數
     player.score += upgradeInfo.bonusScore;
 
-    // 新增到建築列表（升級也算建築）
+    // 新增升級後的建築到列表
     this.cityBuildingList.push({
       id: `b_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       buildingId: upgradeInfo.upgradeTo,
@@ -998,7 +1011,8 @@ export class GameEngine extends EventEmitter {
       toBuilding,
       mergeCount: upgradeInfo.mergeCount,
       bonusScore: upgradeInfo.bonusScore,
-      cityBuildings: this.getCityBuildingStats()
+      cityBuildings: this.getCityBuildingStats(),
+      cityBuildingList: this.cityBuildingList  // 傳送更新後的建築列表
     });
 
     // 檢查成就

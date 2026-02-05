@@ -370,7 +370,13 @@ function handleFlashSalePurchased(data) {
   // 更新剩餘數量
   updateFlashSaleRemaining(data.remaining);
 
-  if (data.playerId !== playerState.id) {
+  // 如果售罄，隱藏彈窗
+  if (data.remaining <= 0) {
+    setTimeout(() => {
+      hideFlashSaleBanner();
+      showToast('限時搶購已售罄！', 'info');
+    }, 1000);
+  } else if (data.playerId !== playerState.id) {
     showToast(`${data.playerName} 搶購成功！剩餘 ${data.remaining} 個`, 'info');
   }
 }
@@ -385,7 +391,8 @@ function handleFlashSaleEnded(data) {
 function handleFlashSaleResult(result) {
   if (result.success) {
     showToast(`搶購成功！${result.building.emoji} ${result.building.name} 省了 ${result.savedAmount} 金幣！`, 'success');
-    updateFlashSaleRemaining(result.remaining);
+    // 搶購成功後立即隱藏彈窗
+    hideFlashSaleBanner();
   } else {
     showToast(result.error, 'error');
   }
@@ -572,8 +579,8 @@ function renderBuildingCards() {
         </div>
       </div>
       <div class="building-stats">
-        <span class="building-cost">💰 ${building.cost}</span>
-        <span class="building-income">+${building.income}/回合</span>
+        <span class="building-cost">💰 ${building.cost} 金幣</span>
+        <span class="building-income" style="color: #4FC3F7;">📈 每回合 +${building.income}</span>
       </div>
     `;
 
@@ -1178,7 +1185,12 @@ function renderUpgradeModal(upgradeable) {
       <div class="upgrade-to">
         <div class="upgrade-building-icon">${item.toBuilding.emoji}</div>
         <div class="upgrade-building-name">${item.toBuilding.name}</div>
-        <div class="upgrade-bonus">+${item.bonusScore} 分</div>
+        <div class="upgrade-bonus" style="font-weight: 700; color: #FFD93D;">
+          🏆 +${item.bonusScore} 積分
+        </div>
+        <div class="upgrade-income" style="font-size: 0.8rem; color: #4FC3F7; margin-top: 2px;">
+          💰 每回合 +${item.toBuilding.income || 0} 金幣
+        </div>
       </div>
       <div class="upgrade-times">可升級 ${item.timesCanUpgrade} 次</div>
     </div>

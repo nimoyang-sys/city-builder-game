@@ -1344,8 +1344,8 @@
       document.getElementById('btn-start').disabled = !isWaiting;
       document.getElementById('btn-end').disabled = !isPlaying;
       // 更新抽獎按鈕狀態
-      if (!lotteryActive) {
-        document.getElementById('btn-lottery-start').disabled = !isEnded;
+      if (!awardActive) {
+        document.getElementById('btn-lottery-start').disabled = !isEnded || (state.playerCount === 0);
       }
 
       // 更新抽獎提示
@@ -1371,8 +1371,10 @@
       }
 
       // 更新城市建築統計
-      if (state.cityBuildings && state.cityBuildings.stats) {
-        updateCityStats(state.cityBuildings.stats);
+      if (state.cityBuildings) {
+        // cityBuildings 可能是 { stats: {...}, categories: {...} } 或直接是 stats 對象
+        const stats = state.cityBuildings.stats || state.cityBuildings;
+        updateCityStats(stats);
       }
     }
 

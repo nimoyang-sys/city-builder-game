@@ -1417,8 +1417,8 @@
       align-items: center;
       justify-content: center;
       z-index: 100;
-      padding: 40px;
-      overflow-y: auto;
+      padding: 20px;
+      overflow: hidden;
     }
 
     .waiting-content-wrapper {
@@ -1426,9 +1426,10 @@
       flex-direction: row;
       align-items: center;
       justify-content: center;
-      gap: 80px;
+      gap: 60px;
       max-width: 1400px;
       width: 100%;
+      height: 100%;
       position: relative;
       z-index: 1;
     }
@@ -1489,8 +1490,8 @@
     }
 
     .waiting-logo {
-      font-size: 10rem;
-      margin-bottom: 30px;
+      font-size: 6rem;
+      margin-bottom: 20px;
       filter: drop-shadow(4px 6px 0 rgba(255,107,157,0.4));
       animation: logoHop 0.8s ease-in-out infinite;
       position: relative;
@@ -1503,10 +1504,10 @@
     }
 
     .waiting-logo-img {
-      max-width: 400px;
+      max-width: 300px;
       width: 100%;
       height: auto;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       filter: drop-shadow(4px 6px 0 rgba(255,107,157,0.2));
       position: relative;
       z-index: 1;
@@ -1524,9 +1525,9 @@
     }
 
     .waiting-subtitle {
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       color: #8B5A8B;
-      margin-bottom: 40px;
+      margin-bottom: 25px;
       position: relative;
       z-index: 1;
       font-weight: 600;
@@ -1554,7 +1555,6 @@
     }
 
     .qr-hint {
-      margin-top: 40px;
       padding: 30px 60px;
       background: var(--bg-card);
       border-radius: 30px;
@@ -1563,6 +1563,8 @@
       text-align: center;
       position: relative;
       z-index: 1;
+      width: 100%;
+      max-width: 500px;
     }
 
     .qr-hint p {
@@ -2193,6 +2195,7 @@
       socket.on('game:started', handleGameStarted);
       socket.on('game:buildingPhase', handleBuildingPhase);
       socket.on('game:buildingPurchased', handleBuildingPurchased);
+      socket.on('game:buildingUpgraded', handleBuildingUpgraded);  // 建築升級事件
       socket.on('game:eventTriggered', handleEventTriggered);
       socket.on('game:scoreAdded', handleScoreAdded);
       socket.on('game:ended', handleGameEnded);
@@ -2559,6 +2562,20 @@
       // 更新建築總數
       const total = data.cityBuildingList ? data.cityBuildingList.length : 0;
       document.getElementById('total-buildings').textContent = total;
+    }
+
+    function handleBuildingUpgraded(data) {
+      console.log('🏗️ Building upgraded:', data);
+
+      // 重新渲染建築（使用更新後的建築列表）
+      renderCityBuildings(data.cityBuildings, data.cityBuildingList);
+
+      // 更新建築總數
+      const total = data.cityBuildingList ? data.cityBuildingList.length : 0;
+      document.getElementById('total-buildings').textContent = total;
+
+      // 可選：顯示升級通知（簡單提示）
+      console.log(`✨ ${data.playerName} 升級了 ${data.mergeCount} 棟 ${data.fromBuilding.name} → ${data.toBuilding.name}！`);
     }
 
     function handleEventTriggered(data) {
