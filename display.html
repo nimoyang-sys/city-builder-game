@@ -3327,7 +3327,7 @@
         </div>
         <div class="event-description" id="event-description">--</div>
         <div class="event-effects">
-          <div class="effect-title">營收加成（金幣＋貢獻分）</div>
+          <div class="effect-title">營收加成（金幣）</div>
           <div class="effect-text" id="event-effects">--</div>
         </div>
         <div style="margin-top: 10px; font-size: 0.9rem; color: #FF6B9D; font-weight: 700; animation: pulse 1.5s ease-in-out infinite;">
@@ -4060,6 +4060,9 @@
       // 隱藏事件彈窗
       hideEvent();
 
+      // 顯示互動事件結算結果
+      showInteractiveEventResults(data);
+
       // 更新排行榜
       if (data.leaderboard) {
         renderLeaderboard(data.leaderboard);
@@ -4070,6 +4073,84 @@
 
       // 重新獲取遊戲狀態
       fetchGameState();
+    }
+
+    // 顯示互動事件結算結果
+    function showInteractiveEventResults(data) {
+      const panel = document.getElementById('event-panel');
+      const typeEl = document.getElementById('event-type');
+      const iconEl = document.getElementById('event-icon');
+      const titleEl = document.getElementById('event-title');
+      const descEl = document.getElementById('event-description');
+      const effectsEl = document.getElementById('event-effects');
+
+      // 設定事件資訊
+      iconEl.textContent = data.event.icon || '🎮';
+      typeEl.textContent = '互動任務結算';
+      titleEl.textContent = data.event.title;
+
+      // 建立結算結果列表
+      const winners = data.results.filter(r => r.result === 'winner');
+      const losers = data.results.filter(r => r.result === 'loser');
+      const participants = data.results.filter(r => r.result === 'participant');
+
+      let resultHTML = '<div style="text-align: left; line-height: 1.8;">';
+
+      if (winners.length > 0) {
+        resultHTML += '<div style="margin-bottom: 12px;">';
+        resultHTML += '<div style="color: #FFD700; font-weight: bold; margin-bottom: 6px;">🏆 贏家</div>';
+        winners.forEach(w => {
+          const coinsText = w.coins >= 0 ? `+${w.coins}元` : `${w.coins}元`;
+          const coinsColor = w.coins >= 0 ? '#4CAF50' : '#f44336';
+          resultHTML += `<div style="padding: 4px 0;">
+            <span style="color: rgba(255,255,255,0.9);">${w.playerName}</span>
+            <span style="color: ${coinsColor}; font-weight: bold; margin-left: 10px;">${coinsText}</span>
+          </div>`;
+        });
+        resultHTML += '</div>';
+      }
+
+      if (losers.length > 0) {
+        resultHTML += '<div style="margin-bottom: 12px;">';
+        resultHTML += '<div style="color: #ff9800; font-weight: bold; margin-bottom: 6px;">😢 輸家</div>';
+        losers.forEach(l => {
+          const coinsText = l.coins >= 0 ? `+${l.coins}元` : `${l.coins}元`;
+          const coinsColor = l.coins >= 0 ? '#4CAF50' : '#f44336';
+          resultHTML += `<div style="padding: 4px 0;">
+            <span style="color: rgba(255,255,255,0.9);">${l.playerName}</span>
+            <span style="color: ${coinsColor}; font-weight: bold; margin-left: 10px;">${coinsText}</span>
+          </div>`;
+        });
+        resultHTML += '</div>';
+      }
+
+      if (participants.length > 0) {
+        resultHTML += '<div style="margin-bottom: 12px;">';
+        resultHTML += '<div style="color: #90caf9; font-weight: bold; margin-bottom: 6px;">👍 參與獎</div>';
+        participants.forEach(p => {
+          const coinsText = p.coins >= 0 ? `+${p.coins}元` : `${p.coins}元`;
+          const coinsColor = p.coins >= 0 ? '#4CAF50' : '#f44336';
+          resultHTML += `<div style="padding: 4px 0;">
+            <span style="color: rgba(255,255,255,0.9);">${p.playerName}</span>
+            <span style="color: ${coinsColor}; font-weight: bold; margin-left: 10px;">${coinsText}</span>
+          </div>`;
+        });
+        resultHTML += '</div>';
+      }
+
+      resultHTML += '</div>';
+
+      descEl.innerHTML = resultHTML;
+      effectsEl.textContent = `共 ${data.results.length} 位玩家參與`;
+      effectsEl.className = 'effect-text positive';
+
+      // 顯示面板
+      panel.classList.add('show');
+
+      // 8秒後自動隱藏
+      setTimeout(() => {
+        hideEvent();
+      }, 8000);
     }
 
     // 處理互動事件取消
@@ -4279,8 +4360,8 @@
       fetchGameState();
     }
 
-    // 定期刷新
-    setInterval(fetchGameState, 5000);
+    // 定期刷新（10秒一次，減少不必要的渲染）
+    setInterval(fetchGameState, 10000);
 
     // ========== 小遊戲系統 ==========
 

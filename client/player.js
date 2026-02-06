@@ -20,6 +20,7 @@ let playerState = {
   role: null,
   achievements: [],
   items: [],
+  purchasedItems: [],  // 本局已購買過的道具
   activeEffects: []
 };
 
@@ -117,6 +118,9 @@ function initSocket() {
   socket.on('game:reset', handleGameReset);
   socket.on('game:buildingPurchased', handleBuildingPurchased);
   socket.on('game:scoreAdded', handleScoreAdded);
+
+  // 互動事件
+  socket.on('game:interactiveEventSettled', handleInteractiveEventSettled);
 
   // 角色事件
   socket.on('player:roleAssigned', handleRoleAssigned);
@@ -287,6 +291,7 @@ function handlePlayerStateUpdate(state) {
   if (state.role !== undefined) playerState.role = state.role;
   if (state.roleId !== undefined) playerState.roleId = state.roleId;
   if (state.items !== undefined) playerState.items = state.items;
+  if (state.purchasedItems !== undefined) playerState.purchasedItems = state.purchasedItems;
   if (state.achievements !== undefined) playerState.achievements = state.achievements;
   if (state.achievementProgress !== undefined) playerState.achievementProgress = state.achievementProgress;
   if (state.activeEffects !== undefined) playerState.activeEffects = state.activeEffects;
@@ -351,6 +356,7 @@ function handleBuyItemResult(result) {
   if (result.success) {
     playerState.coins = result.remainingCoins;
     playerState.items.push(result.item.id);
+    playerState.purchasedItems.push(result.item.id);  // 記錄已購買
     updateResourceDisplay();
     showToast(`購買了 ${result.item.emoji} ${result.item.name}！`, 'success');
   } else {
@@ -514,6 +520,58 @@ function handleGameEnded(data) {
   showToast('遊戲結束！', 'info');
   // 遊戲結束時隱藏按鈕
   hideGameButtons();
+}
+
+function handleInteractiveEventSettled(data) {
+  // 檢查當前玩家是否參與此互動事件
+  const playerId = localStorage.getItem('playerId');
+  const playerResult = data.results.find(r => r.playerId === playerId);
+
+  if (playerResult) {
+    // 玩家參與了這個互動事件
+    let message = '';
+    let type = 'success';
+
+    if (playerResult.result === 'winner') {
+      if (playerResult.coins > 0) {
+        message = `🏆 恭喜！你在「${data.event.title}」中獲勝！獲得 +${playerResult.coins}元`;
+        type = 'success';
+      } else {
+        message = `🎮 你參與了「${data.event.title}」`;
+        type = 'info';
+      }
+    } else if (playerResult.result === 'loser') {
+      if (playerResult.coins < 0) {
+        message = `😢 「${data.event.title}」未能成功，${playerResult.coins}元`;
+        type = 'warning';
+      } else if (playerResult.coins > 0) {
+        message = `👍 參與「${data.event.title}」獲得 +${playerResult.coins}元`;
+        type = 'info';
+      } else {
+        message = `🎮 你參與了「${data.event.title}」`;
+        type = 'info';
+      }
+    } else if (playerResult.result === 'participant') {
+      if (playerResult.coins > 0) {
+        message = `👍 參與「${data.event.title}」獲得 +${playerResult.coins}元`;
+        type = 'success';
+      } else {
+        message = `🎮 你參與了「${data.event.title}」`;
+        type = 'info';
+      }
+    }
+
+    // 顯示提示訊息（較長時間）
+    showToast(message, type, 6000);
+
+    // 從伺服器更新玩家狀態
+    socket.emit('player:getState');
+  }
+
+  // 更新排行榜
+  if (data.leaderboard) {
+    updateLeaderboard(data.leaderboard);
+  }
 }
 
 function handleOtherPlayerJoined(player) {
@@ -758,14 +816,13 @@ function showEventDisplay(event, results) {
   document.getElementById('event-title').textContent = event.title;
   document.getElementById('event-description').textContent = event.description;
 
-  // 顯示效果標籤（營收會同時加金幣和總積分）
+  // 顯示效果標籤
   const effectsContainer = document.getElementById('event-effects');
   if (event.display) {
     effectsContainer.innerHTML = `
       <span class="effect-tag ${event.display.mood === 'positive' ? 'positive' : 'negative'}">
         ${event.display.affected}
       </span>
-      <div class="effect-hint">營收 = 金幣 + 總積分</div>
     `;
   } else {
     effectsContainer.innerHTML = '';
@@ -774,8 +831,23 @@ function showEventDisplay(event, results) {
   // 找到自己的結果
   const myResult = results.find(r => r.playerId === playerState.id);
   if (myResult) {
-    document.getElementById('income-amount').textContent = `+${myResult.income}`;
-    document.getElementById('income-result').style.display = 'block';
+    // 顯示營收（金幣）
+    if (myResult.income > 0) {
+      document.getElementById('income-amount').textContent = `+${myResult.income} 金幣`;
+      document.getElementById('income-result').style.display = 'block';
+    } else {
+      document.getElementById('income-result').style.display = 'none';
+    }
+
+    // 如果有額外積分獎勵，顯示 toast
+    if (myResult.bonusScore && myResult.bonusScore > 0) {
+      showToast(`🎁 獲得 +${myResult.bonusScore} 積分！`, 'success', 4000);
+    }
+
+    // 如果有額外金幣獎勵（事件特殊效果），也顯示 toast
+    if (myResult.bonusCoins && myResult.bonusCoins > 0) {
+      showToast(`💰 獲得 +${myResult.bonusCoins} 金幣獎勵！`, 'success', 4000);
+    }
   } else {
     document.getElementById('income-result').style.display = 'none';
   }
@@ -1099,9 +1171,25 @@ function renderItemShop() {
   if (!container || !gameConfig?.items) return;
 
   container.innerHTML = Object.entries(gameConfig.items).map(([id, item]) => {
+    const alreadyPurchased = playerState.purchasedItems && playerState.purchasedItems.includes(id);
     const canAfford = playerState.coins >= item.cost;
+    const canBuy = !alreadyPurchased && canAfford;
+
+    if (alreadyPurchased) {
+      return `
+        <div class="item-shop-card purchased">
+          <div class="item-shop-icon">${item.emoji}</div>
+          <div class="item-shop-info">
+            <div class="item-shop-name">${item.name}</div>
+            <div class="item-shop-desc">${item.description}</div>
+          </div>
+          <div class="item-shop-cost purchased-label">已購買</div>
+        </div>
+      `;
+    }
+
     return `
-      <div class="item-shop-card ${canAfford ? '' : 'disabled'}" onclick="${canAfford ? `buyItem('${id}')` : ''}">
+      <div class="item-shop-card ${canBuy ? '' : 'disabled'}" onclick="${canBuy ? `buyItem('${id}')` : ''}">
         <div class="item-shop-icon">${item.emoji}</div>
         <div class="item-shop-info">
           <div class="item-shop-name">${item.name}</div>
@@ -1603,6 +1691,10 @@ function showQuizModal(data) {
     if (timeLeft <= 0) {
       clearInterval(quizState.countdownInterval);
       quizState.countdownInterval = null;
+      // 時間結束，顯示等待狀態
+      if (!quizState.answered) {
+        showQuizWaiting();
+      }
     }
   }, 1000);
 
@@ -1619,12 +1711,21 @@ function showQuizWaiting() {
     quizState.countdownInterval = null;
   }
 
-  // 更新問題文字
-  document.getElementById('quiz-question-text').textContent = '等待下一題...';
+  // 判斷是否是最後一題
+  const isLastQuestion = quizState.currentQuestion &&
+    quizState.currentQuestion.questionIndex + 1 >= quizState.currentQuestion.totalQuestions;
 
-  // 清空選項區域，顯示等待訊息
-  const optionsContainer = document.getElementById('quiz-options');
-  optionsContainer.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">準備下一題中...</div>';
+  if (isLastQuestion) {
+    // 最後一題，顯示結算中
+    document.getElementById('quiz-question-text').textContent = '🎉 恭喜完成答題！';
+    const optionsContainer = document.getElementById('quiz-options');
+    optionsContainer.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">結算中，請稍候...</div>';
+  } else {
+    // 不是最後一題，顯示等待下一題
+    document.getElementById('quiz-question-text').textContent = '等待下一題...';
+    const optionsContainer = document.getElementById('quiz-options');
+    optionsContainer.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--text-secondary);">準備下一題中...</div>';
+  }
 
   // 清除計時器顯示
   const timerEl = document.getElementById('quiz-timer');

@@ -329,13 +329,13 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 3, max: 5 },
     gameType: 'drinking',
-    instructions: '隨機抽選 3-5 位玩家，每人與主管喝一杯，喝完獲得獎勵！',
+    instructions: '抽選 3-5 位玩家，每人與主管喝一杯啤酒。喝完獲得 +100元，未完成 +50元參與獎。',
     rewards: {
-      winner: { coins: 100, description: '每杯 +100元' },
+      winner: { coins: 100, description: '喝完 +100元' },
       participant: { coins: 50, description: '參與獎 +50元' }
     },
     display: {
-      affected: '隨機 3-5 位玩家參與，每杯 +100元',
+      affected: '喝酒挑戰：喝完 +100元，參與 +50元',
       mood: 'positive'
     }
   },
@@ -348,13 +348,13 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 2, max: 4 },
     gameType: 'rock_paper_scissors',
-    instructions: '抽選 2-4 位工程師，進行猜拳淘汰賽，最後勝出者成功修復 Bug！',
+    instructions: '抽選 2-4 位玩家進行猜拳淘汰賽。最後勝出者獲得 +300元，淘汰者 -50元並喝一杯。',
     rewards: {
       winner: { coins: 300, description: '成功修復 +300元' },
-      loser: { coins: -50, description: '修復失敗 -50元，需要喝一杯' }
+      loser: { coins: -50, description: '修復失敗 -50元' }
     },
     display: {
-      affected: '工程師猜拳對決，贏家 +300元，輸家 -50元',
+      affected: '猜拳對決：贏家 +300元，輸家 -50元',
       mood: 'mixed'
     }
   },
@@ -367,13 +367,13 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 3, max: 5 },
     gameType: 'black_white_guess',
-    instructions: '抽選 3-5 位業務相關人員，進行黑白猜淘汰賽，勝出者拿下大訂單！',
+    instructions: '抽選 3-5 位玩家進行黑白猜淘汰賽。主持人出題，最後勝出者獲得 +400元。',
     rewards: {
       winner: { coins: 400, description: '拿下訂單 +400元' },
-      loser: { coins: 0, description: '提案失敗，繼續努力' }
+      loser: { coins: 0, description: '提案失敗' }
     },
     display: {
-      affected: '業務提案對決，贏家 +400元',
+      affected: '黑白猜對決：贏家 +400元',
       mood: 'positive'
     }
   },
@@ -386,31 +386,31 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 4, max: 6 },
     gameType: 'team_challenge',
-    instructions: '抽選 4-6 位不同部門的員工組成團隊，進行團隊挑戰（猜拳接力賽）！',
+    instructions: '抽選 4-6 位玩家組成團隊，進行猜拳接力賽（每人輪流猜拳）。成功完成獲得每人 +200元，失敗每人 +50元參與獎。',
     rewards: {
-      winner: { coins: 200, description: '每位成員 +200元' },
+      winner: { coins: 200, description: '任務成功 +200元' },
       loser: { coins: 50, description: '參與獎 +50元' }
     },
     display: {
-      affected: '跨部門團隊挑戰，成功 +200元/人',
+      affected: '團隊挑戰：成功 +200元/人，參與 +50元/人',
       mood: 'positive'
     }
   },
   {
     id: 'INTERACTIVE_CEO_BONUS',
     type: EVENT_TYPES.INTERACTIVE,
-    title: '執行長隨機獎勵',
+    title: '執行長發紅包',
     description: '執行長心情大好，決定現場發放紅包給表現優秀的員工！',
     icon: '🎁',
     interactive: true,
     participantCount: { min: 1, max: 3 },
     gameType: 'lucky_draw',
-    instructions: '執行長隨機抽選 1-3 位幸運員工，每人獲得紅包獎勵！',
+    instructions: '抽選 1-3 位幸運玩家，每人直接獲得 +500元紅包獎勵！',
     rewards: {
-      winner: { coins: 500, description: '幸運紅包 +500元' }
+      winner: { coins: 500, description: '紅包 +500元' }
     },
     display: {
-      affected: '隨機 1-3 位幸運兒，每人 +500元',
+      affected: '幸運紅包：每人 +500元',
       mood: 'positive'
     }
   },
@@ -423,13 +423,13 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 2, max: 4 },
     gameType: 'rock_paper_scissors',
-    instructions: '抽選 2-4 位 QA，進行猜拳對決，勝出者找到最多 Bug！',
+    instructions: '抽選 2-4 位玩家進行猜拳對決。勝出者獲得 +250元，其他玩家獲得 +100元參與獎。',
     rewards: {
-      winner: { coins: 250, description: '找到關鍵 Bug +250元' },
+      winner: { coins: 250, description: '找到 Bug +250元' },
       loser: { coins: 100, description: '參與獎 +100元' }
     },
     display: {
-      affected: 'QA 對決，贏家 +250元，其他 +100元',
+      affected: '猜拳對決：贏家 +250元，其他 +100元',
       mood: 'positive'
     }
   },
@@ -442,69 +442,69 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 2, max: 3 },
     gameType: 'black_white_guess',
-    instructions: '抽選 2-3 位 PM，進行黑白猜對決，勝出者成功化解危機！',
+    instructions: '抽選 2-3 位玩家進行黑白猜對決。勝出者獲得 +350元，失敗者 -100元並喝一杯反省。',
     rewards: {
-      winner: { coins: 350, description: '危機處理成功 +350元' },
-      loser: { coins: -100, description: '處理失敗 -100元，需要喝酒反省' }
+      winner: { coins: 350, description: '危機化解 +350元' },
+      loser: { coins: -100, description: '處理失敗 -100元' }
     },
     display: {
-      affected: 'PM 危機處理，成功 +350元，失敗 -100元',
+      affected: '黑白猜對決：成功 +350元，失敗 -100元',
       mood: 'mixed'
     }
   },
   {
     id: 'INTERACTIVE_MARKETING_VIRAL',
     type: EVENT_TYPES.INTERACTIVE,
-    title: '行銷爆紅挑戰',
+    title: '行銷創意大賽',
     description: '行銷活動需要創意發想！最有創意的提案將獲得高額獎金！',
     icon: '🚀',
     interactive: true,
     participantCount: { min: 2, max: 4 },
     gameType: 'creative_battle',
-    instructions: '抽選 2-4 位行銷人員，進行創意對決（猜拳），勝出者的創意被採用！',
+    instructions: '抽選 2-4 位玩家進行猜拳創意對決。勝出者創意被採用獲得 +400元，其他玩家獲得 +100元參考獎。',
     rewards: {
-      winner: { coins: 400, description: '創意被採用 +400元' },
-      loser: { coins: 100, description: '創意參考獎 +100元' }
+      winner: { coins: 400, description: '創意採用 +400元' },
+      loser: { coins: 100, description: '參考獎 +100元' }
     },
     display: {
-      affected: '行銷創意戰，贏家 +400元，其他 +100元',
+      affected: '猜拳對決：贏家 +400元，其他 +100元',
       mood: 'positive'
     }
   },
   {
     id: 'INTERACTIVE_FINANCE_AUDIT',
     type: EVENT_TYPES.INTERACTIVE,
-    title: '財務季度結算',
+    title: '財務快速結算',
     description: '季度結算時間到！財務部門需要快速完成核對，準確者有獎勵！',
     icon: '💼',
     interactive: true,
     participantCount: { min: 1, max: 2 },
     gameType: 'challenge',
-    instructions: '抽選 1-2 位財務人員，進行挑戰（喝酒速度賽或猜拳），完成者獲得獎勵！',
+    instructions: '抽選 1-2 位玩家進行快速挑戰（喝酒速度賽或猜拳三戰兩勝）。勝出者獲得 +300元，完成者獲得 +150元。',
     rewards: {
-      winner: { coins: 300, description: '準時完成 +300元' },
+      winner: { coins: 300, description: '快速完成 +300元' },
       participant: { coins: 150, description: '完成獎 +150元' }
     },
     display: {
-      affected: '財務結算挑戰，完成 +300元',
+      affected: '速度挑戰：勝出 +300元，完成 +150元',
       mood: 'positive'
     }
   },
   {
     id: 'INTERACTIVE_ALLHANDS_TOAST',
     type: EVENT_TYPES.INTERACTIVE,
-    title: '全體員工大會乾杯',
-    description: '公司達成重要里程碑！執行長號召全體員工一起慶祝！',
+    title: '全員慶功宴',
+    description: '公司達成重要里程碑！執行長號召員工一起舉杯慶祝！',
     icon: '🥂',
     interactive: true,
     participantCount: { min: 5, max: 10 },
     gameType: 'mass_drinking',
-    instructions: '隨機抽選 5-10 位員工代表，與執行長一起舉杯慶祝，參與者都有獎勵！',
+    instructions: '抽選 5-10 位玩家與執行長一起舉杯乾杯。每位參與者獲得 +150元慶功獎勵！',
     rewards: {
-      participant: { coins: 150, description: '每位參與者 +150元' }
+      participant: { coins: 150, description: '慶功獎 +150元' }
     },
     display: {
-      affected: '隨機 5-10 位員工，每人 +150元',
+      affected: '乾杯慶祝：每人 +150元',
       mood: 'positive'
     }
   }

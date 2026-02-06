@@ -482,7 +482,7 @@ export class MiniGameManager extends EventEmitter {
     return { success: true };
   }
 
-  // 結束當前局（結算）
+  // 結束當前局（結算）- 包含5秒開牌動畫延遲
   endPokerRound() {
     if (!this.pokerState.active || !this.pokerState.roundActive) {
       return { success: false, error: '沒有進行中的局' };
@@ -493,6 +493,23 @@ export class MiniGameManager extends EventEmitter {
       this.pokerState.timer = null;
     }
 
+    this.pokerState.roundActive = false; // 結束下注階段
+
+    // 先發送「開牌中」事件
+    this.emit('poker:revealing', {
+      roundNumber: this.pokerState.roundNumber
+    });
+
+    // 5秒後才開牌並發送結果
+    setTimeout(() => {
+      this._revealPokerResult();
+    }, 5000);
+
+    return { success: true, message: '開牌中...' };
+  }
+
+  // 實際開牌並計算結果
+  _revealPokerResult() {
     const card = this.pokerState.card;
     // A~6 小(1-6)，7 和局(7)，8~K 大(8-13)
     let result;
@@ -505,7 +522,6 @@ export class MiniGameManager extends EventEmitter {
     }
 
     this.pokerState.result = result;
-    this.pokerState.roundActive = false; // 結束下注階段
 
     // 計算贏家和輸家
     const winners = [];
@@ -548,8 +564,6 @@ export class MiniGameManager extends EventEmitter {
       losers,
       tied
     });
-
-    return { success: true, card, result, winners, losers, tied };
   }
 
   // 下一局

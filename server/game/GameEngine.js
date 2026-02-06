@@ -245,6 +245,7 @@ export class GameEngine extends EventEmitter {
       achievementProgress: {},  // 各成就進度追蹤
       // 道具系統
       items: [],  // 擁有的道具 ID 列表
+      purchasedItems: [],  // 本局已購買過的道具 ID 列表（每種道具只能買一次）
       activeEffects: []  // 生效中的效果 [{ effectId, effect, expiresAt }]
     };
 
@@ -340,6 +341,7 @@ export class GameEngine extends EventEmitter {
         achievements: [],
         achievementProgress: {},
         items: [],
+        purchasedItems: [],  // 本局已購買過的道具 ID 列表
         activeEffects: []
       };
 
@@ -455,6 +457,7 @@ export class GameEngine extends EventEmitter {
       role: player.roleId ? ROLES[player.roleId] : player.role,
       roleId: player.roleId,
       items: player.items || [],
+      purchasedItems: player.purchasedItems || [],  // 本局已購買過的道具
       achievements: player.achievements || [],
       achievementProgress: player.achievementProgress || {},
       activeEffects: player.activeEffects || [],
@@ -912,15 +915,16 @@ export class GameEngine extends EventEmitter {
       if (!player) continue;
 
       const reward = event.rewards?.winner || { coins: 0 };
-      player.coins += reward.coins || 0;
-      player.score += reward.score || 0;
+      const coinsToAdd = reward.coins || 0;
+      player.coins += coinsToAdd;
+      player.score += coinsToAdd; // 互動事件：金幣和積分同步增加
 
       results.push({
         playerId: winnerId,
         playerName: player.name,
         result: 'winner',
-        coins: reward.coins || 0,
-        score: reward.score || 0,
+        coins: coinsToAdd,
+        score: coinsToAdd, // 積分與金幣同步
         newCoins: player.coins,
         newScore: player.score
       });
@@ -932,15 +936,16 @@ export class GameEngine extends EventEmitter {
       if (!player) continue;
 
       const penalty = event.rewards?.loser || { coins: 0 };
-      player.coins += penalty.coins || 0; // 可能是負數
-      player.score += penalty.score || 0;
+      const coinsToAdd = penalty.coins || 0; // 可能是負數
+      player.coins += coinsToAdd;
+      player.score += coinsToAdd; // 互動事件：金幣和積分同步增加（可能為負）
 
       results.push({
         playerId: loserId,
         playerName: player.name,
         result: 'loser',
-        coins: penalty.coins || 0,
-        score: penalty.score || 0,
+        coins: coinsToAdd,
+        score: coinsToAdd, // 積分與金幣同步
         newCoins: player.coins,
         newScore: player.score
       });
@@ -954,16 +959,17 @@ export class GameEngine extends EventEmitter {
       if (!player) continue;
 
       const reward = event.rewards?.participant || { coins: 0 };
-      if (reward.coins || reward.score) {
-        player.coins += reward.coins || 0;
-        player.score += reward.score || 0;
+      const coinsToAdd = reward.coins || 0;
+      if (coinsToAdd !== 0) {
+        player.coins += coinsToAdd;
+        player.score += coinsToAdd; // 互動事件：金幣和積分同步增加
 
         results.push({
           playerId: participantId,
           playerName: player.name,
           result: 'participant',
-          coins: reward.coins || 0,
-          score: reward.score || 0,
+          coins: coinsToAdd,
+          score: coinsToAdd, // 積分與金幣同步
           newCoins: player.coins,
           newScore: player.score
         });
@@ -1480,6 +1486,11 @@ export class GameEngine extends EventEmitter {
       return { success: false, error: '無效的道具' };
     }
 
+    // 檢查本局是否已購買過此道具（每種道具只能買一次）
+    if (player.purchasedItems && player.purchasedItems.includes(itemId)) {
+      return { success: false, error: '本局已購買過此道具' };
+    }
+
     if (player.coins < item.cost) {
       return { success: false, error: '金幣不足' };
     }
@@ -1489,6 +1500,12 @@ export class GameEngine extends EventEmitter {
 
     // 加入道具
     player.items.push(itemId);
+
+    // 記錄已購買（確保 purchasedItems 存在）
+    if (!player.purchasedItems) {
+      player.purchasedItems = [];
+    }
+    player.purchasedItems.push(itemId);
 
     this.emit('itemPurchased', {
       playerId: player.id,

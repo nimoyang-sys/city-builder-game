@@ -1527,6 +1527,23 @@
       color: var(--warning);
     }
 
+    .item-shop-card.purchased {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+    }
+
+    .item-shop-card.purchased:hover {
+      border-color: var(--border);
+      transform: none;
+      box-shadow: none;
+    }
+
+    .item-shop-cost.purchased-label {
+      color: var(--success);
+      font-size: 0.9rem;
+    }
+
     /* 我的道具 */
     .my-item-card {
       display: flex;

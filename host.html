@@ -1431,6 +1431,10 @@
     let currentAwardIndex = 0;
     let totalPrizes = 0;
     let eventHistory = [];  // 事件歷史紀錄
+    let beerParticipants = [];
+    let pokerTimerInterval = null;
+    let pokerBetBigCount = 0;
+    let pokerBetSmallCount = 0;
 
     // 初始化
     document.addEventListener('DOMContentLoaded', () => {
@@ -1497,6 +1501,168 @@
       socket.on('game:flashSaleStarted', handleFlashSaleStarted);
       socket.on('game:flashSalePurchased', handleFlashSalePurchased);
       socket.on('game:flashSaleEnded', handleFlashSaleEnded);
+
+      // ========== 小遊戲事件監聽 ==========
+
+      // 快問快答事件
+      socket.on('minigame:quizStarted', (data) => {
+        addLog(`快問快答開始，共 ${data.questionCount} 題`, 'success');
+      });
+
+      socket.on('minigame:quizEnded', (data) => {
+        addLog(`快問快答結束，${data.results.length} 位玩家參與`, 'success');
+      });
+
+      // 喝啤酒比賽事件
+      socket.on('minigame:beerWaitingStart', () => {
+        beerParticipants = [];
+        document.getElementById('beer-participants-count').textContent = '0';
+        document.getElementById('beer-participants-list').innerHTML = '';
+      });
+
+      socket.on('minigame:beerPlayerJoined', (data) => {
+        beerParticipants.push({ playerId: data.playerId, playerName: data.playerName });
+        document.getElementById('beer-participants-count').textContent = data.currentCount;
+        document.getElementById('beer-participants-list').innerHTML =
+          beerParticipants.map(p => p.playerName).join(', ');
+
+        if (data.canStart) {
+          document.getElementById('btn-beer-start').disabled = false;
+        }
+
+        addLog(`${data.playerName} 加入喝啤酒比賽（${data.currentCount}/${data.maxPlayers}）`);
+      });
+
+      socket.on('minigame:beerResultsSet', (data) => {
+        addLog('喝啤酒比賽排名已確認，獎勵已發放', 'success');
+      });
+
+      socket.on('minigame:beerEnded', () => {
+        addLog('喝啤酒比賽結束', 'warning');
+      });
+
+      // 比大小事件
+      socket.on('minigame:pokerGameStarted', () => {
+        console.log('🃏 收到 pokerGameStarted 事件');
+        addLog('比大小遊戲已開始', 'success');
+      });
+
+      socket.on('minigame:pokerRoundStarted', (data) => {
+        console.log('🃏 收到 pokerRoundStarted 事件', data);
+        pokerBetBigCount = 0;
+        pokerBetSmallCount = 0;
+
+        document.getElementById('poker-round-number').textContent = data.roundNumber;
+        document.getElementById('poker-bet-big-count').textContent = '0';
+        document.getElementById('poker-bet-small-count').textContent = '0';
+        document.getElementById('poker-betting-control').style.display = 'block';
+        document.getElementById('poker-result-control').style.display = 'none';
+
+        // 啟動倒計時
+        const endTime = data.endTime;
+        if (pokerTimerInterval) clearInterval(pokerTimerInterval);
+
+        pokerTimerInterval = setInterval(() => {
+          const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+          const timerEl = document.getElementById('poker-timer');
+          if (timerEl) {
+            timerEl.textContent = remaining + 's';
+            timerEl.style.color = remaining <= 5 ? 'var(--danger)' : 'var(--warning)';
+          }
+
+          if (remaining <= 0) {
+            clearInterval(pokerTimerInterval);
+            pokerTimerInterval = null;
+          }
+        }, 100);
+
+        addLog(`第 ${data.roundNumber} 局開始，玩家下注中...`, 'info');
+      });
+
+      socket.on('minigame:pokerBetPlaced', (data) => {
+        if (data.bet === 'big') {
+          pokerBetBigCount++;
+        } else {
+          pokerBetSmallCount++;
+        }
+        document.getElementById('poker-bet-big-count').textContent = pokerBetBigCount;
+        document.getElementById('poker-bet-small-count').textContent = pokerBetSmallCount;
+      });
+
+      socket.on('minigame:pokerRoundEnded', (data) => {
+        if (pokerTimerInterval) {
+          clearInterval(pokerTimerInterval);
+          pokerTimerInterval = null;
+        }
+
+        document.getElementById('poker-betting-control').style.display = 'none';
+        document.getElementById('poker-result-control').style.display = 'block';
+
+        const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+        const cardDisplay = cardNames[data.card - 1] || data.card;
+
+        let resultText;
+        if (data.result === 'tie') {
+          resultText = '和局 (7)';
+        } else if (data.result === 'big') {
+          resultText = '大';
+        } else {
+          resultText = '小';
+        }
+
+        document.getElementById('poker-result-round').textContent = data.roundNumber;
+        document.getElementById('poker-card-display').textContent = cardDisplay;
+        document.getElementById('poker-result-display').textContent = resultText;
+        document.getElementById('poker-winners-count').textContent = data.winners.length;
+        document.getElementById('poker-losers-count').textContent = data.losers.length;
+
+        if (data.result === 'tie') {
+          const tiedCount = data.tied ? data.tied.length : 0;
+          addLog(`第 ${data.roundNumber} 局：${cardDisplay} = ${resultText}，${tiedCount}人平手`, 'info');
+        } else {
+          addLog(`第 ${data.roundNumber} 局：${cardDisplay} = ${resultText}，${data.winners.length}人獲勝，${data.losers.length}人喝酒`, 'success');
+        }
+      });
+
+      socket.on('minigame:pokerGameEnded', (data) => {
+        addLog(`比大小遊戲結束，共進行 ${data.totalRounds} 局`, 'warning');
+        document.getElementById('btn-poker-start').style.display = 'block';
+        document.getElementById('poker-game-control').style.display = 'none';
+      });
+
+      // 猜歌曲前奏事件
+      socket.on('minigame:songGuessRoundStarted', (data) => {
+        document.getElementById('song-current-round').textContent = data.round;
+        document.getElementById('song-answered-count').textContent = '0';
+        document.getElementById('btn-start-song-round').style.display = 'none';
+        document.getElementById('btn-end-song-round').style.display = 'block';
+        addLog(`第 ${data.round} 局開始`, 'info');
+      });
+
+      socket.on('minigame:songGuessPlayerSubmitted', (data) => {
+        document.getElementById('song-answered-count').textContent = data.totalSubmitted;
+        addLog(`${data.playerName} 已提交答案`, 'info');
+      });
+
+      socket.on('minigame:songGuessRoundEnded', (data) => {
+        const correctCount = data.results.filter(r => r.isCorrect).length;
+        const wrongCount = data.results.length - correctCount;
+        addLog(`第 ${data.roundNumber} 局結束。答案：${data.correctAnswer}。答對 ${correctCount} 人，答錯 ${wrongCount} 人`, 'success');
+
+        // Reset UI for next round
+        document.getElementById('song-answer-select').style.display = 'none';
+        document.getElementById('song-correct-answer').value = '';
+        document.getElementById('song-custom-answer').style.display = 'none';
+        document.getElementById('song-custom-answer').value = '';
+        document.getElementById('btn-end-song-round').style.display = 'none';
+        document.getElementById('btn-start-song-round').style.display = 'block';
+      });
+
+      socket.on('minigame:songGuessGameEnded', () => {
+        document.getElementById('btn-song-start').style.display = 'block';
+        document.getElementById('song-game-control').style.display = 'none';
+        addLog('猜歌曲前奏遊戲結束', 'success');
+      });
 
       // 檢查是否有保存的密碼，自動登入
       const savedPassword = localStorage.getItem('host-password');
@@ -2878,9 +3044,6 @@
 
     // ========== 小遊戲控制 ==========
 
-    let beerParticipants = [];
-    let pokerTimerInterval = null;
-
     // 快問快答
     function startQuizGame() {
       if (confirm('確定要開始快問快答嗎？')) {
@@ -3063,171 +3226,6 @@
       } else {
         customInput.style.display = 'none';
       }
-    });
-
-    // ========== 小遊戲事件監聽 ==========
-
-    // 快問快答事件
-    socket.on('minigame:quizStarted', (data) => {
-      addLog(`快問快答開始，共 ${data.questionCount} 題`, 'success');
-    });
-
-    socket.on('minigame:quizEnded', (data) => {
-      addLog(`快問快答結束，${data.results.length} 位玩家參與`, 'success');
-    });
-
-    // 喝啤酒比賽事件
-    socket.on('minigame:beerWaitingStart', () => {
-      beerParticipants = [];
-      document.getElementById('beer-participants-count').textContent = '0';
-      document.getElementById('beer-participants-list').innerHTML = '';
-    });
-
-    socket.on('minigame:beerPlayerJoined', (data) => {
-      beerParticipants.push({ playerId: data.playerId, playerName: data.playerName });
-      document.getElementById('beer-participants-count').textContent = data.currentCount;
-      document.getElementById('beer-participants-list').innerHTML =
-        beerParticipants.map(p => p.playerName).join(', ');
-
-      if (data.canStart) {
-        document.getElementById('btn-beer-start').disabled = false;
-      }
-
-      addLog(`${data.playerName} 加入喝啤酒比賽（${data.currentCount}/${data.maxPlayers}）`);
-    });
-
-    socket.on('minigame:beerResultsSet', (data) => {
-      addLog('喝啤酒比賽排名已確認，獎勵已發放', 'success');
-    });
-
-    socket.on('minigame:beerEnded', () => {
-      addLog('喝啤酒比賽結束', 'warning');
-    });
-
-    // 比大小事件
-    let pokerBetBigCount = 0;
-    let pokerBetSmallCount = 0;
-
-    socket.on('minigame:pokerGameStarted', () => {
-      console.log('🃏 收到 pokerGameStarted 事件');
-      addLog('比大小遊戲已開始', 'success');
-    });
-
-    socket.on('minigame:pokerRoundStarted', (data) => {
-      console.log('🃏 收到 pokerRoundStarted 事件', data);
-      pokerBetBigCount = 0;
-      pokerBetSmallCount = 0;
-
-      document.getElementById('poker-round-number').textContent = data.roundNumber;
-      document.getElementById('poker-bet-big-count').textContent = '0';
-      document.getElementById('poker-bet-small-count').textContent = '0';
-      document.getElementById('poker-betting-control').style.display = 'block';
-      document.getElementById('poker-result-control').style.display = 'none';
-
-      // 啟動倒計時
-      const endTime = data.endTime;
-      if (pokerTimerInterval) clearInterval(pokerTimerInterval);
-
-      pokerTimerInterval = setInterval(() => {
-        const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
-        const timerEl = document.getElementById('poker-timer');
-        if (timerEl) {
-          timerEl.textContent = remaining + 's';
-          timerEl.style.color = remaining <= 5 ? 'var(--danger)' : 'var(--warning)';
-        }
-
-        if (remaining <= 0) {
-          clearInterval(pokerTimerInterval);
-          pokerTimerInterval = null;
-        }
-      }, 100);
-
-      addLog(`第 ${data.roundNumber} 局開始，玩家下注中...`, 'info');
-    });
-
-    socket.on('minigame:pokerBetPlaced', (data) => {
-      if (data.bet === 'big') {
-        pokerBetBigCount++;
-      } else {
-        pokerBetSmallCount++;
-      }
-      document.getElementById('poker-bet-big-count').textContent = pokerBetBigCount;
-      document.getElementById('poker-bet-small-count').textContent = pokerBetSmallCount;
-    });
-
-    socket.on('minigame:pokerRoundEnded', (data) => {
-      if (pokerTimerInterval) {
-        clearInterval(pokerTimerInterval);
-        pokerTimerInterval = null;
-      }
-
-      document.getElementById('poker-betting-control').style.display = 'none';
-      document.getElementById('poker-result-control').style.display = 'block';
-
-      const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-      const cardDisplay = cardNames[data.card - 1] || data.card;
-
-      let resultText;
-      if (data.result === 'tie') {
-        resultText = '和局 (7)';
-      } else if (data.result === 'big') {
-        resultText = '大';
-      } else {
-        resultText = '小';
-      }
-
-      document.getElementById('poker-result-round').textContent = data.roundNumber;
-      document.getElementById('poker-card-display').textContent = cardDisplay;
-      document.getElementById('poker-result-display').textContent = resultText;
-      document.getElementById('poker-winners-count').textContent = data.winners.length;
-      document.getElementById('poker-losers-count').textContent = data.losers.length;
-
-      if (data.result === 'tie') {
-        const tiedCount = data.tied ? data.tied.length : 0;
-        addLog(`第 ${data.roundNumber} 局：${cardDisplay} = ${resultText}，${tiedCount}人平手`, 'info');
-      } else {
-        addLog(`第 ${data.roundNumber} 局：${cardDisplay} = ${resultText}，${data.winners.length}人獲勝，${data.losers.length}人喝酒`, 'success');
-      }
-    });
-
-    socket.on('minigame:pokerGameEnded', (data) => {
-      addLog(`比大小遊戲結束，共進行 ${data.totalRounds} 局`, 'warning');
-      document.getElementById('btn-poker-start').style.display = 'block';
-      document.getElementById('poker-game-control').style.display = 'none';
-    });
-
-    // 猜歌曲前奏事件
-    socket.on('minigame:songGuessRoundStarted', (data) => {
-      document.getElementById('song-current-round').textContent = data.round;
-      document.getElementById('song-answered-count').textContent = '0';
-      document.getElementById('btn-start-song-round').style.display = 'none';
-      document.getElementById('btn-end-song-round').style.display = 'block';
-      addLog(`第 ${data.round} 局開始`, 'info');
-    });
-
-    socket.on('minigame:songGuessPlayerSubmitted', (data) => {
-      document.getElementById('song-answered-count').textContent = data.totalSubmitted;
-      addLog(`${data.playerName} 已提交答案`, 'info');
-    });
-
-    socket.on('minigame:songGuessRoundEnded', (data) => {
-      const correctCount = data.results.filter(r => r.isCorrect).length;
-      const wrongCount = data.results.length - correctCount;
-      addLog(`第 ${data.round} 局結束。答案：${data.correctAnswer}。答對 ${correctCount} 人，答錯 ${wrongCount} 人`, 'success');
-
-      // Reset UI for next round
-      document.getElementById('song-answer-select').style.display = 'none';
-      document.getElementById('song-correct-answer').value = '';
-      document.getElementById('song-custom-answer').style.display = 'none';
-      document.getElementById('song-custom-answer').value = '';
-      document.getElementById('btn-end-song-round').style.display = 'none';
-      document.getElementById('btn-start-song-round').style.display = 'block';
-    });
-
-    socket.on('minigame:songGuessGameEnded', () => {
-      document.getElementById('btn-song-start').style.display = 'block';
-      document.getElementById('song-game-control').style.display = 'none';
-      addLog('猜歌曲前奏遊戲結束', 'success');
     });
 
     // 定時刷新
