@@ -1584,9 +1584,8 @@ function handleSongGuessGameStarted() {
     active: true,
     submitted: false
   };
-  showToast('🎵 猜歌曲前奏遊戲開始！請準備作答', 'info');
-  // 遊戲開始時就顯示彈窗，讓玩家準備
-  showSongGuessModal();
+  // 遊戲開始會自動觸發第一局，不需要在這裡顯示彈窗
+  // 彈窗會由 handleSongGuessRoundStarted 處理
 }
 
 function handleSongGuessRoundStarted(data) {

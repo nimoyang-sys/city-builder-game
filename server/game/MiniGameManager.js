@@ -825,24 +825,31 @@ export class MiniGameManager extends EventEmitter {
       return { success: false, error: '猜歌遊戲已在進行中' };
     }
 
-    this.songGuessState = {
-      active: true,
-      roundActive: false,
-      currentRound: 0,
-      totalRounds: 0,
-      playerAnswers: new Map(),
-      correctAnswer: null,
-      roundResults: []
-    };
-
     // 獲取所有玩家列表
     const allPlayers = Array.from(this.gameEngine.players.values()).map(p => ({
       id: p.id,
       name: p.name
     }));
 
+    // 直接開始第一局
+    this.songGuessState = {
+      active: true,
+      roundActive: true,  // 直接開始第一局
+      currentRound: 1,    // 從第一局開始
+      totalRounds: 0,
+      playerAnswers: new Map(),
+      correctAnswer: null,
+      roundResults: []
+    };
+
+    // 發送遊戲開始和第一局開始事件
     this.emit('songGuess:gameStarted', { allPlayers });
-    return { success: true };
+    this.emit('songGuess:roundStarted', {
+      round: 1,
+      allPlayers
+    });
+
+    return { success: true, round: 1 };
   }
 
   startSongRound() {

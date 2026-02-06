@@ -3528,20 +3528,20 @@
       }
     }
 
-    // 猜歌曲前奏 - 開始遊戲
+    // 猜歌曲前奏 - 開始遊戲（自動開始第一局）
     function startSongGuessGame() {
       checkAndStartGame(() => {
         if (confirm('確定要開始猜歌曲前奏遊戲嗎？')) {
           socket.emit('host:startSongGuessGame');
           document.getElementById('btn-song-start').style.display = 'none';
           document.getElementById('song-game-control').style.display = 'block';
-          document.getElementById('song-current-round').textContent = '0';
+          document.getElementById('song-current-round').textContent = '1';  // 直接第一局
           document.getElementById('song-answered-count').textContent = '0';
-          // 確保初始狀態正確：顯示開始新一局按鈕，隱藏其他控制項
-          document.getElementById('btn-start-song-round').style.display = 'block';
-          document.getElementById('btn-end-song-round').style.display = 'none';
+          // 遊戲開始即第一局，顯示結束答題按鈕
+          document.getElementById('btn-start-song-round').style.display = 'none';
+          document.getElementById('btn-end-song-round').style.display = 'block';
           document.getElementById('song-answer-select').style.display = 'none';
-          addLog('猜歌曲前奏遊戲開始', 'success');
+          addLog('猜歌曲前奏遊戲開始，第 1 局', 'success');
         }
       });
     }
