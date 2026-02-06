@@ -4671,11 +4671,6 @@
 
     // 顯示事件
     function showEvent(event, participants = []) {
-      console.log('=== showEvent ===');
-      console.log('Event:', event);
-      console.log('Event type:', event?.type);
-      console.log('Participants received:', participants);
-
       const panel = document.getElementById('event-panel');
       const typeMap = {
         'BOOM': '景氣繁榮',
@@ -4691,16 +4686,33 @@
       document.getElementById('event-title').textContent = event.title;
 
       // 如果是互動事件且有參與者，顯示參與者名單
-      console.log('Is INTERACTIVE?', event.type === 'INTERACTIVE');
-      console.log('Has participants?', participants && participants.length > 0);
       if (event.type === 'INTERACTIVE' && participants && participants.length > 0) {
-        const participantNames = participants.map(p => p.name).join('、');
         const instructionsText = event.instructions || event.description;
+        const participantCards = participants.map(p => `
+          <div style="
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.1));
+            border: 2px solid rgba(255,215,0,0.5);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+          ">
+            ${p.role?.emoji || '👤'} ${p.name}
+          </div>
+        `).join('');
+
         document.getElementById('event-description').innerHTML = `
-          <div style="margin-bottom: 10px;">${instructionsText}</div>
-          <div style="padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-top: 10px;">
-            <div style="color: #FFD700; font-weight: bold; margin-bottom: 6px;">📋 參與玩家</div>
-            <div style="color: rgba(255,255,255,0.95); line-height: 1.6;">${participantNames}</div>
+          <div style="margin-bottom: 15px; font-size: 1.1rem; line-height: 1.6;">${instructionsText}</div>
+          <div style="padding: 15px; background: rgba(0,0,0,0.3); border-radius: 12px; margin-top: 15px;">
+            <div style="color: #FFD700; font-weight: bold; margin-bottom: 12px; font-size: 1.2rem; text-align: center;">
+              📋 參與玩家 (${participants.length}人)
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+              ${participantCards}
+            </div>
           </div>
         `;
       } else {
@@ -4975,10 +4987,6 @@
 
     function handleEventTriggered(data) {
       currentEventData = data;  // 保存事件數據供結算明細使用
-
-      console.log('=== handleEventTriggered ===');
-      console.log('Event type:', data.event?.type);
-      console.log('Participants:', data.participants);
 
       // 先更新狀態和排行榜
       updateStatusBadge('EVENT');

@@ -1875,6 +1875,11 @@
         if (data.miniGameStates) {
           restoreMiniGameUI(data.miniGameStates);
         }
+
+        // 還原事件歷史日誌
+        if (data.gameState && data.gameState.eventHistory) {
+          restoreEventHistory(data.gameState.eventHistory);
+        }
       } else {
         alert(data.error || '登入失敗');
         // 如果自動登入失敗，清除保存的密碼
@@ -1962,6 +1967,33 @@
           document.getElementById('btn-next-ai').style.display = 'none';
         }
       }
+    }
+
+    // 還原事件歷史日誌
+    function restoreEventHistory(eventHistory) {
+      if (!eventHistory || eventHistory.length === 0) return;
+
+      addLog(`🔄 載入 ${eventHistory.length} 筆事件歷史`, 'info');
+
+      // 按時間順序顯示事件（從舊到新）
+      eventHistory.forEach(record => {
+        const event = record.event;
+        const time = new Date(record.timestamp).toLocaleTimeString();
+        const typeEmoji = {
+          'BOOM': '🚀',
+          'RECESSION': '📉',
+          'DISASTER': '🌊',
+          'POLICY': '📜',
+          'SPECIAL': '✨',
+          'INTERACTIVE': '🎮'
+        }[event.type] || '📌';
+
+        const log = document.getElementById('event-log');
+        const item = document.createElement('div');
+        item.className = 'log-item fade-in info';
+        item.innerHTML = `<span class="log-time">[${time}]</span><span>${typeEmoji} 事件：${event.title}</span>`;
+        log.appendChild(item);
+      });
     }
 
     // 填充建築選擇（限時搶購用）

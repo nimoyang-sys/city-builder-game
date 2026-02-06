@@ -2222,7 +2222,8 @@ export class GameEngine extends EventEmitter {
       currentEvent: this.currentEvent,
       leaderboard: this.getLeaderboard(),
       totalBuildings: Object.values(this.cityBuildings).reduce((a, b) => a + b, 0),
-      lotteryState: this.lotteryState
+      lotteryState: this.lotteryState,
+      eventHistory: this.eventHistory
     };
   }
 
