@@ -24,6 +24,11 @@ let playerState = {
   activeEffects: []
 };
 
+// 檢查玩家是否已登入
+function isPlayerLoggedIn() {
+  return playerState.id !== null;
+}
+
 // 角色彈窗是否已經顯示過（使用 localStorage 記錄當前遊戲會話）
 function isRoleModalShown() {
   const playerId = localStorage.getItem('playerId');
@@ -423,6 +428,7 @@ function handleUpgradeResult(result) {
 let flashSaleTimer = null;
 
 function handleFlashSaleStatus(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   if (data.active) {
     showFlashSaleBanner(data);
   } else {
@@ -431,11 +437,13 @@ function handleFlashSaleStatus(data) {
 }
 
 function handleFlashSaleStarted(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   showFlashSaleBanner(data);
   showToast(`⚡ 限時搶購開始！${data.building.emoji} ${data.building.name} 只要 ${data.salePrice} 金幣！`, 'success');
 }
 
 function handleFlashSalePurchased(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   // 更新剩餘數量
   updateFlashSaleRemaining(data.remaining);
 
@@ -451,6 +459,7 @@ function handleFlashSalePurchased(data) {
 }
 
 function handleFlashSaleEnded(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   hideFlashSaleBanner();
   if (data) {
     showToast(`限時搶購結束！共售出 ${data.totalSold}/${data.totalQuantity} 個`, 'info');
@@ -1358,6 +1367,7 @@ let pokerState = {
 
 // 快問快答事件處理
 function handleQuizStarted(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   quizState = {
     active: true,
     currentQuestion: null,
@@ -1370,6 +1380,7 @@ function handleQuizStarted(data) {
 }
 
 function handleQuizQuestion(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   quizState.currentQuestion = data;
   quizState.questionIndex = data.questionIndex;
   quizState.answered = false; // 重置作答狀態
@@ -1385,6 +1396,7 @@ function handleQuizQuestion(data) {
 }
 
 function handleQuizEnded(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   console.log('🏁 Quiz ended, data:', data);
   quizState.active = false;
   closeQuizModal();
@@ -1412,6 +1424,7 @@ function submitQuizAnswer(answerIndex) {
 
 // 喝啤酒比賽事件處理
 function handleBeerWaitingStart() {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   beerState = {
     waiting: true,
     joined: false
@@ -1424,6 +1437,7 @@ function handleBeerPlayerJoined(data) {
 }
 
 function handleBeerGameStarted(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   beerState.waiting = false;
   closeBeerJoinModal();
   showToast('喝啤酒比賽開始！加油！', 'success');
@@ -1445,6 +1459,7 @@ function joinBeerGame() {
 
 // 比大小事件處理
 function handlePokerGameStarted() {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   pokerState = {
     active: true,
     roundActive: false,
@@ -1457,6 +1472,7 @@ function handlePokerGameStarted() {
 }
 
 function handlePokerRoundStarted(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   pokerState.roundActive = true;
   pokerState.bet = null;
   pokerState.endTime = data.endTime;
@@ -1466,11 +1482,13 @@ function handlePokerRoundStarted(data) {
 
 // 開牌中狀態 - 顯示等待動畫
 function handlePokerRevealing(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   pokerState.roundActive = false;
   showPokerRevealingInModal(data.roundNumber);
 }
 
 function handlePokerRoundEnded(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   pokerState.roundActive = false;
   pokerState.result = data;
 
@@ -1492,6 +1510,7 @@ function handlePokerRoundEnded(data) {
 }
 
 function handlePokerGameEnded(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   const totalWinnings = pokerState.totalWinnings || 0;
   pokerState.active = false;
   pokerState.roundActive = false;
@@ -1529,6 +1548,7 @@ let songGuessState = {
 };
 
 function handleSongGuessRoundStarted(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   songGuessState = {
     active: true,
     submitted: false
@@ -1537,6 +1557,7 @@ function handleSongGuessRoundStarted(data) {
 }
 
 function handleSongGuessRoundEnded(data) {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   songGuessState.submitted = false;
   // 不關閉彈窗，等待新一局或遊戲結束
 
@@ -1556,6 +1577,7 @@ function handleSongGuessRoundEnded(data) {
 }
 
 function handleSongGuessGameEnded() {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
   songGuessState.active = false;
   songGuessState.submitted = false;
   closeSongGuessModal();

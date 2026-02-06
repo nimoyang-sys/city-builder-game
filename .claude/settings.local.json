@@ -20,7 +20,8 @@
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
       "Bash(python -m json.tool:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(more:*)"
     ]
   }
 }

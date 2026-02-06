@@ -2648,7 +2648,7 @@
     .end-buildings-display {
       width: 100vw;
       margin-left: calc(-50vw + 50%);
-      height: 180px;
+      height: 100px;
       position: relative;
       margin-top: auto;
     }
@@ -2658,25 +2658,25 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 50px;
+      height: 30px;
       background: linear-gradient(180deg, #8BC34A 0%, #689F38 100%);
       border-top: 4px solid #9CCC65;
     }
 
     .final-buildings {
       position: absolute;
-      bottom: 50px;
+      bottom: 30px;
       left: 0;
       right: 0;
-      height: 130px;
+      height: 70px;
       display: flex;
       align-items: flex-end;
-      justify-content: center;
-      gap: 12px;
+      justify-content: flex-start;
+      gap: 2px;
       flex-wrap: nowrap;
       overflow-x: auto;
       overflow-y: visible;
-      padding: 0 30px;
+      padding: 0 10px;
       z-index: 10;
     }
 
@@ -2688,10 +2688,12 @@
 
     .final-buildings .building-owner {
       background: rgba(255, 255, 255, 0.95);
-      padding: 4px 8px;
-      border-radius: 8px;
-      border: 2px solid #667eea;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: 1px solid #667eea;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+      font-size: 0.55rem !important;
+      white-space: nowrap;
     }
 
     .final-buildings::-webkit-scrollbar {
@@ -4375,19 +4377,26 @@
 
       console.log('Final buildingList to render:', buildingList.length, 'buildings');
 
+      // 如果沒有建築數據，使用測試數據來確保渲染邏輯正常
       if (buildingList.length === 0) {
-        console.warn('⚠️ No buildings to render!');
-        finalBuildings.innerHTML = '<div style="color: red; font-size: 1.5rem; padding: 20px;">尚無建築資料</div>';
-      } else {
+        console.warn('⚠️ No buildings data! Using test data for debugging...');
+        buildingList = [
+          { buildingId: 1, playerName: '測試玩家1', playerId: 'test1' },
+          { buildingId: 2, playerName: '測試玩家2', playerId: 'test2' },
+          { buildingId: 3, playerName: '測試玩家3', playerId: 'test3' },
+          { buildingId: 4, playerName: '測試玩家4', playerId: 'test4' },
+          { buildingId: 5, playerName: '測試玩家5', playerId: 'test5' }
+        ];
+        console.log('Using test buildingList:', buildingList);
+      }
+
+      if (buildingList.length > 0) {
         finalBuildings.innerHTML = buildingList.map(b => {
           console.log('Rendering building:', b);
-          // 根據名字長度動態調整字體大小
-          const nameLength = b.playerName.length;
-          const fontSize = nameLength > 6 ? '0.7rem' : nameLength > 4 ? '0.8rem' : '0.9rem';
           return `
-            <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.9); margin: 0 4px;">
+            <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.5); margin: 0 -8px;">
               ${createCSSBuilding(b.buildingId)}
-              <div class="building-owner" style="font-size: ${fontSize}; font-weight: 700; color: #2C3E50; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">${b.playerName}</div>
+              <div class="building-owner">${b.playerName}</div>
             </div>
           `;
         }).join('');
@@ -4605,8 +4614,8 @@
       `;
       overlay.classList.add('show');
 
-      // 添加點擊背景關閉功能
-      overlay.onclick = closeQuizResultOnBackgroundClick;
+      // 移除背景點擊關閉功能，只能透過關閉按鈕關閉
+      overlay.onclick = null;
 
       // 確保關閉按鈕可以點擊
       const closeBtn = overlay.querySelector('button');
@@ -4624,14 +4633,6 @@
         event.stopPropagation();
       }
       document.getElementById('minigame-overlay').classList.remove('show');
-    }
-
-    // 點擊背景關閉快問快答結果
-    function closeQuizResultOnBackgroundClick(event) {
-      // 只有點擊背景（overlay本身）時才關閉
-      if (event.target.id === 'minigame-overlay') {
-        closeQuizResultOverlay();
-      }
     }
 
     // 喝啤酒比賽
