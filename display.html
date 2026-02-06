@@ -3992,7 +3992,8 @@
         'RECESSION': '景氣衰退',
         'DISASTER': '災難事件',
         'POLICY': '政策利多',
-        'SPECIAL': '特殊事件'
+        'SPECIAL': '特殊事件',
+        'INTERACTIVE': '互動任務'
       };
 
       document.getElementById('event-icon').textContent = event.emoji || '📢';
@@ -4006,13 +4007,17 @@
 
       panel.classList.add('show');
 
-      // 清除舊計時器並設定新的自動隱藏（8秒後）
+      // 清除舊計時器
       if (eventAutoHideTimer) {
         clearTimeout(eventAutoHideTimer);
       }
-      eventAutoHideTimer = setTimeout(() => {
-        hideEvent();
-      }, 8000);
+
+      // 互動事件不自動隱藏，需要主持人手動結算後才關閉
+      if (event.type !== 'INTERACTIVE') {
+        eventAutoHideTimer = setTimeout(() => {
+          hideEvent();
+        }, 8000);
+      }
     }
 
     // 隱藏事件

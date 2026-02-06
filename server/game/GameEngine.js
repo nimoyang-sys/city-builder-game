@@ -769,6 +769,11 @@ export class GameEngine extends EventEmitter {
       timestamp: Date.now()
     });
 
+    // 檢查是否為互動事件
+    if (event.type === 'INTERACTIVE' || event.interactive) {
+      return this.triggerInteractiveEvent(event);
+    }
+
     // 計算事件倍率
     const eventMultipliers = this.getEventMultipliers(event);
 
@@ -844,6 +849,163 @@ export class GameEngine extends EventEmitter {
     }
 
     return multipliers;
+  }
+
+  /**
+   * 觸發互動事件（不自動結算，需要主持人手動處理）
+   */
+  triggerInteractiveEvent(event) {
+    // 隨機選擇參與玩家
+    const allPlayers = Array.from(this.players.values());
+    const { min, max } = event.participantCount || { min: 1, max: 3 };
+    const participantCount = Math.floor(Math.random() * (max - min + 1)) + min;
+    const actualCount = Math.min(participantCount, allPlayers.length);
+
+    // 隨機抽選玩家
+    const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
+    const participants = shuffled.slice(0, actualCount);
+
+    // 儲存互動事件狀態
+    this.pendingInteractiveEvent = {
+      event,
+      participants: participants.map(p => ({
+        id: p.id,
+        name: p.name,
+        role: p.role ? ROLES[p.role] : null
+      })),
+      timestamp: Date.now()
+    };
+
+    // 發送給前端（不包含結算結果，等待手動處理）
+    this.emit('eventTriggered', {
+      event,
+      participants: this.pendingInteractiveEvent.participants,
+      results: [], // 互動事件沒有自動結算結果
+      cityBuildings: this.getCityBuildingStats(),
+      leaderboard: this.getLeaderboard()
+    });
+
+    return {
+      success: true,
+      event,
+      participants: this.pendingInteractiveEvent.participants,
+      message: '互動事件已觸發，等待主持人結算'
+    };
+  }
+
+  /**
+   * 結算互動事件（主持人手動確認結果後呼叫）
+   */
+  settleInteractiveEvent({ eventId, winners = [], losers = [], participants = [] }) {
+    if (!this.pendingInteractiveEvent) {
+      return { success: false, error: '沒有待結算的互動事件' };
+    }
+
+    const event = this.pendingInteractiveEvent.event;
+
+    // 發放獎勵
+    const results = [];
+
+    // 處理贏家
+    for (const winnerId of winners) {
+      const player = this.players.get(winnerId);
+      if (!player) continue;
+
+      const reward = event.rewards?.winner || { coins: 0 };
+      player.coins += reward.coins || 0;
+      player.score += reward.score || 0;
+
+      results.push({
+        playerId: winnerId,
+        playerName: player.name,
+        result: 'winner',
+        coins: reward.coins || 0,
+        score: reward.score || 0,
+        newCoins: player.coins,
+        newScore: player.score
+      });
+    }
+
+    // 處理輸家
+    for (const loserId of losers) {
+      const player = this.players.get(loserId);
+      if (!player) continue;
+
+      const penalty = event.rewards?.loser || { coins: 0 };
+      player.coins += penalty.coins || 0; // 可能是負數
+      player.score += penalty.score || 0;
+
+      results.push({
+        playerId: loserId,
+        playerName: player.name,
+        result: 'loser',
+        coins: penalty.coins || 0,
+        score: penalty.score || 0,
+        newCoins: player.coins,
+        newScore: player.score
+      });
+    }
+
+    // 處理其他參與者
+    for (const participantId of participants) {
+      if (winners.includes(participantId) || losers.includes(participantId)) continue;
+
+      const player = this.players.get(participantId);
+      if (!player) continue;
+
+      const reward = event.rewards?.participant || { coins: 0 };
+      if (reward.coins || reward.score) {
+        player.coins += reward.coins || 0;
+        player.score += reward.score || 0;
+
+        results.push({
+          playerId: participantId,
+          playerName: player.name,
+          result: 'participant',
+          coins: reward.coins || 0,
+          score: reward.score || 0,
+          newCoins: player.coins,
+          newScore: player.score
+        });
+      }
+    }
+
+    // 清除待處理事件
+    this.pendingInteractiveEvent = null;
+
+    // 廣播結算結果
+    this.emit('interactiveEventSettled', {
+      event,
+      results,
+      leaderboard: this.getLeaderboard()
+    });
+
+    // 回到建設階段
+    this.state = 'BUILDING';
+
+    return { success: true, event, results };
+  }
+
+  /**
+   * 取消互動事件
+   */
+  cancelInteractiveEvent() {
+    if (!this.pendingInteractiveEvent) {
+      return { success: false, error: '沒有待結算的互動事件' };
+    }
+
+    const event = this.pendingInteractiveEvent.event;
+    this.pendingInteractiveEvent = null;
+
+    // 廣播取消事件
+    this.emit('interactiveEventCancelled', {
+      event
+    });
+
+    // 回到建設階段
+    this.state = 'BUILDING';
+
+    return { success: true, message: '互動事件已取消' };
   }
 
   /**

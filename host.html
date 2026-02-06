@@ -1014,6 +1014,69 @@
         </div>
       </div>
 
+      <!-- 互動事件結算 -->
+      <div class="panel-card" id="interactive-event-panel" style="display: none;">
+        <h3>🎮 互動事件結算</h3>
+
+        <div id="interactive-event-info" style="margin-bottom: 15px; padding: 15px; background: var(--bg); border-radius: 8px; border-left: 4px solid var(--primary);">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <span id="interactive-event-icon" style="font-size: 2rem;">🎮</span>
+            <div style="flex: 1;">
+              <div id="interactive-event-title" style="font-weight: bold; font-size: 1.1rem; margin-bottom: 4px;">事件名稱</div>
+              <div id="interactive-event-desc" style="font-size: 0.9rem; color: var(--text-muted);">事件說明</div>
+            </div>
+          </div>
+          <div id="interactive-event-instructions" style="padding: 10px; background: var(--card-bg); border-radius: 6px; font-size: 0.9rem;">
+            遊戲說明
+          </div>
+        </div>
+
+        <div id="interactive-participants" style="margin-bottom: 15px;">
+          <h4 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--text-muted);">📋 參與玩家</h4>
+          <div id="interactive-participants-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
+            <!-- 動態生成玩家列表 -->
+          </div>
+        </div>
+
+        <div id="interactive-result-input" style="margin-bottom: 15px;">
+          <h4 style="font-size: 0.95rem; margin-bottom: 10px; color: var(--text-muted);">🏆 結算結果</h4>
+
+          <div class="form-group">
+            <label>結算類型</label>
+            <select id="interactive-settlement-type" class="event-select" onchange="updateInteractiveSettlementUI()">
+              <option value="winner">指定贏家</option>
+              <option value="all_participants">全員獲獎</option>
+              <option value="winner_loser">指定贏家與輸家</option>
+            </select>
+          </div>
+
+          <!-- 贏家選擇 -->
+          <div id="winner-selection" class="form-group">
+            <label>選擇贏家</label>
+            <div id="winner-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
+              <!-- 動態生成 -->
+            </div>
+          </div>
+
+          <!-- 輸家選擇 -->
+          <div id="loser-selection" class="form-group" style="display: none;">
+            <label>選擇輸家</label>
+            <div id="loser-checkboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;">
+              <!-- 動態生成 -->
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <button class="btn btn-success btn-block" onclick="settleInteractiveEvent()">
+            ✅ 確認結算
+          </button>
+          <button class="btn btn-secondary btn-block" onclick="cancelInteractiveEvent()">
+            ❌ 取消事件
+          </button>
+        </div>
+      </div>
+
       <!-- 限時搶購控制 -->
       <div class="panel-card" id="flash-sale-panel">
         <h3>⚡ 限時搶購</h3>
@@ -1416,6 +1479,10 @@
       socket.on('game:scoreAdded', handleScoreAdded);
       socket.on('game:scoreBatchAdded', handleScoreBatchAdded);
 
+      // 互動事件
+      socket.on('game:interactiveEventSettled', handleInteractiveEventSettled);
+      socket.on('game:interactiveEventCancelled', handleInteractiveEventCancelled);
+
       // 抽獎事件
       socket.on('lottery:results', handleLotteryResults);
       socket.on('lottery:status', handleLotteryStatus);
@@ -1530,7 +1597,8 @@
         'RECESSION': '📉 經濟衰退',
         'DISASTER': '🌊 天災',
         'POLICY': '📜 政策',
-        'SPECIAL': '✨ 特殊事件'
+        'SPECIAL': '✨ 特殊事件',
+        'INTERACTIVE': '🎮 互動任務'
       };
 
       for (const [type, typeEvents] of Object.entries(eventsByType)) {
@@ -1936,9 +2004,16 @@
     }
 
     function handleEventTriggered(data) {
-      addLog(`事件「${data.event.title}」已結算，影響 ${data.results.length} 位玩家`);
-      showSettlement(data.event, data.results);
-      refreshGameState();
+      // 檢查是否為互動事件
+      if (data.event.type === 'INTERACTIVE' || data.event.interactive) {
+        // 互動事件需要手動結算
+        showInteractiveEventPanel(data);
+      } else {
+        // 一般事件直接顯示結算結果
+        addLog(`事件「${data.event.title}」已結算，影響 ${data.results.length} 位玩家`);
+        showSettlement(data.event, data.results);
+        refreshGameState();
+      }
     }
 
     // 顯示結算明細
@@ -2315,6 +2390,146 @@
 
       if (confirm(`確定要發布「${eventName}」嗎？`)) {
         socket.emit('host:triggerEvent', { eventId });
+      }
+    }
+
+    // ========== 互動事件結算 ==========
+    let currentInteractiveEvent = null;
+    let interactiveParticipants = [];
+
+    function showInteractiveEventPanel(eventData) {
+      currentInteractiveEvent = eventData.event;
+      interactiveParticipants = eventData.participants || [];
+
+      const panel = document.getElementById('interactive-event-panel');
+
+      // 填充事件資訊
+      document.getElementById('interactive-event-icon').textContent = currentInteractiveEvent.icon || '🎮';
+      document.getElementById('interactive-event-title').textContent = currentInteractiveEvent.title;
+      document.getElementById('interactive-event-desc').textContent = currentInteractiveEvent.description;
+      document.getElementById('interactive-event-instructions').textContent = currentInteractiveEvent.instructions || '';
+
+      // 顯示參與玩家
+      const participantsList = document.getElementById('interactive-participants-list');
+      participantsList.innerHTML = interactiveParticipants.map(p => `
+        <div style="padding: 8px; background: var(--bg-hover); border-radius: 6px; text-align: center; font-size: 0.9rem;">
+          ${p.role?.emoji || '👤'} ${p.name}
+        </div>
+      `).join('');
+
+      // 初始化結算UI
+      updateInteractiveSettlementUI();
+
+      // 顯示面板
+      panel.style.display = 'block';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      // 暫停自動發布事件
+      if (autoEventEnabled) {
+        stopAutoEventTimer();
+        addLog('⏸️ 互動事件進行中，自動發布已暫停');
+      }
+
+      addLog(`🎮 互動事件「${currentInteractiveEvent.title}」已觸發，等待主持人結算`);
+    }
+
+    function updateInteractiveSettlementUI() {
+      const type = document.getElementById('interactive-settlement-type').value;
+      const winnerSelection = document.getElementById('winner-selection');
+      const loserSelection = document.getElementById('loser-selection');
+
+      if (type === 'all_participants') {
+        winnerSelection.style.display = 'none';
+        loserSelection.style.display = 'none';
+      } else if (type === 'winner') {
+        winnerSelection.style.display = 'block';
+        loserSelection.style.display = 'none';
+        renderParticipantCheckboxes('winner');
+      } else if (type === 'winner_loser') {
+        winnerSelection.style.display = 'block';
+        loserSelection.style.display = 'block';
+        renderParticipantCheckboxes('winner');
+        renderParticipantCheckboxes('loser');
+      }
+    }
+
+    function renderParticipantCheckboxes(category) {
+      const container = document.getElementById(`${category}-checkboxes`);
+      container.innerHTML = interactiveParticipants.map(p => `
+        <div style="padding: 8px; background: var(--bg); border-radius: 6px; display: flex; align-items: center; gap: 6px;">
+          <input type="checkbox" id="${category}-${p.id}" value="${p.id}" style="width: 16px; height: 16px;">
+          <label for="${category}-${p.id}" style="cursor: pointer; font-size: 0.9rem; flex: 1;">
+            ${p.role?.emoji || '👤'} ${p.name}
+          </label>
+        </div>
+      `).join('');
+    }
+
+    function settleInteractiveEvent() {
+      if (!currentInteractiveEvent) return;
+
+      const type = document.getElementById('interactive-settlement-type').value;
+      let winners = [];
+      let losers = [];
+
+      if (type === 'all_participants') {
+        winners = interactiveParticipants.map(p => p.id);
+      } else if (type === 'winner') {
+        winners = Array.from(document.querySelectorAll('#winner-checkboxes input:checked')).map(cb => cb.value);
+        if (winners.length === 0) {
+          alert('請至少選擇一位贏家！');
+          return;
+        }
+      } else if (type === 'winner_loser') {
+        winners = Array.from(document.querySelectorAll('#winner-checkboxes input:checked')).map(cb => cb.value);
+        losers = Array.from(document.querySelectorAll('#loser-checkboxes input:checked')).map(cb => cb.value);
+
+        if (winners.length === 0 && losers.length === 0) {
+          alert('請至少選擇贏家或輸家！');
+          return;
+        }
+
+        // 檢查重複
+        const overlap = winners.filter(id => losers.includes(id));
+        if (overlap.length > 0) {
+          alert('同一位玩家不能同時是贏家和輸家！');
+          return;
+        }
+      }
+
+      if (confirm('確定要結算此互動事件嗎？')) {
+        socket.emit('host:settleInteractiveEvent', {
+          eventId: currentInteractiveEvent.id,
+          winners,
+          losers,
+          participants: interactiveParticipants.map(p => p.id)
+        });
+
+        addLog(`✅ 互動事件「${currentInteractiveEvent.title}」已結算`);
+        hideInteractiveEventPanel();
+      }
+    }
+
+    function cancelInteractiveEvent() {
+      if (confirm('確定要取消此互動事件嗎？不會有任何獎勵發放。')) {
+        socket.emit('host:cancelInteractiveEvent', {
+          eventId: currentInteractiveEvent?.id
+        });
+
+        addLog(`❌ 互動事件「${currentInteractiveEvent?.title}」已取消`);
+        hideInteractiveEventPanel();
+      }
+    }
+
+    function hideInteractiveEventPanel() {
+      document.getElementById('interactive-event-panel').style.display = 'none';
+      currentInteractiveEvent = null;
+      interactiveParticipants = [];
+
+      // 恢復自動發布（如果之前有開啟）
+      if (autoEventEnabled) {
+        startAutoEventTimer();
+        addLog('▶️ 互動事件已結束，自動發布已恢復');
       }
     }
 

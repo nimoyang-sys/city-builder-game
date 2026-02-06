@@ -484,6 +484,26 @@ io.on('connection', (socket) => {
     socket.emit('host:eventResult', result);
   });
 
+  // 結算互動事件
+  socket.on('host:settleInteractiveEvent', ({ eventId, winners, losers, participants }) => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = gameEngine.settleInteractiveEvent({ eventId, winners, losers, participants });
+    socket.emit('host:result', result);
+  });
+
+  // 取消互動事件
+  socket.on('host:cancelInteractiveEvent', ({ eventId }) => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = gameEngine.cancelInteractiveEvent();
+    socket.emit('host:result', result);
+  });
+
   // 手動加分
   socket.on('host:addScore', ({ playerId, amount, reason }) => {
     if (socket.id !== hostSocketId) {
