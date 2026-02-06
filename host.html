@@ -1302,6 +1302,35 @@
             8-10局，答對+100元，答錯喝酒
           </p>
         </div>
+
+        <!-- AI是真是假 -->
+        <div>
+          <button class="btn btn-info btn-block" onclick="startAIGame()" id="btn-ai-start">
+            🤖 AI是真是假
+          </button>
+          <div id="ai-game-control" style="display: none;">
+            <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
+              <p style="font-size: 0.9rem; font-weight: bold; margin-bottom: 10px;">
+                第 <span id="ai-current-question">1</span> / 6 題 | 存活：<span id="ai-survivor-count">0</span> 人
+              </p>
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
+                已作答：<span id="ai-answered-count">0</span> / <span id="ai-total-survivors">0</span> 人
+              </p>
+              <button class="btn btn-warning btn-block btn-sm" onclick="revealAIAnswer()" id="btn-reveal-ai">
+                📢 公布答案
+              </button>
+              <button class="btn btn-primary btn-block btn-sm" onclick="nextAIQuestion()" id="btn-next-ai" style="margin-top: 10px; display: none;">
+                ➡️ 下一題
+              </button>
+              <button class="btn btn-danger btn-block btn-sm" onclick="endAIGame()" id="btn-end-ai" style="margin-top: 10px;">
+                🏁 結束遊戲
+              </button>
+            </div>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
+            6題淘汰賽，答錯淘汰，全滅則敗部復活
+          </p>
+        </div>
       </div>
 
       <!-- 頒獎控制 -->
@@ -1743,6 +1772,62 @@
         document.getElementById('btn-song-start').style.display = 'block';
         document.getElementById('song-game-control').style.display = 'none';
         addLog('猜歌曲前奏已被強制結束', 'warning');
+      });
+
+      // AI是真是假事件
+      socket.on('minigame:aiGameStarted', (data) => {
+        document.getElementById('btn-ai-start').style.display = 'none';
+        document.getElementById('ai-game-control').style.display = 'block';
+        document.getElementById('ai-current-question').textContent = '1';
+        document.getElementById('ai-survivor-count').textContent = data.survivors.length;
+        document.getElementById('ai-total-survivors').textContent = data.survivors.length;
+        document.getElementById('ai-answered-count').textContent = '0';
+        document.getElementById('btn-reveal-ai').style.display = 'block';
+        document.getElementById('btn-next-ai').style.display = 'none';
+        addLog(`AI是真是假遊戲開始，${data.survivors.length} 位玩家參與`, 'success');
+      });
+
+      socket.on('minigame:aiQuestion', (data) => {
+        document.getElementById('ai-current-question').textContent = data.questionIndex + 1;
+        document.getElementById('ai-survivor-count').textContent = data.survivors.length;
+        document.getElementById('ai-total-survivors').textContent = data.survivors.length;
+        document.getElementById('ai-answered-count').textContent = '0';
+        document.getElementById('btn-reveal-ai').style.display = 'block';
+        document.getElementById('btn-next-ai').style.display = 'none';
+      });
+
+      socket.on('minigame:aiPlayerAnswered', (data) => {
+        document.getElementById('ai-answered-count').textContent = data.answeredCount;
+        document.getElementById('ai-total-survivors').textContent = data.totalSurvivors;
+      });
+
+      socket.on('minigame:aiAnswerRevealed', (data) => {
+        document.getElementById('ai-survivor-count').textContent = data.remainingSurvivors;
+        document.getElementById('btn-reveal-ai').style.display = 'none';
+
+        let msg = `第${data.questionIndex + 1}題答案: ${data.correctAnswerText}，答對${data.correctPlayers.length}人`;
+        if (data.allEliminated) {
+          msg += ' (全軍覆沒！敗部復活)';
+        }
+        addLog(msg, data.allEliminated ? 'warning' : 'info');
+
+        // 如果不是最後一題，顯示下一題按鈕
+        if (data.questionIndex < 5) {
+          document.getElementById('btn-next-ai').style.display = 'block';
+        }
+      });
+
+      socket.on('minigame:aiGameEnded', (data) => {
+        document.getElementById('btn-ai-start').style.display = 'block';
+        document.getElementById('ai-game-control').style.display = 'none';
+        const survivorNames = data.finalSurvivors.map(s => s.playerName).join(', ');
+        addLog(`AI是真是假遊戲結束！最終存活: ${survivorNames || '無'}`, 'success');
+      });
+
+      socket.on('minigame:aiGameForceEnded', () => {
+        document.getElementById('btn-ai-start').style.display = 'block';
+        document.getElementById('ai-game-control').style.display = 'none';
+        addLog('AI是真是假已被強制結束', 'warning');
       });
 
       // 活動遊戲狀態回應
@@ -3398,6 +3483,30 @@
         customInput.style.display = 'none';
       }
     });
+
+    // AI是真是假 - 開始遊戲
+    function startAIGame() {
+      if (confirm('確定要開始「AI是真是假」遊戲嗎？\n\n所有在線玩家都會參與，共6題淘汰賽。')) {
+        socket.emit('host:startAIGame');
+      }
+    }
+
+    // AI是真是假 - 公布答案
+    function revealAIAnswer() {
+      socket.emit('host:revealAIAnswer');
+    }
+
+    // AI是真是假 - 下一題
+    function nextAIQuestion() {
+      socket.emit('host:nextAIQuestion');
+    }
+
+    // AI是真是假 - 結束遊戲
+    function endAIGame() {
+      if (confirm('確定要結束「AI是真是假」遊戲嗎？')) {
+        socket.emit('host:endAIGame');
+      }
+    }
 
     // 定時刷新
     setInterval(() => {

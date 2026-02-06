@@ -3061,17 +3061,17 @@
     /* 得獎者顯示區 */
     .lottery-winner-display {
       text-align: center;
-      min-height: 200px;
+      min-height: 150px;
       background: linear-gradient(135deg, rgba(45,27,78,0.95) 0%, rgba(26,26,46,0.95) 100%);
       border-radius: 30px;
-      padding: 30px 60px;
+      padding: 25px 50px;
       border: 4px solid #ffd700;
       box-shadow:
         0 10px 50px rgba(255,215,0,0.3),
         0 0 30px rgba(147,112,219,0.3),
         inset 0 2px 15px rgba(255,215,0,0.1);
       position: relative;
-      max-width: 600px;
+      max-width: 700px;
       width: 100%;
     }
 
@@ -3099,15 +3099,24 @@
     }
 
     .lottery-winner-rank {
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: 900;
       color: #ffd700;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-shadow: 0 0 15px rgba(255,215,0,0.5);
     }
 
+    /* 名字和積分在同一行 */
+    .lottery-winner-info {
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
     .lottery-winner-name {
-      font-size: 4rem;
+      font-size: 3.5rem;
       font-weight: 900;
       background: linear-gradient(135deg, #ffd700 0%, #fff 50%, #ffd700 100%);
       -webkit-background-clip: text;
@@ -3119,13 +3128,12 @@
 
     @keyframes winnerCelebrate {
       0% { transform: scale(1); }
-      100% { transform: scale(1.05); }
+      100% { transform: scale(1.03); }
     }
 
     .lottery-winner-score {
-      font-size: 1.5rem;
+      font-size: 1.8rem;
       color: #dda0dd;
-      margin-top: 10px;
       font-weight: 700;
       text-shadow: 0 0 10px rgba(221,160,221,0.5);
     }
@@ -3439,6 +3447,30 @@
         </div>
       </div>
     </div>
+
+    <!-- 音效開關按鈕（固定在右上角） -->
+    <button id="sound-toggle-btn" onclick="toggleSound()" style="
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    ">
+      <span id="sound-icon">🔇</span>
+      <span id="sound-text">啟用音效</span>
+    </button>
   </div>
 
   <!-- 頒獎畫面 -->
@@ -3519,16 +3551,56 @@
     // ========== 音效系統 ==========
     const SoundFX = {
       audioContext: null,
+      enabled: false,
+      unlocked: false,
 
       init() {
         if (!this.audioContext) {
           this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
+        // 嘗試恢復被暫停的 AudioContext
+        if (this.audioContext.state === 'suspended') {
+          this.audioContext.resume();
+        }
         return this.audioContext;
+      },
+
+      // 解鎖音效（需要用戶互動）
+      unlock() {
+        if (this.unlocked) return;
+        const ctx = this.init();
+        // 播放一個空的音效來解鎖
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        gain.gain.value = 0; // 靜音
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.001);
+        this.unlocked = true;
+        this.enabled = true;
+        console.log('🔊 音效系統已解鎖');
+      },
+
+      // 切換音效開關
+      toggle() {
+        this.enabled = !this.enabled;
+        return this.enabled;
+      },
+
+      // 檢查是否可以播放
+      canPlay() {
+        if (!this.enabled) return false;
+        if (!this.unlocked) {
+          console.log('⚠️ 音效未解鎖，請點擊「啟用音效」按鈕');
+          return false;
+        }
+        return true;
       },
 
       // 時間緊迫音效（嘀嘀聲）
       tick(urgent = false) {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -3548,6 +3620,7 @@
 
       // 倒數最後5秒急促聲
       countdown() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -3567,6 +3640,7 @@
 
       // 開牌音效（緊張的搓牌聲）
       shuffling() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
 
         // 創建噪音
@@ -3597,6 +3671,7 @@
 
       // 開牌揭曉音效
       reveal() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
 
         [400, 500, 600, 800].forEach((freq, i) => {
@@ -3620,6 +3695,7 @@
 
       // 獲勝掌聲/歡呼音效
       applause() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
 
         // 模擬掌聲：多層噪音 + 隨機脈衝
@@ -3675,6 +3751,7 @@
 
       // 失敗/喝酒音效
       loser() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
 
         // 下降音階
@@ -3697,6 +3774,7 @@
 
       // 和局音效
       tie() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
 
         const osc = ctx.createOscillator();
@@ -3717,6 +3795,7 @@
 
       // 遊戲開始音效
       gameStart() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
 
         const notes = [262, 330, 392, 523]; // C4, E4, G4, C5
@@ -3743,6 +3822,7 @@
 
       // 題目出現音效
       questionAppear() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const notes = [523, 659, 784]; // C5, E5, G5
         notes.forEach((freq, i) => {
@@ -3762,6 +3842,7 @@
 
       // 答對音效
       correct() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
         notes.forEach((freq, i) => {
@@ -3781,6 +3862,7 @@
 
       // 答錯音效
       wrong() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -3797,6 +3879,7 @@
 
       // 時間到音效
       timeUp() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         [400, 300, 200].forEach((freq, i) => {
           const osc = ctx.createOscillator();
@@ -3817,6 +3900,7 @@
 
       // 玩家加入音效
       playerJoin() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -3832,6 +3916,7 @@
 
       // 比賽開始倒數
       raceCountdown() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -3847,6 +3932,7 @@
 
       // 比賽開始 GO!
       raceGo() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -3862,6 +3948,7 @@
 
       // 獲得名次音效
       rankReveal(rank) {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         // 第一名最高音，依次降低
         const baseFreq = rank === 1 ? 1047 : (rank === 2 ? 784 : 523);
@@ -3883,6 +3970,7 @@
 
       // 頒獎鼓聲
       drumRoll() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         for (let i = 0; i < 20; i++) {
           setTimeout(() => {
@@ -3904,6 +3992,7 @@
 
       // 新一局開始
       songRoundStart() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const notes = [392, 494, 587, 784]; // G4, B4, D5, G5
         notes.forEach((freq, i) => {
@@ -3923,6 +4012,7 @@
 
       // 玩家提交答案
       answerSubmit() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -3938,6 +4028,7 @@
 
       // 公布答案
       answerReveal() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         // 戲劇性揭曉
         const notes = [262, 330, 392, 523, 659, 784];
@@ -3958,6 +4049,7 @@
 
       // 遊戲結束 - 總結音效
       gameEnd() {
+        if (!this.canPlay()) return;
         const ctx = this.init();
         // 結束音階
         const notes = [523, 659, 784, 1047, 784, 659, 523];
@@ -3976,6 +4068,35 @@
         });
       }
     };
+
+    // 音效開關函數
+    function toggleSound() {
+      const btn = document.getElementById('sound-toggle-btn');
+      const icon = document.getElementById('sound-icon');
+      const text = document.getElementById('sound-text');
+
+      if (!SoundFX.unlocked) {
+        // 首次點擊：解鎖音效系統
+        SoundFX.unlock();
+        icon.textContent = '🔊';
+        text.textContent = '音效已開啟';
+        btn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+        // 播放一個測試音效表示已啟用
+        SoundFX.gameStart();
+      } else {
+        // 已解鎖：切換開關
+        const enabled = SoundFX.toggle();
+        if (enabled) {
+          icon.textContent = '🔊';
+          text.textContent = '音效已開啟';
+          btn.style.background = 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)';
+        } else {
+          icon.textContent = '🔇';
+          text.textContent = '音效已關閉';
+          btn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        }
+      }
+    }
 
     // 遊戲設定
     let gameConfig = null;
@@ -4070,6 +4191,9 @@
       socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
       socket.on('minigame:songGuessPlayerSubmitted', handleSongGuessPlayerSubmitted);
       socket.on('minigame:songGuessRoundEnded', handleSongGuessRoundEnded);
+      socket.on('minigame:songGuessGameEnded', () => {
+        document.getElementById('song-guess-overlay').style.display = 'none';
+      });
 
       // 強制結束小遊戲事件
       socket.on('minigame:quizForceEnded', () => {
@@ -4086,6 +4210,16 @@
 
       socket.on('minigame:songGuessForceEnded', () => {
         document.getElementById('song-guess-overlay').style.display = 'none';
+      });
+
+      // AI是真是假事件監聽
+      socket.on('minigame:aiGameStarted', handleAIGameStarted);
+      socket.on('minigame:aiQuestionDisplay', handleAIQuestionDisplay);
+      socket.on('minigame:aiPlayerAnswered', handleAIPlayerAnswered);
+      socket.on('minigame:aiAnswerRevealed', handleAIAnswerRevealed);
+      socket.on('minigame:aiGameEnded', handleAIGameEnded);
+      socket.on('minigame:aiGameForceEnded', () => {
+        document.getElementById('ai-game-overlay').style.display = 'none';
       });
 
       // 抽獎事件監聽
@@ -4165,6 +4299,13 @@
 
       // 檢查抽獎狀態並恢復抽獎畫面
       if (state.lotteryState && state.lotteryState.active) {
+        // 如果抽獎畫面已經顯示，不要重新初始化（避免閃爍）
+        const lotteryOverlay = document.getElementById('lottery-overlay');
+        if (lotteryOverlay && lotteryOverlay.classList.contains('show')) {
+          // 抽獎畫面已顯示，不需要重新初始化
+          return;
+        }
+
         console.log('🎰 偵測到進行中的抽獎，恢復抽獎畫面');
 
         // 恢復抽獎數據
@@ -4213,7 +4354,18 @@
           const lotteryOverlay = document.getElementById('lottery-overlay');
           if (!lotteryOverlay || !lotteryOverlay.classList.contains('show')) {
             console.log('🎉 顯示遊戲結束畫面');
+
+            // 隱藏所有可能顯示的遊戲畫面
+            const pokerOverlay = document.getElementById('poker-game-overlay');
+            if (pokerOverlay) pokerOverlay.style.display = 'none';
+
+            // 隱藏事件面板
+            hideEvent();
+
             endOverlay.classList.add('show');
+
+            // 渲染最終城市建築
+            renderFinalBuildings(state.cityBuildingList, state.cityBuildings, state.leaderboard);
           }
         }
       }
@@ -4519,6 +4671,11 @@
 
     // 顯示事件
     function showEvent(event, participants = []) {
+      console.log('=== showEvent ===');
+      console.log('Event:', event);
+      console.log('Event type:', event?.type);
+      console.log('Participants received:', participants);
+
       const panel = document.getElementById('event-panel');
       const typeMap = {
         'BOOM': '景氣繁榮',
@@ -4529,11 +4686,13 @@
         'INTERACTIVE': '互動任務'
       };
 
-      document.getElementById('event-icon').textContent = event.emoji || '📢';
+      document.getElementById('event-icon').textContent = event.icon || event.emoji || '📢';
       document.getElementById('event-type').textContent = typeMap[event.type] || '事件';
       document.getElementById('event-title').textContent = event.title;
 
       // 如果是互動事件且有參與者，顯示參與者名單
+      console.log('Is INTERACTIVE?', event.type === 'INTERACTIVE');
+      console.log('Has participants?', participants && participants.length > 0);
       if (event.type === 'INTERACTIVE' && participants && participants.length > 0) {
         const participantNames = participants.map(p => p.name).join('、');
         const instructionsText = event.instructions || event.description;
@@ -4817,6 +4976,10 @@
     function handleEventTriggered(data) {
       currentEventData = data;  // 保存事件數據供結算明細使用
 
+      console.log('=== handleEventTriggered ===');
+      console.log('Event type:', data.event?.type);
+      console.log('Participants:', data.participants);
+
       // 先更新狀態和排行榜
       updateStatusBadge('EVENT');
       renderLeaderboard(data.leaderboard);
@@ -4834,34 +4997,19 @@
       fetchGameState();
     }
 
-    function handleGameEnded(data) {
-      console.log('=== handleGameEnded called ===');
-      console.log('Received data:', JSON.stringify(data, null, 2));
-      console.log('cityBuildingList:', data.cityBuildingList);
-      console.log('cityBuildings:', data.cityBuildings);
-      console.log('leaderboard:', data.leaderboard);
-
-      updateStatusBadge('ENDED');
-
-      // 顯示結束畫面
-      const endOverlay = document.getElementById('end-overlay');
-      console.log('end-overlay element:', endOverlay);
-      endOverlay.classList.add('show');
-      console.log('Added show class, classList:', endOverlay.classList);
-
-      // 渲染最終城市（使用建築列表，含玩家名稱）
+    // 渲染結束畫面的建築物
+    function renderFinalBuildings(cityBuildingList, cityBuildings, leaderboard) {
       const finalBuildings = document.getElementById('final-buildings');
-      console.log('final-buildings element:', finalBuildings);
+      if (!finalBuildings) return;
 
-      // Try both cityBuildingList and cityBuildings
-      let buildingList = data.cityBuildingList || [];
+      let buildingList = cityBuildingList || [];
 
       // If cityBuildingList is empty, try to construct from cityBuildings
-      if (buildingList.length === 0 && data.cityBuildings) {
+      if (buildingList.length === 0 && cityBuildings) {
         console.log('cityBuildingList is empty, trying cityBuildings...');
-        buildingList = Object.entries(data.cityBuildings || {}).flatMap(([buildingId, owners]) =>
+        buildingList = Object.entries(cityBuildings || {}).flatMap(([buildingId, owners]) =>
           owners.map(playerId => {
-            const player = (data.leaderboard || []).find(p => p.playerId === playerId);
+            const player = (leaderboard || []).find(p => p.playerId === playerId);
             return {
               buildingId: parseInt(buildingId),
               playerId: playerId,
@@ -4869,12 +5017,11 @@
             };
           })
         );
-        console.log('Constructed buildingList:', buildingList);
       }
 
       console.log('Final buildingList to render:', buildingList.length, 'buildings');
 
-      // 如果沒有建築數據，使用測試數據來確保渲染邏輯正常
+      // 如果沒有建築數據，使用測試數據
       if (buildingList.length === 0) {
         console.warn('⚠️ No buildings data! Using test data for debugging...');
         buildingList = [
@@ -4884,12 +5031,10 @@
           { buildingId: 4, playerName: '測試玩家4', playerId: 'test4' },
           { buildingId: 5, playerName: '測試玩家5', playerId: 'test5' }
         ];
-        console.log('Using test buildingList:', buildingList);
       }
 
       if (buildingList.length > 0) {
         finalBuildings.innerHTML = buildingList.map(b => {
-          console.log('Rendering building:', b);
           return `
             <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.45); transform-origin: bottom center; margin: 0 -10px;">
               ${createCSSBuilding(b.buildingId)}
@@ -4899,6 +5044,27 @@
         }).join('');
         console.log('✅ Final buildings HTML set successfully');
       }
+    }
+
+    function handleGameEnded(data) {
+      console.log('=== handleGameEnded called ===');
+      console.log('Received data:', JSON.stringify(data, null, 2));
+
+      updateStatusBadge('ENDED');
+
+      // 隱藏所有可能顯示的遊戲畫面
+      const pokerOverlay = document.getElementById('poker-game-overlay');
+      if (pokerOverlay) pokerOverlay.style.display = 'none';
+
+      // 隱藏事件面板
+      hideEvent();
+
+      // 顯示結束畫面
+      const endOverlay = document.getElementById('end-overlay');
+      endOverlay.classList.add('show');
+
+      // 渲染最終城市建築
+      renderFinalBuildings(data.cityBuildingList, data.cityBuildings, data.leaderboard);
 
       // 渲染最終排行榜
       renderLeaderboard(data.leaderboard, 'final-leaderboard');
@@ -5665,10 +5831,11 @@
       currentRound: 0
     };
 
-    function handleSongGuessGameStarted() {
+    function handleSongGuessGameStarted(data) {
       // 播放遊戲開始音效
       SoundFX.gameStart();
 
+      songGuessState.allPlayers = data?.allPlayers || [];
       songGuessState.players.clear();
       songGuessState.correctAnswer = null;
       songGuessState.currentRound = 0;
@@ -5688,15 +5855,14 @@
             <div class="song-players-section">
               <div class="song-players-title">🎤 玩家列表</div>
               <div class="song-players-grid" id="song-players-grid">
-                <div style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;">
-                  遊戲即將開始...
-                </div>
+                <!-- 動態生成 -->
               </div>
             </div>
           </div>
         </div>
       `;
       overlay.classList.add('show');
+      updateSongPlayersDisplay();
     }
 
     function handleSongGuessRoundStarted(data) {
@@ -5856,6 +6022,251 @@
           </div>
         `;
       }).join('');
+    }
+
+    // ========== AI是真是假 遊戲 ==========
+    let aiGameState = {
+      active: false,
+      currentQuestion: 0,
+      survivors: [],
+      answeredCount: 0,
+      roundResults: []
+    };
+
+    function handleAIGameStarted(data) {
+      console.log('[AIGame Display] 遊戲開始', data);
+      SoundFX.gameStart();
+
+      aiGameState = {
+        active: true,
+        currentQuestion: 0,
+        survivors: data.survivors || [],
+        answeredCount: 0,
+        roundResults: []
+      };
+
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="song-guess-container">
+            <div class="song-info">
+              <div class="song-icon">🤖</div>
+              <div class="song-title">AI是真是假？</div>
+              <div class="song-status">等待主持人發送第一題...</div>
+              <div class="song-status" style="margin-top: 20px; font-size: 1.3rem; color: var(--text-muted);">
+                存活玩家: ${data.survivors.length} 人
+              </div>
+            </div>
+            <div class="song-players-section">
+              <div class="song-players-title">🎮 參賽玩家</div>
+              <div class="song-players-grid" id="ai-players-grid">
+                ${data.survivors.map(s => `
+                  <div class="song-player-item">
+                    <div class="song-player-name">${s.playerName}</div>
+                    <div class="song-player-status">⏳</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      overlay.classList.add('show');
+    }
+
+    function handleAIQuestionDisplay(data) {
+      console.log('[AIGame Display] 顯示題目', data);
+
+      aiGameState.currentQuestion = data.questionIndex;
+      aiGameState.survivors = data.survivors;
+      aiGameState.answeredCount = 0;
+
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="song-guess-container">
+            <div class="song-info">
+              <div class="song-icon">🤖</div>
+              <div class="song-title">AI是真是假？</div>
+              <div class="song-status">第 ${data.questionIndex + 1} / ${data.totalQuestions} 題</div>
+              <div style="margin-top: 20px; font-size: 1.5rem; color: var(--warning);">
+                ${data.question}
+              </div>
+              <div style="margin-top: 30px; display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;">
+                ${data.options.map((opt, idx) => `
+                  <div style="background: var(--bg-hover); padding: 15px 25px; border-radius: 10px; font-size: 1.2rem;">
+                    ${idx + 1}. ${opt}
+                  </div>
+                `).join('')}
+              </div>
+              <div style="margin-top: 30px; font-size: 1.1rem; color: var(--text-muted);">
+                已作答: <span id="ai-answered-display">0</span> / ${data.survivors.length} 人
+              </div>
+            </div>
+            <div class="song-players-section">
+              <div class="song-players-title">🎮 存活玩家 (${data.survivors.length}人)</div>
+              <div class="song-players-grid" id="ai-players-grid">
+                ${data.survivors.map(s => `
+                  <div class="song-player-item" id="ai-player-${s.playerId}">
+                    <div class="song-player-name">${s.playerName}</div>
+                    <div class="song-player-status">⏳</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      overlay.classList.add('show');
+    }
+
+    function handleAIPlayerAnswered(data) {
+      console.log('[AIGame Display] 玩家作答', data);
+      aiGameState.answeredCount = data.answeredCount;
+
+      // 更新作答計數
+      const countDisplay = document.getElementById('ai-answered-display');
+      if (countDisplay) {
+        countDisplay.textContent = data.answeredCount;
+      }
+
+      // 更新玩家狀態顯示
+      const playerEl = document.getElementById(`ai-player-${data.playerId}`);
+      if (playerEl) {
+        playerEl.classList.add('submitted');
+        const statusEl = playerEl.querySelector('.song-player-status');
+        if (statusEl) {
+          statusEl.textContent = '✓';
+        }
+      }
+
+      SoundFX.answerSubmit();
+    }
+
+    function handleAIAnswerRevealed(data) {
+      console.log('[AIGame Display] 答案公布', data);
+      SoundFX.answerReveal();
+
+      const correctCount = data.correctPlayers.length;
+      const wrongCount = data.wrongPlayers.length;
+
+      // 如果有人答對，播放掌聲；否則播放失敗音效
+      if (correctCount > 0) {
+        setTimeout(() => SoundFX.applause(), 600);
+      } else {
+        setTimeout(() => SoundFX.wrong(), 600);
+      }
+
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="song-guess-container">
+            <div class="song-info">
+              <div class="song-icon">🤖</div>
+              <div class="song-title">AI是真是假？</div>
+              <div class="song-status">第 ${data.questionIndex + 1} 題結果</div>
+              <div class="song-answer-display" style="background: var(--success); color: white; padding: 20px 40px; border-radius: 15px; margin: 20px 0; font-size: 1.8rem;">
+                正確答案: ${data.correctAnswerText}
+              </div>
+              ${data.allEliminated ? `
+                <div style="margin: 20px 0; padding: 15px 30px; background: var(--warning); color: black; border-radius: 10px; font-size: 1.3rem; animation: pulse 1s infinite;">
+                  🔄 全軍覆沒！敗部復活！
+                </div>
+              ` : ''}
+              <div style="margin-top: 20px; font-size: 1.3rem;">
+                <span style="color: var(--success);">✓ ${correctCount}人答對</span>
+                <span style="margin: 0 15px; color: var(--text-muted);">|</span>
+                <span style="color: var(--danger);">✗ ${wrongCount}人淘汰</span>
+              </div>
+              <div style="margin-top: 15px; font-size: 1.1rem; color: var(--info);">
+                剩餘存活: ${data.remainingSurvivors} 人
+              </div>
+            </div>
+            <div class="song-players-section">
+              <div class="song-players-title">📊 本題結果</div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                  <div style="color: var(--success); font-weight: bold; margin-bottom: 10px;">🎉 答對 (${correctCount}人)</div>
+                  <div class="song-players-grid">
+                    ${data.correctPlayers.map(p => `
+                      <div class="song-player-item correct">
+                        <div class="song-player-name">${p.playerName}</div>
+                        <div class="song-player-status">✓</div>
+                      </div>
+                    `).join('') || '<div style="color: var(--text-muted); padding: 10px;">無</div>'}
+                  </div>
+                </div>
+                <div>
+                  <div style="color: var(--danger); font-weight: bold; margin-bottom: 10px;">😢 淘汰 (${wrongCount}人)</div>
+                  <div class="song-players-grid">
+                    ${data.wrongPlayers.map(p => `
+                      <div class="song-player-item wrong">
+                        <div class="song-player-name">${p.playerName}</div>
+                        <div class="song-player-status">✗</div>
+                      </div>
+                    `).join('') || '<div style="color: var(--text-muted); padding: 10px;">無</div>'}
+                  </div>
+                </div>
+              </div>
+              ${data.revivedPlayers.length > 0 ? `
+                <div style="margin-top: 20px;">
+                  <div style="color: var(--warning); font-weight: bold; margin-bottom: 10px;">🔄 復活 (${data.revivedPlayers.length}人)</div>
+                  <div class="song-players-grid">
+                    ${data.revivedPlayers.map(p => `
+                      <div class="song-player-item" style="border-color: var(--warning);">
+                        <div class="song-player-name">${p.playerName}</div>
+                        <div class="song-player-status">🔄</div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function handleAIGameEnded(data) {
+      console.log('[AIGame Display] 遊戲結束', data);
+      SoundFX.applause();
+
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content">
+          <div class="song-guess-container">
+            <div class="song-info">
+              <div class="song-icon" style="font-size: 5rem;">🏆</div>
+              <div class="song-title">AI是真是假？</div>
+              <div class="song-status" style="font-size: 2rem; color: var(--success);">遊戲結束！</div>
+              <div style="margin-top: 30px; font-size: 1.5rem;">
+                最終存活: ${data.finalSurvivors.length} 人
+              </div>
+            </div>
+            <div class="song-players-section">
+              <div class="song-players-title" style="font-size: 1.5rem;">🎉 最終存活者</div>
+              <div class="song-players-grid" style="justify-content: center;">
+                ${data.finalSurvivors.length > 0 ? data.finalSurvivors.map(s => `
+                  <div class="song-player-item correct" style="font-size: 1.3rem; padding: 20px;">
+                    <div class="song-player-name">${s.playerName}</div>
+                    <div class="song-player-status">🏆</div>
+                  </div>
+                `).join('') : `
+                  <div style="color: var(--text-muted); padding: 30px; font-size: 1.2rem;">
+                    無人存活
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // 5秒後關閉
+      setTimeout(() => {
+        overlay.classList.remove('show');
+        aiGameState.active = false;
+      }, 8000);
     }
 
     // ========== 抽獎系統 ==========
@@ -6253,8 +6664,10 @@
 
       display.innerHTML = `
         <div class="lottery-winner-rank">${rankEmoji} 第 ${rank} 名 ${rankEmoji}</div>
-        <div class="lottery-winner-name">${winnerName}</div>
-        <div class="lottery-winner-score">積分：${winnerScore} 分</div>
+        <div class="lottery-winner-info">
+          <div class="lottery-winner-name">${winnerName}</div>
+          <div class="lottery-winner-score">${winnerScore} 分</div>
+        </div>
       `;
     }
 

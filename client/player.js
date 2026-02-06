@@ -181,6 +181,14 @@ function initSocket() {
   socket.on('minigame:songGuessGameEnded', handleSongGuessGameEnded);
   socket.on('player:songAnswerResult', handleSongAnswerResult);
 
+  // AI是真是假遊戲事件
+  socket.on('minigame:aiGameStarted', handleAIGameStarted);
+  socket.on('minigame:aiQuestion', handleAIQuestion);
+  socket.on('minigame:aiPlayerResult', handleAIPlayerResult);
+  socket.on('minigame:aiAnswerRevealed', handleAIAnswerRevealed);
+  socket.on('minigame:aiGameEnded', handleAIGameEnded);
+  socket.on('player:aiAnswerResult', handleAIAnswerResult);
+
   // 強制結束小遊戲事件
   socket.on('minigame:quizForceEnded', () => {
     closeQuizResultModal();
@@ -197,6 +205,10 @@ function initSocket() {
   socket.on('minigame:songGuessForceEnded', () => {
     closeSongGuessModal();
     closeSongResult();
+  });
+
+  socket.on('minigame:aiGameForceEnded', () => {
+    closeAIGameModal();
   });
 
   // 抽獎事件
@@ -1611,6 +1623,7 @@ function handleSongGuessGameEnded() {
   songGuessState.active = false;
   songGuessState.submitted = false;
   closeSongGuessModal();
+  closeSongResult(); // 也關閉結果彈窗
   showToast('🎵 猜歌曲前奏遊戲已結束！', 'info');
 }
 
@@ -1648,7 +1661,18 @@ function showSongGuessModal() {
     input.value = '';
     input.style.display = 'block';
     buttons.style.display = 'flex';
+    // 重置識別中區塊的樣式和內容
+    identifying.innerHTML = `
+      <div style="font-size: 1.3rem; color: var(--warning); font-weight: bold; animation: pulse 1.5s infinite; margin-bottom: 10px;">
+        🎤 識別中...
+      </div>
+      <div style="font-size: 0.95rem; color: var(--text-muted);">
+        等待主持人公布結果
+      </div>
+    `;
     identifying.style.display = 'none';
+    identifying.style.background = 'rgba(241, 196, 15, 0.1)';
+    identifying.style.borderColor = 'var(--warning)';
     modal.classList.add('show');
   }
 }
@@ -1694,6 +1718,38 @@ function closeSongResult() {
   const modal = document.getElementById('song-result-modal');
   if (modal) {
     modal.classList.remove('show');
+  }
+
+  // 如果遊戲仍在進行中，顯示等待下一局的狀態
+  if (songGuessState.active) {
+    showSongGuessWaiting();
+  }
+}
+
+function showSongGuessWaiting() {
+  const modal = document.getElementById('song-guess-modal');
+  const input = document.getElementById('song-guess-input');
+  const identifying = document.getElementById('song-identifying');
+  const buttons = document.querySelector('#song-guess-modal .modal-buttons');
+
+  if (modal) {
+    // 隱藏輸入框和按鈕
+    input.style.display = 'none';
+    buttons.style.display = 'none';
+
+    // 修改識別中區塊的內容為等待下一局
+    identifying.innerHTML = `
+      <div style="font-size: 1.3rem; color: var(--info); font-weight: bold; animation: pulse 1.5s infinite; margin-bottom: 10px;">
+        ⏳ 等待下一局...
+      </div>
+      <div style="font-size: 0.95rem; color: var(--text-muted);">
+        主持人即將開始新一題
+      </div>
+    `;
+    identifying.style.display = 'block';
+    identifying.style.background = 'rgba(77, 150, 255, 0.1)';
+    identifying.style.borderColor = 'var(--info)';
+    modal.classList.add('show');
   }
 }
 
@@ -2418,3 +2474,190 @@ function bindEvents() {
     }
   });
 }
+
+// ===== AI是真是假 遊戲 =====
+
+let aiGameState = {
+  active: false,
+  eliminated: false,
+  currentQuestion: 0,
+  answered: false
+};
+
+function handleAIGameStarted(data) {
+  console.log('[AIGame] 遊戲開始', data);
+  aiGameState = {
+    active: true,
+    eliminated: false,
+    currentQuestion: 0,
+    answered: false
+  };
+}
+
+function handleAIQuestion(data) {
+  console.log('[AIGame] 收到題目', data);
+
+  // 檢查自己是否在存活名單中
+  const isSurvivor = data.survivors.some(s => s.playerId === playerState.id);
+  if (!isSurvivor) {
+    console.log('[AIGame] 我已被淘汰，不顯示題目');
+    return;
+  }
+
+  aiGameState.currentQuestion = data.questionIndex;
+  aiGameState.answered = false;
+
+  showAIGameModal(data);
+}
+
+function handleAIAnswerResult(result) {
+  if (result.success) {
+    aiGameState.answered = true;
+    showAIGameWaiting();
+  } else {
+    showToast(result.error, 'error');
+  }
+}
+
+function handleAIPlayerResult(data) {
+  console.log('[AIGame] 收到個人結果', data);
+
+  if (data.correct) {
+    // 答對
+    showAIGameResultPopup('correct', data.message);
+  } else if (data.revived) {
+    // 敗部復活
+    aiGameState.eliminated = false;
+    showAIGameResultPopup('revived', data.message);
+  } else {
+    // 答錯淘汰
+    aiGameState.eliminated = true;
+    showAIGameResultPopup('eliminated', data.message);
+  }
+}
+
+function handleAIAnswerRevealed(data) {
+  console.log('[AIGame] 答案公布', data);
+  // 這裡主要給投影用，玩家端由 handleAIPlayerResult 處理
+}
+
+function handleAIGameEnded(data) {
+  console.log('[AIGame] 遊戲結束', data);
+  aiGameState.active = false;
+
+  // 延遲關閉彈窗
+  setTimeout(() => {
+    closeAIGameModal();
+  }, 3000);
+}
+
+function showAIGameModal(data) {
+  let modal = document.getElementById('ai-game-modal');
+
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'ai-game-modal';
+    modal.className = 'modal-overlay';
+    document.body.appendChild(modal);
+  }
+
+  const question = data.question;
+  const options = data.options;
+
+  modal.innerHTML = `
+    <div class="modal ai-game-modal">
+      <div class="modal-header">
+        <div class="modal-emoji">🤖</div>
+        <div class="modal-title">AI是真是假？</div>
+        <div class="modal-subtitle">第 ${data.questionIndex + 1} / ${data.totalQuestions} 題</div>
+      </div>
+      <div class="modal-body">
+        <div class="ai-question-text">${question}</div>
+        <div class="ai-options" id="ai-options">
+          ${options.map((opt, idx) => `
+            <button class="ai-option-btn" onclick="submitAIAnswer(${idx})">
+              ${opt}
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.classList.add('show');
+}
+
+function showAIGameWaiting() {
+  const optionsContainer = document.getElementById('ai-options');
+  if (optionsContainer) {
+    optionsContainer.innerHTML = `
+      <div class="ai-waiting">
+        <div class="ai-waiting-icon">⏳</div>
+        <div class="ai-waiting-text">已作答，等待公布結果...</div>
+      </div>
+    `;
+  }
+}
+
+function showAIGameResultPopup(type, message) {
+  const modal = document.getElementById('ai-game-modal');
+  if (!modal) return;
+
+  const modalContent = modal.querySelector('.modal');
+  if (!modalContent) return;
+
+  let emoji, bgColor;
+  switch (type) {
+    case 'correct':
+      emoji = '🎉';
+      bgColor = 'var(--success)';
+      break;
+    case 'revived':
+      emoji = '🔄';
+      bgColor = 'var(--warning)';
+      break;
+    case 'eliminated':
+      emoji = '😢';
+      bgColor = 'var(--danger)';
+      break;
+  }
+
+  modalContent.innerHTML = `
+    <div class="modal-header" style="background: ${bgColor}">
+      <div class="modal-emoji" style="font-size: 4rem;">${emoji}</div>
+      <div class="modal-title" style="font-size: 1.5rem; margin-top: 1rem;">${message}</div>
+    </div>
+  `;
+
+  // 如果是淘汰，幾秒後關閉
+  if (type === 'eliminated') {
+    setTimeout(() => {
+      closeAIGameModal();
+    }, 3000);
+  }
+}
+
+function submitAIAnswer(answerIndex) {
+  if (aiGameState.answered) {
+    showToast('已經作答過了', 'error');
+    return;
+  }
+
+  console.log('[AIGame] 提交答案:', answerIndex);
+  socket.emit('player:submitAIAnswer', { answerIndex });
+
+  // 立即顯示等待狀態
+  showAIGameWaiting();
+  aiGameState.answered = true;
+}
+
+function closeAIGameModal() {
+  const modal = document.getElementById('ai-game-modal');
+  if (modal) {
+    modal.classList.remove('show');
+    setTimeout(() => modal.remove(), 300);
+  }
+}
+
+window.submitAIAnswer = submitAIAnswer;
+window.closeAIGameModal = closeAIGameModal;

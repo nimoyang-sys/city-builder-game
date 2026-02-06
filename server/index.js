@@ -17,6 +17,7 @@ import { MiniGameManager } from './game/MiniGameManager.js';
 import { GAME_CONFIG, ROLES, ACHIEVEMENTS, ACHIEVEMENT_CATEGORIES, ITEM_CARDS, ITEM_CATEGORIES, CITY_GOALS, BUILDING_UPGRADES, MINI_GAMES } from '../shared/config.js';
 import { connectDB } from './db/mongodb.js';
 import { hashPassword, verifyPassword, generatePlayerId, normalizeName } from './utils/crypto.js';
+import mongoose from 'mongoose';
 
 // 載入環境變數
 dotenv.config();
@@ -71,6 +72,9 @@ const gameEngine = new GameEngine();
 const lotteryManager = new LotteryManager();
 const miniGameManager = new MiniGameManager();
 
+// 設定 MiniGameManager 的 gameEngine 參考
+miniGameManager.gameEngine = gameEngine;
+
 // 設定預設獎品
 lotteryManager.setPrizes('TOP', DEFAULT_PRIZES.TOP);
 lotteryManager.setPrizes('MID', DEFAULT_PRIZES.MID);
@@ -108,8 +112,6 @@ app.get('/api/health', (req, res) => {
 
 // 伺服器狀態監控（新增）
 app.get('/api/server/status', (req, res) => {
-  const mongoose = require('mongoose');
-
   res.json({
     server: {
       uptime: process.uptime(),
@@ -257,7 +259,7 @@ io.on('connection', (socket) => {
       } else if (game.type === 'poker') {
         socket.emit('minigame:pokerStarted', game.data);
       } else if (game.type === 'songGuess') {
-        socket.emit('minigame:songGuessGameStarted');
+        socket.emit('minigame:songGuessGameStarted', { allPlayers: game.data.allPlayers });
         if (game.data.roundActive) {
           socket.emit('minigame:songGuessRoundStarted', {
             round: game.data.currentRound,
@@ -301,7 +303,7 @@ io.on('connection', (socket) => {
         } else if (game.type === 'poker') {
           socket.emit('minigame:pokerStarted', game.data);
         } else if (game.type === 'songGuess') {
-          socket.emit('minigame:songGuessGameStarted');
+          socket.emit('minigame:songGuessGameStarted', { allPlayers: game.data.allPlayers });
           if (game.data.roundActive) {
             socket.emit('minigame:songGuessRoundStarted', {
               round: game.data.currentRound,
@@ -957,6 +959,58 @@ io.on('connection', (socket) => {
     socket.emit('host:result', result);
   });
 
+  // AI是真是假 - 主持人開始遊戲
+  socket.on('host:startAIGame', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.startAIGame();
+    socket.emit('host:result', result);
+  });
+
+  // AI是真是假 - 玩家提交答案
+  socket.on('player:submitAIAnswer', ({ answerIndex }) => {
+    const player = gameEngine.getPlayerBySocketId(socket.id);
+    if (!player) {
+      socket.emit('player:error', { message: '玩家不存在' });
+      return;
+    }
+
+    const result = miniGameManager.submitAIAnswer(player.id, player.name, answerIndex);
+    socket.emit('player:aiAnswerResult', result);
+  });
+
+  // AI是真是假 - 主持人公布答案
+  socket.on('host:revealAIAnswer', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.revealAIAnswer();
+    socket.emit('host:result', result);
+  });
+
+  // AI是真是假 - 主持人進入下一題
+  socket.on('host:nextAIQuestion', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.nextAIQuestion();
+    socket.emit('host:result', result);
+  });
+
+  // AI是真是假 - 主持人結束遊戲
+  socket.on('host:endAIGame', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.endAIGame();
+    socket.emit('host:result', result);
+  });
+
   // 檢查是否有活動的小遊戲
   socket.on('host:checkActiveGames', () => {
     if (socket.id !== hostSocketId) {
@@ -1205,6 +1259,16 @@ gameEngine.on('flashSaleEnded', (data) => {
   io.emit('game:flashSaleEnded', data);
 });
 
+// 互動事件結算
+gameEngine.on('interactiveEventSettled', (data) => {
+  io.emit('game:interactiveEventSettled', data);
+});
+
+// 互動事件取消
+gameEngine.on('interactiveEventCancelled', (data) => {
+  io.emit('game:interactiveEventCancelled', data);
+});
+
 // ========== 小遊戲事件轉發 ==========
 
 // 快問快答事件
@@ -1326,8 +1390,8 @@ miniGameManager.on('poker:gameEnded', (data) => {
 });
 
 // 猜歌曲前奏事件
-miniGameManager.on('songGuess:gameStarted', () => {
-  io.emit('minigame:songGuessGameStarted');
+miniGameManager.on('songGuess:gameStarted', (data) => {
+  io.emit('minigame:songGuessGameStarted', data);
 });
 
 miniGameManager.on('songGuess:roundStarted', (data) => {
@@ -1344,6 +1408,82 @@ miniGameManager.on('songGuess:roundEnded', (data) => {
 
 miniGameManager.on('songGuess:gameEnded', (data) => {
   io.emit('minigame:songGuessGameEnded', data);
+});
+
+// AI是真是假事件
+miniGameManager.on('aiGame:started', (data) => {
+  console.log('[Server] AI是真是假遊戲開始，存活玩家:', data.survivors.length);
+  io.emit('minigame:aiGameStarted', data);
+});
+
+miniGameManager.on('aiGame:question', (data) => {
+  console.log(`[Server] AI是真是假 第${data.questionIndex + 1}題發送給 ${data.survivors.length} 位存活玩家`);
+
+  // 只發送給存活的玩家
+  for (const survivor of data.survivors) {
+    const player = gameEngine.getPlayer(survivor.playerId);
+    if (player && player.socketId) {
+      io.to(player.socketId).emit('minigame:aiQuestion', data);
+    }
+  }
+
+  // 發送給主持人和投影
+  io.to('host').emit('minigame:aiQuestion', data);
+  io.emit('minigame:aiQuestionDisplay', data); // 投影專用
+});
+
+miniGameManager.on('aiGame:playerAnswered', (data) => {
+  console.log(`[Server] AI是真是假 玩家 ${data.playerName} 已作答 (${data.answeredCount}/${data.totalSurvivors})`);
+  io.to('host').emit('minigame:aiPlayerAnswered', data);
+  io.emit('minigame:aiPlayerAnswered', data);
+});
+
+miniGameManager.on('aiGame:answerRevealed', (data) => {
+  console.log(`[Server] AI是真是假 第${data.questionIndex + 1}題公布答案: ${data.correctAnswerText}`);
+  console.log(`[Server] 答對: ${data.correctPlayers.length}, 答錯: ${data.wrongPlayers.length}, 復活: ${data.revivedPlayers.length}`);
+
+  // 發送給所有人（包含投影和主持人）
+  io.emit('minigame:aiAnswerRevealed', data);
+
+  // 個別通知答對/答錯的玩家
+  for (const player of data.correctPlayers) {
+    const p = gameEngine.getPlayer(player.playerId);
+    if (p && p.socketId) {
+      io.to(p.socketId).emit('minigame:aiPlayerResult', {
+        correct: true,
+        message: '恭喜往前一步，喝一杯吧~'
+      });
+    }
+  }
+
+  for (const player of data.wrongPlayers) {
+    const p = gameEngine.getPlayer(player.playerId);
+    if (p && p.socketId) {
+      io.to(p.socketId).emit('minigame:aiPlayerResult', {
+        correct: false,
+        eliminated: true,
+        message: '止步於此'
+      });
+    }
+  }
+
+  // 通知復活的玩家
+  for (const player of data.revivedPlayers) {
+    const p = gameEngine.getPlayer(player.playerId);
+    if (p && p.socketId) {
+      io.to(p.socketId).emit('minigame:aiPlayerResult', {
+        correct: false,
+        eliminated: false,
+        revived: true,
+        message: '敗部復活！'
+      });
+    }
+  }
+});
+
+miniGameManager.on('aiGame:ended', (data) => {
+  console.log('[Server] AI是真是假遊戲結束，最終存活:', data.finalSurvivors.length);
+  io.emit('minigame:aiGameEnded', data);
 });
 
 // ========== 強制結束遊戲事件 ==========
@@ -1366,6 +1506,11 @@ miniGameManager.on('poker:forceEnded', () => {
 miniGameManager.on('songGuess:forceEnded', () => {
   console.log('[Server] 猜歌曲前奏被強制結束');
   io.emit('minigame:songGuessForceEnded');
+});
+
+miniGameManager.on('aiGame:forceEnded', () => {
+  console.log('[Server] AI是真是假被強制結束');
+  io.emit('minigame:aiGameForceEnded');
 });
 
 // ========== 啟動伺服器 ==========

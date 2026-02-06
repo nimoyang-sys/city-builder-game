@@ -22,7 +22,8 @@
       "Bash(python -m json.tool:*)",
       "Bash(grep:*)",
       "Bash(more:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(node --check:*)"
     ]
   }
 }

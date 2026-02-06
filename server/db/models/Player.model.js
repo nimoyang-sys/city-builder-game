@@ -120,8 +120,7 @@ const playerSchema = new mongoose.Schema({
   collection: 'players'
 });
 
-// 索引
-playerSchema.index({ playerId: 1 });
+// 索引（playerId 已在 schema 定義中設為 index: true，不需重複定義）
 playerSchema.index({ name: 1, passwordHash: 1 }); // 用於名字+密碼查詢
 playerSchema.index({ connected: 1 });
 playerSchema.index({ score: -1 });

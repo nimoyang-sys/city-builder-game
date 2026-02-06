@@ -1,10 +1,11 @@
 /**
  * 小遊戲管理器
- * 處理快問快答、喝啤酒比賽、比大小三個小遊戲
+ * 處理快問快答、喝啤酒比賽、比大小、猜歌曲前奏、AI是真是假 五個小遊戲
  */
 
 import { EventEmitter } from 'events';
 import { MINI_GAMES } from '../../shared/config.js';
+import { AIGameResult } from '../models/AIGameResult.js';
 
 export class MiniGameManager extends EventEmitter {
   constructor() {
@@ -54,6 +55,26 @@ export class MiniGameManager extends EventEmitter {
       playerAnswers: new Map(), // playerId -> { playerName, answer, timestamp }
       correctAnswer: null,
       roundResults: [] // 每局的結果記錄
+    };
+
+    // AI是真是假 遊戲狀態
+    this.aiGameState = {
+      active: false,
+      currentQuestion: 0,        // 當前題號 (0-5)
+      questions: [
+        { question: '問題一', options: ['馬桶', '馬桶刷', '衛生紙', '都不是'], correctAnswer: 2 },
+        { question: '問題二', options: ['真的', '假的'], correctAnswer: 0 },
+        { question: '問題三', options: ['冰塊 1', '冰塊 2', '冰塊 3', '冰塊 4', '都是真的', '都是假的'], correctAnswer: 5 },
+        { question: '問題四', options: ['都是真的', '都是假的'], correctAnswer: 0 },
+        { question: '問題五', options: ['植物 1', '植物 2', '植物 3', '植物 4', '都是真的', '都是假的'], correctAnswer: 5 },
+        { question: '問題六', options: ['第一個', '第二個', '都真的', '都假的'], correctAnswer: 2 }
+      ],
+      playerAnswers: new Map(),  // playerId -> { playerName, answer }
+      survivors: [],             // 當前存活玩家 [{ playerId, playerName }]
+      previousLosers: [],        // 前一題的敗部（用於復活）
+      roundResults: [],          // 每題結果記錄
+      gameResult: null,          // AIGameResult 實例
+      revealed: false            // 當前題目是否已公布答案
     };
   }
 
@@ -257,7 +278,7 @@ export class MiniGameManager extends EventEmitter {
     this.quizState = {
       active: false,
       questions: [],
-      currentQuestionIndex: 0,
+      questionIndex: 0,
       currentQuestion: null,
       playerAnswers: new Map(),
       timer: null
@@ -374,6 +395,10 @@ export class MiniGameManager extends EventEmitter {
         reward
       };
     });
+
+    // 發放獎勵後重置狀態，允許開始新一局
+    this.beerState.active = false;
+    this.beerState.waiting = false;
 
     this.emit('beer:resultsSet', { results });
 
@@ -781,7 +806,13 @@ export class MiniGameManager extends EventEmitter {
       roundResults: []
     };
 
-    this.emit('songGuess:gameStarted');
+    // 獲取所有玩家列表
+    const allPlayers = Array.from(this.gameEngine.players.values()).map(p => ({
+      id: p.id,
+      name: p.name
+    }));
+
+    this.emit('songGuess:gameStarted', { allPlayers });
     return { success: true };
   }
 
@@ -941,6 +972,13 @@ export class MiniGameManager extends EventEmitter {
       endedGames.push('songGuess');
     }
 
+    // 結束 AI是真是假
+    if (this.aiGameState.active) {
+      this.aiGameState.active = false;
+      this.emit('aiGame:forceEnded');
+      endedGames.push('aiGame');
+    }
+
     return { success: true, endedGames };
   }
 
@@ -983,9 +1021,310 @@ export class MiniGameManager extends EventEmitter {
       });
     }
 
+    if (this.aiGameState.active) {
+      activeGames.push({
+        type: 'aiGame',
+        name: 'AI是真是假',
+        canForceEnd: true
+      });
+    }
+
     return {
       hasActiveGames: activeGames.length > 0,
       activeGames
+    };
+  }
+
+  // ========== AI是真是假 ==========
+
+  /**
+   * 開始 AI是真是假 遊戲
+   */
+  startAIGame() {
+    if (this.aiGameState.active) {
+      return { success: false, error: 'AI是真是假遊戲已在進行中' };
+    }
+
+    // 獲取所有玩家作為初始存活者
+    const allPlayers = Array.from(this.gameEngine.players.values()).map(p => ({
+      playerId: p.id,
+      playerName: p.name
+    }));
+
+    // 建立遊戲紀錄
+    const gameResult = new AIGameResult();
+
+    this.aiGameState = {
+      active: true,
+      currentQuestion: 0,
+      questions: [
+        { question: '問題一', options: ['馬桶', '馬桶刷', '衛生紙', '都不是'], correctAnswer: 2 },
+        { question: '問題二', options: ['真的', '假的'], correctAnswer: 0 },
+        { question: '問題三', options: ['冰塊 1', '冰塊 2', '冰塊 3', '冰塊 4', '都是真的', '都是假的'], correctAnswer: 5 },
+        { question: '問題四', options: ['都是真的', '都是假的'], correctAnswer: 0 },
+        { question: '問題五', options: ['植物 1', '植物 2', '植物 3', '植物 4', '都是真的', '都是假的'], correctAnswer: 5 },
+        { question: '問題六', options: ['第一個', '第二個', '都真的', '都假的'], correctAnswer: 2 }
+      ],
+      playerAnswers: new Map(),
+      survivors: allPlayers,
+      previousLosers: [],
+      roundResults: [],
+      gameResult,
+      revealed: false
+    };
+
+    console.log(`[AIGame] Game started with ${allPlayers.length} players`);
+
+    this.emit('aiGame:started', {
+      totalQuestions: 6,
+      survivors: allPlayers
+    });
+
+    // 發送第一題
+    this._sendAIQuestion();
+
+    return { success: true };
+  }
+
+  /**
+   * 發送當前題目給存活玩家
+   */
+  _sendAIQuestion() {
+    const state = this.aiGameState;
+    const question = state.questions[state.currentQuestion];
+
+    console.log(`[AIGame] Sending question ${state.currentQuestion + 1}/6 to ${state.survivors.length} survivors`);
+
+    this.emit('aiGame:question', {
+      questionIndex: state.currentQuestion,
+      totalQuestions: 6,
+      question: question.question,
+      options: question.options,
+      survivors: state.survivors,
+      answeredCount: 0,
+      totalSurvivors: state.survivors.length
+    });
+  }
+
+  /**
+   * 玩家提交答案
+   */
+  submitAIAnswer(playerId, playerName, answerIndex) {
+    const state = this.aiGameState;
+
+    if (!state.active) {
+      return { success: false, error: '遊戲未進行中' };
+    }
+
+    if (state.revealed) {
+      return { success: false, error: '答案已公布，無法作答' };
+    }
+
+    // 檢查是否為存活玩家
+    const isSurvivor = state.survivors.some(s => s.playerId === playerId);
+    if (!isSurvivor) {
+      return { success: false, error: '您已被淘汰' };
+    }
+
+    // 記錄答案
+    state.playerAnswers.set(playerId, {
+      playerId,
+      playerName,
+      answerIndex
+    });
+
+    console.log(`[AIGame] Player ${playerName} answered question ${state.currentQuestion + 1}: option ${answerIndex}`);
+
+    // 通知已作答人數更新
+    this.emit('aiGame:playerAnswered', {
+      playerId,
+      playerName,
+      answeredCount: state.playerAnswers.size,
+      totalSurvivors: state.survivors.length
+    });
+
+    return { success: true };
+  }
+
+  /**
+   * 主持人公布答案
+   */
+  revealAIAnswer() {
+    const state = this.aiGameState;
+
+    if (!state.active) {
+      return { success: false, error: '遊戲未進行中' };
+    }
+
+    if (state.revealed) {
+      return { success: false, error: '答案已公布' };
+    }
+
+    state.revealed = true;
+
+    const question = state.questions[state.currentQuestion];
+    const correctAnswer = question.correctAnswer;
+
+    // 分類答對和答錯的玩家
+    const correctPlayers = [];
+    const wrongPlayers = [];
+
+    for (const survivor of state.survivors) {
+      const answer = state.playerAnswers.get(survivor.playerId);
+      if (answer && answer.answerIndex === correctAnswer) {
+        correctPlayers.push(survivor);
+      } else {
+        wrongPlayers.push(survivor);
+      }
+    }
+
+    console.log(`[AIGame] Question ${state.currentQuestion + 1} revealed: ${correctPlayers.length} correct, ${wrongPlayers.length} wrong`);
+
+    // 檢查是否全軍覆沒
+    let revivedPlayers = [];
+    if (correctPlayers.length === 0 && state.previousLosers.length > 0) {
+      // 全軍覆沒，前一題敗部復活
+      revivedPlayers = [...state.previousLosers];
+      state.survivors = revivedPlayers;
+      console.log(`[AIGame] All eliminated! Reviving ${revivedPlayers.length} players from previous round`);
+    } else {
+      // 更新存活者
+      state.survivors = correctPlayers;
+      state.previousLosers = wrongPlayers;
+    }
+
+    // 記錄到 gameResult
+    state.gameResult.addRoundResult(
+      state.currentQuestion,
+      correctPlayers,
+      wrongPlayers,
+      revivedPlayers
+    );
+
+    // 記錄這一題的結果
+    state.roundResults.push({
+      questionIndex: state.currentQuestion,
+      correctAnswer,
+      correctAnswerText: question.options[correctAnswer],
+      correctPlayers,
+      wrongPlayers,
+      revivedPlayers,
+      allEliminated: correctPlayers.length === 0
+    });
+
+    this.emit('aiGame:answerRevealed', {
+      questionIndex: state.currentQuestion,
+      correctAnswer,
+      correctAnswerText: question.options[correctAnswer],
+      correctPlayers,
+      wrongPlayers,
+      revivedPlayers,
+      allEliminated: correctPlayers.length === 0,
+      remainingSurvivors: state.survivors.length
+    });
+
+    return {
+      success: true,
+      correctPlayers,
+      wrongPlayers,
+      revivedPlayers,
+      allEliminated: correctPlayers.length === 0
+    };
+  }
+
+  /**
+   * 進入下一題
+   */
+  nextAIQuestion() {
+    const state = this.aiGameState;
+
+    if (!state.active) {
+      return { success: false, error: '遊戲未進行中' };
+    }
+
+    if (!state.revealed) {
+      return { success: false, error: '請先公布答案' };
+    }
+
+    // 檢查是否還有下一題
+    if (state.currentQuestion >= 5) {
+      return { success: false, error: '已經是最後一題' };
+    }
+
+    // 進入下一題
+    state.currentQuestion++;
+    state.playerAnswers.clear();
+    state.revealed = false;
+
+    console.log(`[AIGame] Moving to question ${state.currentQuestion + 1}`);
+
+    // 發送下一題
+    this._sendAIQuestion();
+
+    return { success: true, questionIndex: state.currentQuestion };
+  }
+
+  /**
+   * 結束遊戲
+   */
+  endAIGame() {
+    const state = this.aiGameState;
+
+    if (!state.active) {
+      return { success: false, error: '遊戲未進行中' };
+    }
+
+    // 設定最終存活者
+    state.gameResult.setFinalSurvivors(state.survivors);
+    state.gameResult.endGame();
+
+    const finalResult = {
+      totalQuestions: 6,
+      roundResults: state.roundResults,
+      finalSurvivors: state.survivors,
+      gameRecord: state.gameResult.toJSON()
+    };
+
+    console.log(`[AIGame] Game ended. Final survivors: ${state.survivors.length}`);
+
+    this.emit('aiGame:ended', finalResult);
+
+    // 重置狀態
+    this.aiGameState = {
+      active: false,
+      currentQuestion: 0,
+      questions: [
+        { question: '問題一', options: ['馬桶', '馬桶刷', '衛生紙', '都不是'], correctAnswer: 2 },
+        { question: '問題二', options: ['真的', '假的'], correctAnswer: 0 },
+        { question: '問題三', options: ['冰塊 1', '冰塊 2', '冰塊 3', '冰塊 4', '都是真的', '都是假的'], correctAnswer: 5 },
+        { question: '問題四', options: ['都是真的', '都是假的'], correctAnswer: 0 },
+        { question: '問題五', options: ['植物 1', '植物 2', '植物 3', '植物 4', '都是真的', '都是假的'], correctAnswer: 5 },
+        { question: '問題六', options: ['第一個', '第二個', '都真的', '都假的'], correctAnswer: 2 }
+      ],
+      playerAnswers: new Map(),
+      survivors: [],
+      previousLosers: [],
+      roundResults: [],
+      gameResult: null,
+      revealed: false
+    };
+
+    return { success: true, finalResult };
+  }
+
+  /**
+   * 獲取 AI 遊戲狀態
+   */
+  getAIGameState() {
+    const state = this.aiGameState;
+    return {
+      active: state.active,
+      currentQuestion: state.currentQuestion,
+      totalQuestions: 6,
+      survivors: state.survivors,
+      answeredCount: state.playerAnswers.size,
+      revealed: state.revealed,
+      roundResults: state.roundResults
     };
   }
 }
