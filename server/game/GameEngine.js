@@ -795,9 +795,9 @@ export class GameEngine extends EventEmitter {
         }
       }
 
-      // 更新玩家資源
+      // 更新玩家資源（營收只加到金幣，不加到積分）
       player.coins += totalIncome + bonusCoins;
-      player.score += totalIncome + bonusScore;
+      player.score += bonusScore;  // 積分只加事件的 bonus_score，不加營收
       player.totalIncome += totalIncome;
 
       // 檢查收入相關成就

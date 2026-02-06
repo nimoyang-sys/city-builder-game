@@ -2105,6 +2105,76 @@
       modal.classList.remove('show');
     }
 
+    // 互動事件結算完成處理
+    function handleInteractiveEventSettled(data) {
+      addLog(`✅ 互動事件「${data.event.title}」已結算，影響 ${data.results.length} 位玩家`);
+
+      // 顯示結算結果
+      const panel = document.getElementById('settlement-panel');
+      const eventInfo = document.getElementById('settlement-event-info');
+      const list = document.getElementById('settlement-list');
+      const total = document.getElementById('settlement-total');
+
+      eventInfo.innerHTML = `
+        <div style="margin-bottom: 10px; padding: 10px; background: var(--bg-card); border-radius: 8px;">
+          <div style="font-size: 1.1rem; margin-bottom: 5px;">${data.event.icon || '🎮'} ${data.event.title}</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">互動事件結算</div>
+        </div>
+      `;
+
+      list.innerHTML = data.results.map((r, index) => {
+        const resultType = r.result === 'winner' ? '🏆 贏家' : r.result === 'loser' ? '😢 輸家' : '👍 參與';
+        const coinsClass = r.coins >= 0 ? '' : 'negative';
+        const coinsSign = r.coins >= 0 ? '+' : '';
+
+        return `
+          <div class="settlement-item">
+            <span class="player-name">
+              <span style="color: var(--text-muted); margin-right: 5px;">#${index + 1}</span>
+              ${r.playerName}
+              <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 8px;">${resultType}</span>
+            </span>
+            <span class="income-detail">
+              <span class="income ${coinsClass}">${coinsSign}${r.coins}</span>
+              <span class="coins" title="金幣">💰 ${r.newCoins}</span>
+              <span class="score" title="貢獻分">⭐ ${r.newScore}</span>
+            </span>
+          </div>
+        `;
+      }).join('');
+
+      const totalCoins = data.results.reduce((sum, r) => sum + r.coins, 0);
+      total.innerHTML = `
+        <span>共 ${data.results.length} 位玩家</span>
+        <span style="color: var(--success);">總發放 +${totalCoins}</span>
+      `;
+
+      panel.classList.add('show');
+
+      // 加入歷史紀錄
+      eventHistory.unshift({
+        event: data.event,
+        results: data.results,
+        totalIncome: totalCoins,
+        timestamp: Date.now()
+      });
+      updateEventHistory();
+
+      // 刷新遊戲狀態
+      refreshGameState();
+
+      // 隱藏投影介面的事件彈窗
+      setTimeout(() => {
+        // 通知投影介面可以關閉事件彈窗
+      }, 2000);
+    }
+
+    // 互動事件取消處理
+    function handleInteractiveEventCancelled(data) {
+      addLog(`❌ 互動事件「${data.event.title}」已取消`);
+      refreshGameState();
+    }
+
     // 更新事件歷史列表
     function updateEventHistory() {
       const list = document.getElementById('event-history-list');

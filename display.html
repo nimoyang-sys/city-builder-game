@@ -3546,6 +3546,10 @@
       socket.on('game:eventTriggered', handleEventTriggered);
       socket.on('game:scoreAdded', handleScoreAdded);
       socket.on('game:ended', handleGameEnded);
+
+      // 互動事件
+      socket.on('game:interactiveEventSettled', handleInteractiveEventSettled);
+      socket.on('game:interactiveEventCancelled', handleInteractiveEventCancelled);
       socket.on('game:playerJoined', handlePlayerJoined);
       socket.on('game:reset', handleReset);
 
@@ -3877,12 +3881,34 @@
     // 每排最多幾棟建築
     const BUILDINGS_PER_ROW = 10;
 
-    // 渲染城市建築（使用建築列表，含玩家名稱）
+    // Debounce 機制：避免短時間內重複渲染
+    let renderDebounceTimer = null;
+    let pendingRenderData = null;
+
+    // 渲染城市建築（使用建築列表，含玩家名稱）- 帶 debounce
     function renderCityBuildings(cityBuildings, buildingList) {
+      // 儲存待渲染的資料
+      pendingRenderData = { cityBuildings, buildingList };
+
+      // 如果已經有排程中的渲染，跳過
+      if (renderDebounceTimer) {
+        return;
+      }
+
+      // 設定 debounce，100ms 後執行實際渲染
+      renderDebounceTimer = setTimeout(() => {
+        renderDebounceTimer = null;
+        if (pendingRenderData) {
+          doRenderCityBuildings(pendingRenderData.cityBuildings, pendingRenderData.buildingList);
+          pendingRenderData = null;
+        }
+      }, 100);
+    }
+
+    // 實際渲染城市建築
+    function doRenderCityBuildings(cityBuildings, buildingList) {
       const container = document.getElementById('buildings-container');
       const statsPanel = document.getElementById('stats-panel');
-
-      console.log('renderCityBuildings called:', { cityBuildings, buildingList });
 
       // 只使用有玩家名稱的 buildingList，不從 stats 重建
       // 這樣可以確保每棟建築都顯示正確的玩家名稱
@@ -4027,6 +4053,35 @@
         clearTimeout(eventAutoHideTimer);
         eventAutoHideTimer = null;
       }
+    }
+
+    // 處理互動事件結算完成
+    function handleInteractiveEventSettled(data) {
+      // 隱藏事件彈窗
+      hideEvent();
+
+      // 更新排行榜
+      if (data.leaderboard) {
+        renderLeaderboard(data.leaderboard);
+      }
+
+      // 更新狀態為建設階段
+      updateStatusBadge('BUILDING');
+
+      // 重新獲取遊戲狀態
+      fetchGameState();
+    }
+
+    // 處理互動事件取消
+    function handleInteractiveEventCancelled(data) {
+      // 隱藏事件彈窗
+      hideEvent();
+
+      // 更新狀態為建設階段
+      updateStatusBadge('BUILDING');
+
+      // 重新獲取遊戲狀態
+      fetchGameState();
     }
 
     // 顯示結算明細
