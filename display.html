@@ -2986,7 +2986,7 @@
     }
 
     .lottery-wheel.stopping {
-      transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+      transition: transform 2s cubic-bezier(0.17, 0.67, 0.12, 0.99);
     }
 
     @keyframes wheelSpin {
@@ -6674,8 +6674,8 @@
       wheel.classList.remove('stopping');
       wheel.classList.add('spinning');
 
-      // 轉動 2-3 秒
-      const spinDuration = 2500 + Math.random() * 1000;
+      // 轉動 1.5-2.5 秒
+      const spinDuration = 1500 + Math.random() * 1000;
 
       setTimeout(() => {
         // 停止快速旋轉
@@ -6722,7 +6722,7 @@
           }
 
           isRevealing = false;
-        }, 4000); // 等待停止動畫完成
+        }, 2000); // 等待停止動畫完成
       }, spinDuration);
     }
 
