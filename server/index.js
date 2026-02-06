@@ -1271,6 +1271,11 @@ miniGameManager.on('poker:betPlaced', (data) => {
   io.emit('minigame:pokerBetPlaced', data);
 });
 
+miniGameManager.on('poker:revealing', (data) => {
+  console.log('[Server] 比大小第', data.roundNumber, '局開牌中...');
+  io.emit('minigame:pokerRevealing', data);
+});
+
 miniGameManager.on('poker:roundEnded', (data) => {
   // 發放獎勵給贏家
   if (data.winners && data.winners.length > 0) {

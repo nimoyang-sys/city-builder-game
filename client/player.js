@@ -165,6 +165,7 @@ function initSocket() {
 
   socket.on('minigame:pokerGameStarted', handlePokerGameStarted);
   socket.on('minigame:pokerRoundStarted', handlePokerRoundStarted);
+  socket.on('minigame:pokerRevealing', handlePokerRevealing);
   socket.on('minigame:pokerRoundEnded', handlePokerRoundEnded);
   socket.on('minigame:pokerGameEnded', handlePokerGameEnded);
   socket.on('player:placeBetResult', handlePlaceBetResult);
@@ -1463,6 +1464,12 @@ function handlePokerRoundStarted(data) {
   showPokerBetModal(data);
 }
 
+// 開牌中狀態 - 顯示等待動畫
+function handlePokerRevealing(data) {
+  pokerState.roundActive = false;
+  showPokerRevealingInModal(data.roundNumber);
+}
+
 function handlePokerRoundEnded(data) {
   pokerState.roundActive = false;
   pokerState.result = data;
@@ -1475,15 +1482,29 @@ function handlePokerRoundEnded(data) {
   const isLoser = data.losers.some(l => l.playerId === playerState.id);
   const isTied = data.tied && data.tied.some(t => t.playerId === playerState.id);
 
+  // 累計本場遊戲贏得的金幣
+  if (isWinner) {
+    pokerState.totalWinnings = (pokerState.totalWinnings || 0) + 100;
+  }
+
   // 更新彈窗顯示結果（不關閉彈窗）
   showPokerResultInModal(data, cardDisplay, resultText, isWinner, isLoser, isTied);
 }
 
 function handlePokerGameEnded(data) {
+  const totalWinnings = pokerState.totalWinnings || 0;
   pokerState.active = false;
   pokerState.roundActive = false;
+  pokerState.totalWinnings = 0; // 重置
+
   closePokerBetModal();
-  showToast(`🃏 比大小遊戲結束！共進行 ${data.totalRounds} 局`, 'info');
+
+  // 顯示遊戲結束與總金幣
+  if (totalWinnings > 0) {
+    showToast(`🃏 比大小結束！共 ${data.totalRounds} 局，你贏得 ${totalWinnings} 金幣！`, 'success');
+  } else {
+    showToast(`🃏 比大小結束！共 ${data.totalRounds} 局`, 'info');
+  }
 }
 
 function handlePlaceBetResult(result) {
@@ -1942,6 +1963,49 @@ function showPokerWaitingInModal() {
       </div>
     `;
   }
+}
+
+// 開牌中狀態 - 搓牌動畫
+function showPokerRevealingInModal(roundNumber) {
+  const modal = document.getElementById('poker-bet-modal');
+  if (!modal) return;
+
+  // 清除倒數計時器
+  if (pokerState.timer) {
+    clearTimeout(pokerState.timer);
+    pokerState.timer = null;
+  }
+
+  const betText = pokerState.bet === 'big' ? '📈 大' : (pokerState.bet === 'small' ? '📉 小' : '未下注');
+
+  const modalContent = modal.querySelector('.modal');
+  modalContent.innerHTML = `
+    <div class="modal-title">第 ${roundNumber} 局</div>
+    <div style="text-align: center; margin: 20px 0;">
+      <div style="font-size: 4rem; animation: cardShuffle 0.3s ease-in-out infinite;">🃏</div>
+    </div>
+    <div style="text-align: center; margin-bottom: 15px;">
+      <div style="font-size: 1.5rem; font-weight: bold; color: var(--warning); animation: textPulse 0.8s ease-in-out infinite;">
+        開牌中...
+      </div>
+    </div>
+    <div style="text-align: center; padding: 12px; background: rgba(0,0,0,0.1); border-radius: 12px;">
+      <div style="color: var(--text-muted); font-size: 0.9rem;">你的選擇：${betText}</div>
+    </div>
+    <style>
+      @keyframes cardShuffle {
+        0% { transform: translateY(-10px) rotate(-5deg); }
+        25% { transform: translateY(8px) rotate(3deg); }
+        50% { transform: translateY(-8px) rotate(-3deg); }
+        75% { transform: translateY(10px) rotate(5deg); }
+        100% { transform: translateY(-10px) rotate(-5deg); }
+      }
+      @keyframes textPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.6; transform: scale(1.05); }
+      }
+    </style>
+  `;
 }
 
 function showPokerResultInModal(data, cardDisplay, resultText, isWinner, isLoser, isTied) {

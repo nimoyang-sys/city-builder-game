@@ -1196,6 +1196,17 @@
               </p>
             </div>
 
+            <!-- 開牌中狀態 -->
+            <div id="poker-revealing-control" style="display: none; margin-top: 10px;">
+              <div style="background: var(--bg); padding: 15px; border-radius: 8px; text-align: center;">
+                <p style="font-size: 1rem; font-weight: bold; margin-bottom: 8px; color: var(--warning);">
+                  第 <span id="poker-revealing-round">1</span> 局 - 開牌中...
+                </p>
+                <p style="font-size: 2rem; animation: pulse 0.5s infinite;">🃏</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">請稍候 5 秒...</p>
+              </div>
+            </div>
+
             <!-- 結果顯示狀態 -->
             <div id="poker-result-control" style="display: none; margin-top: 10px;">
               <div style="background: var(--bg); padding: 15px; border-radius: 8px;">
@@ -1589,13 +1600,31 @@
         document.getElementById('poker-bet-small-count').textContent = pokerBetSmallCount;
       });
 
-      socket.on('minigame:pokerRoundEnded', (data) => {
+      // 開牌中狀態
+      socket.on('minigame:pokerRevealing', (data) => {
+        console.log('🃏 收到 pokerRevealing 事件', data);
         if (pokerTimerInterval) {
           clearInterval(pokerTimerInterval);
           pokerTimerInterval = null;
         }
 
         document.getElementById('poker-betting-control').style.display = 'none';
+        document.getElementById('poker-revealing-control').style.display = 'block';
+        document.getElementById('poker-result-control').style.display = 'none';
+        document.getElementById('poker-revealing-round').textContent = data.roundNumber;
+
+        addLog(`第 ${data.roundNumber} 局下注結束，開牌中...`, 'info');
+      });
+
+      socket.on('minigame:pokerRoundEnded', (data) => {
+        console.log('🃏 收到 pokerRoundEnded 事件', data);
+        if (pokerTimerInterval) {
+          clearInterval(pokerTimerInterval);
+          pokerTimerInterval = null;
+        }
+
+        document.getElementById('poker-betting-control').style.display = 'none';
+        document.getElementById('poker-revealing-control').style.display = 'none';
         document.getElementById('poker-result-control').style.display = 'block';
 
         const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -1628,6 +1657,8 @@
         addLog(`比大小遊戲結束，共進行 ${data.totalRounds} 局`, 'warning');
         document.getElementById('btn-poker-start').style.display = 'block';
         document.getElementById('poker-game-control').style.display = 'none';
+        document.getElementById('poker-revealing-control').style.display = 'none';
+        document.getElementById('poker-result-control').style.display = 'none';
       });
 
       // 猜歌曲前奏事件

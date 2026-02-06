@@ -1997,11 +1997,13 @@
     .poker-game-container {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 40px;
+      gap: 30px;
       max-width: 1400px;
       margin: 0 auto;
-      padding: 30px;
-      height: calc(100vh - 100px);
+      padding: 20px;
+      min-height: 0;
+      max-height: calc(100vh - 60px);
+      overflow: hidden;
     }
 
     /* 左側：標題+撲克牌 */
@@ -2071,6 +2073,43 @@
     @keyframes cardFloat {
       0%, 100% { transform: translateY(0) rotate(-2deg); }
       50% { transform: translateY(-12px) rotate(2deg); }
+    }
+
+    /* 開牌中搓牌動畫 */
+    .poker-card-shuffling {
+      width: 180px;
+      height: 250px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      margin: 20px auto;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+      border: 4px solid rgba(255,255,255,0.3);
+      animation: cardShuffle 0.3s ease-in-out infinite;
+    }
+
+    @keyframes cardShuffle {
+      0% { transform: translateY(-15px) rotate(-5deg); }
+      25% { transform: translateY(10px) rotate(3deg); }
+      50% { transform: translateY(-10px) rotate(-3deg); }
+      75% { transform: translateY(15px) rotate(5deg); }
+      100% { transform: translateY(-15px) rotate(-5deg); }
+    }
+
+    .poker-revealing-text {
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--warning);
+      margin-top: 20px;
+      animation: textPulse 0.8s ease-in-out infinite;
+    }
+
+    @keyframes textPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.05); }
     }
 
     .poker-card {
@@ -2892,18 +2931,20 @@
       box-shadow: 0 4px 20px rgba(147,112,219,0.4);
     }
 
-    /* 圓形轉盤容器 */
+    /* 圓形轉盤容器 - 確保正圓形 */
     .lottery-wheel-container {
       position: relative;
-      width: 480px;
-      height: 480px;
+      width: 400px;
+      height: 400px;
+      flex-shrink: 0;
     }
 
-    /* 圓形轉盤 */
+    /* 圓形轉盤 - 強制正圓形 */
     .lottery-wheel {
-      width: 100%;
-      height: 100%;
+      width: 400px;
+      height: 400px;
       border-radius: 50%;
+      aspect-ratio: 1 / 1;
       background: conic-gradient(
         from 0deg,
         #8b5cf6 0deg 30deg,
@@ -2948,8 +2989,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 140px;
-      height: 140px;
+      width: 120px;
+      height: 120px;
       background: linear-gradient(135deg, #2d1b4e 0%, #1a1a2e 50%, #2d1b4e 100%);
       border-radius: 50%;
       border: 6px solid #ffd700;
@@ -2963,7 +3004,7 @@
     }
 
     .lottery-wheel-center-text {
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: 900;
       color: #ffd700;
       text-align: center;
@@ -2971,23 +3012,13 @@
       text-shadow: 0 0 10px rgba(255,215,0,0.5);
     }
 
-    /* 轉盤上的名字 */
+    /* 隱藏轉盤上的名字 */
     .lottery-wheel-names {
-      position: absolute;
-      inset: 0;
+      display: none;
     }
 
     .lottery-wheel-name {
-      position: absolute;
-      left: 50%;
-      top: 15%;
-      transform-origin: 0 240px;
-      width: 100px;
-      text-align: center;
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: #fff;
-      text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+      display: none;
       transform: translateX(-50%);
     }
 
@@ -3417,11 +3448,7 @@
         <!-- 圓形轉盤 -->
         <div class="lottery-wheel-container">
           <div class="lottery-pointer"></div>
-          <div class="lottery-wheel" id="lottery-wheel">
-            <div class="lottery-wheel-names" id="lottery-wheel-names">
-              <!-- 動態生成名字 -->
-            </div>
-          </div>
+          <div class="lottery-wheel" id="lottery-wheel"></div>
           <div class="lottery-wheel-center">
             <div class="lottery-wheel-center-text" id="lottery-wheel-center-text">等待<br>抽獎</div>
           </div>
@@ -3567,6 +3594,7 @@
       socket.on('minigame:pokerGameStarted', handlePokerGameStarted);
       socket.on('minigame:pokerRoundStarted', handlePokerRoundStarted);
       socket.on('minigame:pokerBetPlaced', handlePokerBetPlaced);
+      socket.on('minigame:pokerRevealing', handlePokerRevealing);
       socket.on('minigame:pokerRoundEnded', handlePokerRoundEnded);
       socket.on('minigame:pokerGameEnded', handlePokerGameEnded);
 
@@ -3691,14 +3719,8 @@
 
         console.log('📊 轉換後的 awardWinners:', awardWinners);
 
-        // 顯示抽獎畫面
+        // 顯示抽獎畫面（startAwardMode 內部會處理得獎者列表的恢復）
         startAwardMode();
-
-        // 如果已經有得獎者，恢復到得獎者列表
-        if (awardWinners.length > 0) {
-          console.log('🏆 恢復已抽出的得獎者:', awardWinners.length);
-          updateAwardWinnersList();
-        }
       } else if (state.state === 'ENDED') {
         // 遊戲已結束但沒有抽獎，顯示結束畫面
         const endOverlay = document.getElementById('end-overlay');
@@ -4315,8 +4337,9 @@
 
     function handleGameEnded(data) {
       console.log('=== handleGameEnded called ===');
-      console.log('Received data:', data);
+      console.log('Received data:', JSON.stringify(data, null, 2));
       console.log('cityBuildingList:', data.cityBuildingList);
+      console.log('cityBuildings:', data.cityBuildings);
       console.log('leaderboard:', data.leaderboard);
 
       updateStatusBadge('ENDED');
@@ -4329,21 +4352,47 @@
 
       // 渲染最終城市（使用建築列表，含玩家名稱）
       const finalBuildings = document.getElementById('final-buildings');
-      const buildingList = data.cityBuildingList || [];
+      console.log('final-buildings element:', finalBuildings);
 
-      console.log('Rendering final buildings:', buildingList.length, 'buildings');
-      finalBuildings.innerHTML = buildingList.map(b => {
-        // 根據名字長度動態調整字體大小
-        const nameLength = b.playerName.length;
-        const fontSize = nameLength > 6 ? '0.7rem' : nameLength > 4 ? '0.8rem' : '0.9rem';
-        return `
-          <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.9); margin: 0 4px;">
-            ${createCSSBuilding(b.buildingId)}
-            <div class="building-owner" style="font-size: ${fontSize}; font-weight: 700; color: #2C3E50; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">${b.playerName}</div>
-          </div>
-        `;
-      }).join('');
-      console.log('Final buildings HTML set, element:', finalBuildings);
+      // Try both cityBuildingList and cityBuildings
+      let buildingList = data.cityBuildingList || [];
+
+      // If cityBuildingList is empty, try to construct from cityBuildings
+      if (buildingList.length === 0 && data.cityBuildings) {
+        console.log('cityBuildingList is empty, trying cityBuildings...');
+        buildingList = Object.entries(data.cityBuildings || {}).flatMap(([buildingId, owners]) =>
+          owners.map(playerId => {
+            const player = (data.leaderboard || []).find(p => p.playerId === playerId);
+            return {
+              buildingId: parseInt(buildingId),
+              playerId: playerId,
+              playerName: player ? player.name : playerId
+            };
+          })
+        );
+        console.log('Constructed buildingList:', buildingList);
+      }
+
+      console.log('Final buildingList to render:', buildingList.length, 'buildings');
+
+      if (buildingList.length === 0) {
+        console.warn('⚠️ No buildings to render!');
+        finalBuildings.innerHTML = '<div style="color: red; font-size: 1.5rem; padding: 20px;">尚無建築資料</div>';
+      } else {
+        finalBuildings.innerHTML = buildingList.map(b => {
+          console.log('Rendering building:', b);
+          // 根據名字長度動態調整字體大小
+          const nameLength = b.playerName.length;
+          const fontSize = nameLength > 6 ? '0.7rem' : nameLength > 4 ? '0.8rem' : '0.9rem';
+          return `
+            <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.9); margin: 0 4px;">
+              ${createCSSBuilding(b.buildingId)}
+              <div class="building-owner" style="font-size: ${fontSize}; font-weight: 700; color: #2C3E50; text-shadow: 1px 1px 2px rgba(255,255,255,0.8);">${b.playerName}</div>
+            </div>
+          `;
+        }).join('');
+        console.log('✅ Final buildings HTML set successfully');
+      }
 
       // 渲染最終排行榜
       renderLeaderboard(data.leaderboard, 'final-leaderboard');
@@ -4821,6 +4870,57 @@
           bigSection.classList.add('loser');
         }
       }
+    }
+
+    // 開牌中動畫（5秒等待）
+    function handlePokerRevealing(data) {
+      if (pokerTimerInterval) {
+        clearInterval(pokerTimerInterval);
+        pokerTimerInterval = null;
+      }
+
+      const overlay = document.getElementById('minigame-overlay');
+      overlay.innerHTML = `
+        <div class="minigame-content" style="max-width: 1400px; padding: 20px;">
+        <div class="poker-game-container">
+          <!-- 左側：搓牌動畫 -->
+          <div class="poker-left-section">
+            <div class="poker-game-title">🃏 比大小</div>
+            <div class="poker-round-info">第 ${data.roundNumber} 局</div>
+            <div class="poker-card-shuffling">🃏</div>
+            <div class="poker-revealing-text">開牌中...</div>
+          </div>
+
+          <!-- 右側：下注結果 -->
+          <div class="poker-right-section">
+            <div class="poker-bet-section big" id="poker-section-big">
+              <div class="poker-bet-title big">
+                📈 押大
+                <span class="poker-bet-count">${pokerBetsData.big.length} 人</span>
+              </div>
+              <div class="poker-bet-players" id="poker-bets-big">
+                ${pokerBetsData.big.length > 0 ?
+                  pokerBetsData.big.map(name => `<div class="poker-bet-player">${name}</div>`).join('') :
+                  '<div class="poker-no-bets">無人下注</div>'
+                }
+              </div>
+            </div>
+            <div class="poker-bet-section small" id="poker-section-small">
+              <div class="poker-bet-title small">
+                📉 押小
+                <span class="poker-bet-count">${pokerBetsData.small.length} 人</span>
+              </div>
+              <div class="poker-bet-players" id="poker-bets-small">
+                ${pokerBetsData.small.length > 0 ?
+                  pokerBetsData.small.map(name => `<div class="poker-bet-player">${name}</div>`).join('') :
+                  '<div class="poker-no-bets">無人下注</div>'
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      `;
     }
 
     function handlePokerRoundEnded(data) {
@@ -5345,17 +5445,31 @@
       }
 
       document.getElementById('lottery-prize-label').textContent = `共 ${awardPrizeCount} 位得獎者`;
-      document.getElementById('lottery-hint').textContent = '等待主持人揭曉得獎者...';
-      document.getElementById('lottery-winner-display').innerHTML = '';
 
       // 更新轉盤中心文字
       const centerText = document.getElementById('lottery-wheel-center-text');
-      if (centerText) {
-        centerText.innerHTML = '等待<br>抽獎';
+
+      // 如果已經有得獎者，恢復顯示最後一位得獎者
+      if (awardWinners.length > 0) {
+        const lastWinner = awardWinners[awardWinners.length - 1];
+        showAwardWinner(lastWinner, lastWinner.rank);
+        if (centerText) {
+          centerText.innerHTML = `第${lastWinner.rank}名<br>🎉`;
+        }
+        if (currentAwardRank < awardPrizeCount) {
+          document.getElementById('lottery-hint').textContent = '等待揭曉下一位得獎者...';
+        } else {
+          document.getElementById('lottery-hint').textContent = '🎊 頒獎典禮圓滿結束！';
+        }
+      } else {
+        document.getElementById('lottery-hint').textContent = '等待主持人揭曉得獎者...';
+        document.getElementById('lottery-winner-display').innerHTML = '';
+        if (centerText) {
+          centerText.innerHTML = '等待<br>抽獎';
+        }
       }
 
-      // 建立轉盤上的名字
-      buildWheelNames();
+      // 更新右側得獎者列表（只呼叫一次）
       updateAwardWinnersList();
 
       // 重置轉盤角度
@@ -5369,25 +5483,9 @@
       console.log('🎉 抽獎畫面初始化完成');
     }
 
-    // 建立轉盤上的名字
+    // 建立轉盤上的名字（已移除顯示，保留空函數以防呼叫錯誤）
     function buildWheelNames() {
-      const container = document.getElementById('lottery-wheel-names');
-      if (!container) return;
-
-      const playerCount = Math.min(awardPlayers.length, 12); // 最多顯示12個名字
-      const angleStep = 360 / playerCount;
-
-      let html = '';
-      for (let i = 0; i < playerCount; i++) {
-        const player = awardPlayers[i];
-        const angle = i * angleStep;
-        html += `
-          <div class="lottery-wheel-name" style="transform: translateX(-50%) rotate(${angle}deg);">
-            ${player.name || '未知'}
-          </div>
-        `;
-      }
-      container.innerHTML = html;
+      // 名字已移除，轉盤只顯示顏色
     }
 
     // 揭曉得獎者
