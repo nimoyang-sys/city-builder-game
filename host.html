@@ -1178,11 +1178,11 @@
               <div id="beer-ranking-control" style="display: none; margin-top: 10px;">
                 <p style="font-size: 0.85rem; margin-bottom: 10px; font-weight: bold;">設定排名（拖曳排序）：</p>
                 <div id="beer-ranking-list"></div>
-                <button class="btn btn-primary btn-block btn-sm" onclick="confirmBeerRankings()" style="margin-top: 10px;">
+                <button class="btn btn-primary btn-block btn-sm" onclick="confirmBeerRankings()" id="btn-beer-confirm" style="margin-top: 10px;">
                   確認排名並發放獎勵
                 </button>
-                <button class="btn btn-danger btn-block btn-sm" onclick="endBeerGameFinal()" style="margin-top: 5px;">
-                  結束比賽
+                <button class="btn btn-primary btn-block btn-sm" onclick="nextBeerGame()" id="btn-beer-next" style="display: none; margin-top: 10px;">
+                  再開一局
                 </button>
               </div>
             </div>
@@ -1568,6 +1568,8 @@
 
       socket.on('minigame:beerResultsSet', (data) => {
         addLog('喝啤酒比賽排名已確認，獎勵已發放', 'success');
+        document.getElementById('btn-beer-confirm').style.display = 'none';
+        document.getElementById('btn-beer-next').style.display = 'block';
       });
 
       socket.on('minigame:beerEnded', () => {
@@ -2815,7 +2817,7 @@
       currentInteractiveEvent = null;
       interactiveParticipants = [];
 
-      // 恢復自動發布（如果之前有開啟）
+      // 恢復自動發布（���果之前有開啟）
       if (autoEventEnabled) {
         startAutoEventTimer();
         addLog('▶️ 互動事件已結束，自動發布已恢復');
@@ -3177,6 +3179,21 @@
       }
     }
 
+    // 再開一局喝啤酒比賽
+    function nextBeerGame() {
+      if (confirm('確定要再開一局喝啤酒比賽嗎？')) {
+        socket.emit('host:startBeerWaiting');
+        document.getElementById('beer-participants-count').textContent = '0';
+        document.getElementById('beer-participants-list').innerHTML = '';
+        document.getElementById('btn-beer-start').disabled = true;
+        document.getElementById('beer-ranking-control').style.display = 'none';
+        document.getElementById('btn-beer-confirm').style.display = 'block';
+        document.getElementById('btn-beer-next').style.display = 'none';
+        beerParticipants = [];
+        addLog('開始新一局喝啤酒比賽', 'success');
+      }
+    }
+
     // 結束喝啤酒比賽
     function endBeerGameFinal() {
       if (confirm('確定要結束喝啤酒比賽嗎？')) {
@@ -3185,6 +3202,8 @@
         document.getElementById('beer-game-control').style.display = 'none';
         document.getElementById('beer-ranking-control').style.display = 'none';
         document.getElementById('btn-beer-start').disabled = false;
+        document.getElementById('btn-beer-confirm').style.display = 'block';
+        document.getElementById('btn-beer-next').style.display = 'none';
         beerParticipants = [];
         addLog('喝啤酒比賽結束', 'warning');
       }
@@ -3234,6 +3253,10 @@
         document.getElementById('song-game-control').style.display = 'block';
         document.getElementById('song-current-round').textContent = '0';
         document.getElementById('song-answered-count').textContent = '0';
+        // 確保初始狀態正確：顯示開始新一局按鈕，隱藏其他控制項
+        document.getElementById('btn-start-song-round').style.display = 'block';
+        document.getElementById('btn-end-song-round').style.display = 'none';
+        document.getElementById('song-answer-select').style.display = 'none';
         addLog('猜歌曲前奏遊戲開始', 'success');
       }
     }

@@ -3512,6 +3512,230 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    // ========== 音效系統 ==========
+    const SoundFX = {
+      audioContext: null,
+
+      init() {
+        if (!this.audioContext) {
+          this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        return this.audioContext;
+      },
+
+      // 時間緊迫音效（嘀嘀聲）
+      tick(urgent = false) {
+        const ctx = this.init();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.value = urgent ? 880 : 440;
+        osc.type = 'square';
+
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialDecayTo && gain.gain.exponentialDecayTo(0.01, ctx.currentTime + 0.1);
+
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.08);
+      },
+
+      // 倒數最後5秒急促聲
+      countdown() {
+        const ctx = this.init();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.value = 600;
+        osc.type = 'sine';
+
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
+      },
+
+      // 開牌音效（緊張的搓牌聲）
+      shuffling() {
+        const ctx = this.init();
+
+        // 創建噪音
+        const bufferSize = ctx.sampleRate * 0.1;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.3;
+        }
+
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 2000;
+
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        noise.start(ctx.currentTime);
+      },
+
+      // 開牌揭曉音效
+      reveal() {
+        const ctx = this.init();
+
+        [400, 500, 600, 800].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+
+          const startTime = ctx.currentTime + i * 0.08;
+          gain.gain.setValueAtTime(0.3, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.2);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.2);
+        });
+      },
+
+      // 獲勝掌聲/歡呼音效
+      applause() {
+        const ctx = this.init();
+
+        // 模擬掌聲：多層噪音 + 隨機脈衝
+        for (let j = 0; j < 20; j++) {
+          setTimeout(() => {
+            const bufferSize = ctx.sampleRate * 0.05;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+              data[i] = (Math.random() * 2 - 1);
+            }
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 1500 + Math.random() * 1000;
+
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.15 + Math.random() * 0.1, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.05);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+
+            noise.start(ctx.currentTime);
+          }, j * 50 + Math.random() * 30);
+        }
+
+        // 勝利音階
+        const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+
+          const startTime = ctx.currentTime + i * 0.12;
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.3);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.3);
+        });
+      },
+
+      // 失敗/喝酒音效
+      loser() {
+        const ctx = this.init();
+
+        // 下降音階
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.4);
+        osc.type = 'sawtooth';
+
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+      },
+
+      // 和局音效
+      tie() {
+        const ctx = this.init();
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.frequency.value = 440;
+        osc.type = 'triangle';
+
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+      },
+
+      // 遊戲開始音效
+      gameStart() {
+        const ctx = this.init();
+
+        const notes = [262, 330, 392, 523]; // C4, E4, G4, C5
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+
+          const startTime = ctx.currentTime + i * 0.1;
+          gain.gain.setValueAtTime(0.3, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.25);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.25);
+        });
+      }
+    };
+
     // 遊戲設定
     let gameConfig = null;
     let socket = null;
@@ -4036,7 +4260,7 @@
     let eventAutoHideTimer = null;
 
     // 顯示事件
-    function showEvent(event) {
+    function showEvent(event, participants = []) {
       const panel = document.getElementById('event-panel');
       const typeMap = {
         'BOOM': '景氣繁榮',
@@ -4050,7 +4274,21 @@
       document.getElementById('event-icon').textContent = event.emoji || '📢';
       document.getElementById('event-type').textContent = typeMap[event.type] || '事件';
       document.getElementById('event-title').textContent = event.title;
-      document.getElementById('event-description').textContent = event.description;
+
+      // 如果是互動事件且有參與者，顯示參與者名單
+      if (event.type === 'INTERACTIVE' && participants && participants.length > 0) {
+        const participantNames = participants.map(p => p.name).join('、');
+        const instructionsText = event.instructions || event.description;
+        document.getElementById('event-description').innerHTML = `
+          <div style="margin-bottom: 10px;">${instructionsText}</div>
+          <div style="padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-top: 10px;">
+            <div style="color: #FFD700; font-weight: bold; margin-bottom: 6px;">📋 參與玩家</div>
+            <div style="color: rgba(255,255,255,0.95); line-height: 1.6;">${participantNames}</div>
+          </div>
+        `;
+      } else {
+        document.getElementById('event-description').textContent = event.description;
+      }
 
       const effectsEl = document.getElementById('event-effects');
       effectsEl.textContent = event.display?.affected || '--';
@@ -4330,7 +4568,7 @@
 
       // 延遲顯示事件彈窗，確保不會被 fetchGameState 的狀態更新干擾
       setTimeout(() => {
-        showEvent(data.event);
+        showEvent(data.event, data.participants);
       }, 200);
     }
 
@@ -4534,7 +4772,7 @@
           </div>
 
           <!-- 右側：名單區域（帶滾動） -->
-          <div style="
+          <div class="quiz-results-scroll" style="
             flex: 1;
             overflow-y: auto;
             padding-right: 10px;
@@ -4557,7 +4795,7 @@
                 background: rgba(255, 255, 255, 0.5);
               }
             </style>
-            <div class="quiz-results-scroll" style="display: grid; gap: 12px;">
+            <div style="display: grid; gap: 12px;">
               ${results.map((r, i) => `
                 <div style="
                   display: flex;
@@ -4724,7 +4962,7 @@
                   <div class="beer-rank rank-${r.rank}">第${r.rank}名</div>
                   <div style="font-weight: bold; font-size: 1.3rem;">${r.playerName}</div>
                 </div>
-                <div style="color: var(--warning); font-weight: bold; font-size: 1.2rem;">+${r.reward}分</div>
+                <div style="color: var(--warning); font-weight: bold; font-size: 1.2rem;">+${r.reward}元</div>
               </div>
             `).join('')}
           </div>
@@ -4755,6 +4993,9 @@
       console.log('🃏 Display: 收到 pokerRoundStarted', data);
       pokerBetsData = { big: [], small: [] };
       pokerCurrentRound = data.roundNumber;
+
+      // 播放遊戲開始音效
+      SoundFX.gameStart();
 
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
@@ -4799,6 +5040,7 @@
       const endTime = data.endTime;
       if (pokerTimerInterval) clearInterval(pokerTimerInterval);
 
+      let lastSecond = -1;
       pokerTimerInterval = setInterval(() => {
         const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
         const timerEl = document.getElementById('poker-timer-display');
@@ -4806,6 +5048,11 @@
           timerEl.textContent = remaining + 's';
           if (remaining <= 5) {
             timerEl.classList.add('urgent');
+            // 每秒播放一次急促音效
+            if (remaining !== lastSecond && remaining > 0) {
+              lastSecond = remaining;
+              SoundFX.countdown();
+            }
           }
         }
         if (remaining <= 0) {
@@ -4887,6 +5134,16 @@
         pokerTimerInterval = null;
       }
 
+      // 播放搓牌音效（每0.5秒播放一次，共5秒）
+      let shuffleCount = 0;
+      const shuffleInterval = setInterval(() => {
+        SoundFX.shuffling();
+        shuffleCount++;
+        if (shuffleCount >= 10) {
+          clearInterval(shuffleInterval);
+        }
+      }, 500);
+
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
         <div class="minigame-content" style="max-width: 1400px; padding: 20px;">
@@ -4936,6 +5193,21 @@
         clearInterval(pokerTimerInterval);
         pokerTimerInterval = null;
       }
+
+      // 播放開牌揭曉音效
+      SoundFX.reveal();
+
+      // 延遲播放結果音效（等開牌動畫完成）
+      setTimeout(() => {
+        if (data.result === 'tie') {
+          SoundFX.tie();
+        } else if (data.winners && data.winners.length > 0) {
+          SoundFX.applause();
+        }
+        if (data.losers && data.losers.length > 0) {
+          setTimeout(() => SoundFX.loser(), 800);
+        }
+      }, 500);
 
       const cardNames = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
       const suits = ['♠', '♥', '♦', '♣'];

@@ -348,14 +348,14 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 2, max: 4 },
     gameType: 'rock_paper_scissors',
-    instructions: '抽選 2-4 位玩家進行猜拳淘汰賽。最後勝出者獲得 +300元，淘汰者 -50元並喝一杯。',
+    instructions: '抽選 2-4 位玩家進行猜拳淘汰賽。最後勝出者獲得 +300元，淘汰者喝一杯。',
     rewards: {
       winner: { coins: 300, description: '成功修復 +300元' },
-      loser: { coins: -50, description: '修復失敗 -50元' }
+      loser: { coins: 0, description: '修復失敗' }
     },
     display: {
-      affected: '猜拳對決：贏家 +300元，輸家 -50元',
-      mood: 'mixed'
+      affected: '猜拳對決：贏家 +300元',
+      mood: 'positive'
     }
   },
   {
@@ -442,14 +442,14 @@ export const EVENT_DECK = [
     interactive: true,
     participantCount: { min: 2, max: 3 },
     gameType: 'black_white_guess',
-    instructions: '抽選 2-3 位玩家進行黑白猜對決。勝出者獲得 +350元，失敗者 -100元並喝一杯反省。',
+    instructions: '抽選 2-3 位玩家進行黑白猜對決。勝出者獲得 +350元，失敗者喝一杯反省。',
     rewards: {
       winner: { coins: 350, description: '危機化解 +350元' },
-      loser: { coins: -100, description: '處理失敗 -100元' }
+      loser: { coins: 0, description: '處理失敗' }
     },
     display: {
-      affected: '黑白猜對決：成功 +350元，失敗 -100元',
-      mood: 'mixed'
+      affected: '黑白猜對決：贏家 +350元',
+      mood: 'positive'
     }
   },
   {

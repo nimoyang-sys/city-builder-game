@@ -175,6 +175,7 @@ function initSocket() {
   socket.on('minigame:pokerGameEnded', handlePokerGameEnded);
   socket.on('player:placeBetResult', handlePlaceBetResult);
 
+  socket.on('minigame:songGuessGameStarted', handleSongGuessGameStarted);
   socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
   socket.on('minigame:songGuessRoundEnded', handleSongGuessRoundEnded);
   socket.on('minigame:songGuessGameEnded', handleSongGuessGameEnded);
@@ -1546,6 +1547,17 @@ let songGuessState = {
   active: false,
   submitted: false
 };
+
+function handleSongGuessGameStarted() {
+  if (!isPlayerLoggedIn()) return; // 未登入時不處理
+  songGuessState = {
+    active: true,
+    submitted: false
+  };
+  showToast('🎵 猜歌曲前奏遊戲開始！請準備作答', 'info');
+  // 遊戲開始時就顯示彈窗，讓玩家準備
+  showSongGuessModal();
+}
 
 function handleSongGuessRoundStarted(data) {
   if (!isPlayerLoggedIn()) return; // 未登入時不處理

@@ -1326,6 +1326,28 @@ miniGameManager.on('songGuess:gameEnded', (data) => {
   io.emit('minigame:songGuessGameEnded', data);
 });
 
+// ========== 強制結束遊戲事件 ==========
+
+miniGameManager.on('quiz:forceEnded', () => {
+  console.log('[Server] 快問快答被強制結束');
+  io.emit('minigame:quizForceEnded');
+});
+
+miniGameManager.on('beer:forceEnded', () => {
+  console.log('[Server] 喝啤酒比賽被強制結束');
+  io.emit('minigame:beerForceEnded');
+});
+
+miniGameManager.on('poker:forceEnded', () => {
+  console.log('[Server] 比大小被強制結束');
+  io.emit('minigame:pokerForceEnded');
+});
+
+miniGameManager.on('songGuess:forceEnded', () => {
+  console.log('[Server] 猜歌曲前奏被強制結束');
+  io.emit('minigame:songGuessForceEnded');
+});
+
 // ========== 啟動伺服器 ==========
 
 const PORT = process.env.PORT || 3000;

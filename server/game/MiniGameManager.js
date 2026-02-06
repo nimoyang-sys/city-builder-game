@@ -891,6 +891,103 @@ export class MiniGameManager extends EventEmitter {
 
     return { success: true, finalResults };
   }
+
+  /**
+   * 強制結束所有進行中的小遊戲
+   * @returns {object} 被結束的遊戲列表
+   */
+  forceEndAllGames() {
+    const endedGames = [];
+
+    // 結束快問快答
+    if (this.quizState.active) {
+      if (this.quizState.timer) {
+        clearTimeout(this.quizState.timer);
+      }
+      this.quizState.active = false;
+      this.quizState.currentQuestion = null;
+      this.emit('quiz:forceEnded');
+      endedGames.push('quiz');
+    }
+
+    // 結束喝啤酒比賽
+    if (this.beerState.active || this.beerState.waiting) {
+      if (this.beerState.timer) {
+        clearTimeout(this.beerState.timer);
+      }
+      this.beerState.active = false;
+      this.beerState.waiting = false;
+      this.beerState.participants = [];
+      this.emit('beer:forceEnded');
+      endedGames.push('beer');
+    }
+
+    // 結束比大小
+    if (this.pokerState.active) {
+      if (this.pokerState.timer) {
+        clearTimeout(this.pokerState.timer);
+      }
+      this.pokerState.active = false;
+      this.pokerState.roundActive = false;
+      this.emit('poker:forceEnded');
+      endedGames.push('poker');
+    }
+
+    // 結束猜歌曲前奏
+    if (this.songGuessState.active) {
+      this.songGuessState.active = false;
+      this.songGuessState.roundActive = false;
+      this.emit('songGuess:forceEnded');
+      endedGames.push('songGuess');
+    }
+
+    return { success: true, endedGames };
+  }
+
+  /**
+   * 檢查是否有任何小遊戲正在進行
+   * @returns {object} 當前活動的遊戲資訊
+   */
+  checkActiveGames() {
+    const activeGames = [];
+
+    if (this.quizState.active) {
+      activeGames.push({
+        type: 'quiz',
+        name: '快問快答',
+        canForceEnd: true
+      });
+    }
+
+    if (this.beerState.active || this.beerState.waiting) {
+      activeGames.push({
+        type: 'beer',
+        name: '喝啤酒比賽',
+        canForceEnd: true
+      });
+    }
+
+    if (this.pokerState.active) {
+      activeGames.push({
+        type: 'poker',
+        name: '比大小',
+        canForceEnd: true
+      });
+    }
+
+    if (this.songGuessState.active) {
+      activeGames.push({
+        type: 'songGuess',
+        name: '猜歌曲前奏',
+        canForceEnd: true
+      });
+    }
+
+    return {
+      hasActiveGames: activeGames.length > 0,
+      activeGames
+    };
+  }
 }
 
 export default MiniGameManager;
