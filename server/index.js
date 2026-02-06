@@ -957,6 +957,26 @@ io.on('connection', (socket) => {
     socket.emit('host:result', result);
   });
 
+  // 檢查是否有活動的小遊戲
+  socket.on('host:checkActiveGames', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.checkActiveGames();
+    socket.emit('host:activeGamesStatus', result);
+  });
+
+  // 強制結束所有小遊戲
+  socket.on('host:forceEndAllGames', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.forceEndAllGames();
+    socket.emit('host:result', result);
+    console.log('[Server] 已強制結束所有小遊戲:', result.endedGames);
+  });
 
   // 重置遊戲
   socket.on('host:reset', () => {

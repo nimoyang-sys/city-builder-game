@@ -2648,9 +2648,10 @@
     .end-buildings-display {
       width: 100vw;
       margin-left: calc(-50vw + 50%);
-      height: 100px;
+      height: 80px;
       position: relative;
       margin-top: auto;
+      overflow: visible;
     }
 
     .final-city-ground {
@@ -2658,25 +2659,24 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 30px;
+      height: 25px;
       background: linear-gradient(180deg, #8BC34A 0%, #689F38 100%);
-      border-top: 4px solid #9CCC65;
+      border-top: 3px solid #9CCC65;
     }
 
     .final-buildings {
       position: absolute;
-      bottom: 30px;
+      bottom: 25px;
       left: 0;
       right: 0;
-      height: 70px;
       display: flex;
       align-items: flex-end;
       justify-content: flex-start;
-      gap: 2px;
+      gap: 0;
       flex-wrap: nowrap;
       overflow-x: auto;
       overflow-y: visible;
-      padding: 0 10px;
+      padding: 0 10px 0 10px;
       z-index: 10;
     }
 
@@ -2684,16 +2684,20 @@
       flex-shrink: 0;
       opacity: 1 !important;
       visibility: visible !important;
+      transform-origin: bottom center;
     }
 
     .final-buildings .building-owner {
       background: rgba(255, 255, 255, 0.95);
-      padding: 2px 4px;
-      border-radius: 4px;
+      padding: 1px 3px;
+      border-radius: 3px;
       border: 1px solid #667eea;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-      font-size: 0.55rem !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      font-size: 0.5rem !important;
       white-space: nowrap;
+      max-width: 40px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .final-buildings::-webkit-scrollbar {
@@ -3733,6 +3737,243 @@
           osc.start(startTime);
           osc.stop(startTime + 0.25);
         });
+      },
+
+      // ========== 快問快答音效 ==========
+
+      // 題目出現音效
+      questionAppear() {
+        const ctx = this.init();
+        const notes = [523, 659, 784]; // C5, E5, G5
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          const startTime = ctx.currentTime + i * 0.06;
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.15);
+          osc.start(startTime);
+          osc.stop(startTime + 0.15);
+        });
+      },
+
+      // 答對音效
+      correct() {
+        const ctx = this.init();
+        const notes = [523, 659, 784, 1047]; // C5, E5, G5, C6
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          const startTime = ctx.currentTime + i * 0.08;
+          gain.gain.setValueAtTime(0.3, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.2);
+          osc.start(startTime);
+          osc.stop(startTime + 0.2);
+        });
+      },
+
+      // 答錯音效
+      wrong() {
+        const ctx = this.init();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.3);
+        osc.type = 'sawtooth';
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+      },
+
+      // 時間到音效
+      timeUp() {
+        const ctx = this.init();
+        [400, 300, 200].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'square';
+          const startTime = ctx.currentTime + i * 0.15;
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.15);
+          osc.start(startTime);
+          osc.stop(startTime + 0.15);
+        });
+      },
+
+      // ========== 喝啤酒比賽音效 ==========
+
+      // 玩家加入音效
+      playerJoin() {
+        const ctx = this.init();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.2, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
+      },
+
+      // 比賽開始倒數
+      raceCountdown() {
+        const ctx = this.init();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 440;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+      },
+
+      // 比賽開始 GO!
+      raceGo() {
+        const ctx = this.init();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+      },
+
+      // 獲得名次音效
+      rankReveal(rank) {
+        const ctx = this.init();
+        // 第一名最高音，依次降低
+        const baseFreq = rank === 1 ? 1047 : (rank === 2 ? 784 : 523);
+        const notes = [baseFreq * 0.75, baseFreq, baseFreq * 1.25];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          const startTime = ctx.currentTime + i * 0.1;
+          gain.gain.setValueAtTime(0.3, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.25);
+          osc.start(startTime);
+          osc.stop(startTime + 0.25);
+        });
+      },
+
+      // 頒獎鼓聲
+      drumRoll() {
+        const ctx = this.init();
+        for (let i = 0; i < 20; i++) {
+          setTimeout(() => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.value = 100 + Math.random() * 50;
+            osc.type = 'triangle';
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.05);
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.05);
+          }, i * 50);
+        }
+      },
+
+      // ========== 猜歌曲前奏音效 ==========
+
+      // 新一局開始
+      songRoundStart() {
+        const ctx = this.init();
+        const notes = [392, 494, 587, 784]; // G4, B4, D5, G5
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          const startTime = ctx.currentTime + i * 0.08;
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.2);
+          osc.start(startTime);
+          osc.stop(startTime + 0.2);
+        });
+      },
+
+      // 玩家提交答案
+      answerSubmit() {
+        const ctx = this.init();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 660;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+      },
+
+      // 公布答案
+      answerReveal() {
+        const ctx = this.init();
+        // 戲劇性揭曉
+        const notes = [262, 330, 392, 523, 659, 784];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          const startTime = ctx.currentTime + i * 0.1;
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.3);
+          osc.start(startTime);
+          osc.stop(startTime + 0.3);
+        });
+      },
+
+      // 遊戲結束 - 總結音效
+      gameEnd() {
+        const ctx = this.init();
+        // 結束音階
+        const notes = [523, 659, 784, 1047, 784, 659, 523];
+        notes.forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          const startTime = ctx.currentTime + i * 0.12;
+          gain.gain.setValueAtTime(0.25, startTime);
+          gain.gain.linearRampToValueAtTime(0, startTime + 0.25);
+          osc.start(startTime);
+          osc.stop(startTime + 0.25);
+        });
       }
     };
 
@@ -3829,6 +4070,23 @@
       socket.on('minigame:songGuessRoundStarted', handleSongGuessRoundStarted);
       socket.on('minigame:songGuessPlayerSubmitted', handleSongGuessPlayerSubmitted);
       socket.on('minigame:songGuessRoundEnded', handleSongGuessRoundEnded);
+
+      // 強制結束小遊戲事件
+      socket.on('minigame:quizForceEnded', () => {
+        document.getElementById('quiz-overlay').style.display = 'none';
+      });
+
+      socket.on('minigame:beerForceEnded', () => {
+        document.getElementById('beer-game-overlay').style.display = 'none';
+      });
+
+      socket.on('minigame:pokerForceEnded', () => {
+        document.getElementById('poker-game-overlay').style.display = 'none';
+      });
+
+      socket.on('minigame:songGuessForceEnded', () => {
+        document.getElementById('song-guess-overlay').style.display = 'none';
+      });
 
       // 抽獎事件監聽
       socket.on('lottery:start', (data) => {
@@ -4633,7 +4891,7 @@
         finalBuildings.innerHTML = buildingList.map(b => {
           console.log('Rendering building:', b);
           return `
-            <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.5); margin: 0 -8px;">
+            <div class="building no-animation" title="${b.playerName}" style="transform: scale(0.45); transform-origin: bottom center; margin: 0 -10px;">
               ${createCSSBuilding(b.buildingId)}
               <div class="building-owner">${b.playerName}</div>
             </div>
@@ -4666,6 +4924,9 @@
 
     // 快問快答
     function handleQuizStarted(data) {
+      // 播放遊戲開始音效
+      SoundFX.gameStart();
+
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
         <div class="minigame-content">
@@ -4679,7 +4940,12 @@
       overlay.classList.add('show');
     }
 
+    let quizTimerInterval = null;
+
     function handleQuizQuestion(data) {
+      // 播放題目出現音效
+      SoundFX.questionAppear();
+
       quizCurrentQuestion = data;
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
@@ -4692,14 +4958,52 @@
               <div class="quiz-option">${opt}</div>
             `).join('')}
           </div>
-          <div class="quiz-timer">倒數 ${data.timeLimit} 秒</div>
+          <div class="quiz-timer" id="quiz-timer-display">倒數 ${data.timeLimit} 秒</div>
         </div>
       `;
       overlay.classList.add('show');
+
+      // 倒數計時音效
+      if (quizTimerInterval) clearInterval(quizTimerInterval);
+      let lastSecond = data.timeLimit;
+      const startTime = Date.now();
+      quizTimerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        const remaining = Math.max(0, data.timeLimit - elapsed);
+        const timerEl = document.getElementById('quiz-timer-display');
+        if (timerEl) {
+          timerEl.textContent = `倒數 ${remaining} 秒`;
+          if (remaining <= 3 && remaining !== lastSecond && remaining > 0) {
+            lastSecond = remaining;
+            SoundFX.countdown();
+          }
+        }
+        if (remaining <= 0) {
+          clearInterval(quizTimerInterval);
+          quizTimerInterval = null;
+          SoundFX.timeUp();
+        }
+      }, 100);
     }
 
     function handleQuizEnded(data) {
       console.log('🏁 Display: Quiz ended, data:', data);
+
+      // 停止計時器
+      if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+        quizTimerInterval = null;
+      }
+
+      // 播放遊戲結束音效
+      SoundFX.gameEnd();
+
+      // 如果有人答對，播放掌聲
+      const hasCorrect = data.results && data.results.some(r => r.correctCount > 0);
+      if (hasCorrect) {
+        setTimeout(() => SoundFX.applause(), 500);
+      }
+
       const overlay = document.getElementById('minigame-overlay');
       const results = data.results; // 顯示所有玩家
       console.log('📊 Showing results:', results);
@@ -4885,6 +5189,10 @@
 
     function handleBeerWaitingStart() {
       beerParticipants = [];
+
+      // 播放等待音效
+      SoundFX.gameStart();
+
       const overlay = document.getElementById('minigame-overlay');
       const maxSlots = 5; // 最多顯示5個位置（一局最多5人）
       overlay.innerHTML = `
@@ -4908,6 +5216,9 @@
     }
 
     function handleBeerPlayerJoined(data) {
+      // 播放玩家加入音效
+      SoundFX.playerJoin();
+
       beerParticipants.push(data.playerName);
       const participantsDisplay = document.getElementById('beer-participants-display');
       if (participantsDisplay) {
@@ -4934,12 +5245,18 @@
     }
 
     function handleBeerGameStarted(data) {
+      // 播放倒數音效 3-2-1-GO!
+      SoundFX.raceCountdown();
+      setTimeout(() => SoundFX.raceCountdown(), 1000);
+      setTimeout(() => SoundFX.raceCountdown(), 2000);
+      setTimeout(() => SoundFX.raceGo(), 3000);
+
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
         <div class="minigame-content">
           <div class="minigame-icon">🍺</div>
           <div class="minigame-title">喝啤酒比賽</div>
-          <div class="beer-status">比賽進行中...</div>
+          <div class="beer-status" id="beer-countdown">3</div>
           <div class="beer-participants">
             ${data.participants.map(p => `
               <div class="beer-participant">${p.playerName}</div>
@@ -4947,9 +5264,40 @@
           </div>
         </div>
       `;
+
+      // 顯示倒數
+      const countdownEl = document.getElementById('beer-countdown');
+      let count = 3;
+      const countdownInterval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownEl.textContent = count;
+          countdownEl.style.fontSize = '4rem';
+        } else if (count === 0) {
+          countdownEl.textContent = 'GO!';
+          countdownEl.style.color = 'var(--success)';
+          countdownEl.style.fontSize = '5rem';
+        } else {
+          countdownEl.textContent = '比賽進行中...';
+          countdownEl.style.fontSize = '2rem';
+          countdownEl.style.color = 'var(--text)';
+          clearInterval(countdownInterval);
+        }
+      }, 1000);
     }
 
     function handleBeerResultsSet(data) {
+      // 播放鼓聲
+      SoundFX.drumRoll();
+
+      // 延遲播放名次音效
+      setTimeout(() => {
+        SoundFX.applause();
+        data.results.forEach((r, i) => {
+          setTimeout(() => SoundFX.rankReveal(r.rank), i * 300);
+        });
+      }, 1000);
+
       const overlay = document.getElementById('minigame-overlay');
       overlay.innerHTML = `
         <div class="minigame-content">
@@ -4972,6 +5320,10 @@
 
     function handleBeerEnded() {
       console.log('🍺 喝啤酒比賽結束，關閉介面');
+
+      // 播放結束音效
+      SoundFX.gameEnd();
+
       // 立即關閉小遊戲介面，回到城市建築畫面
       document.getElementById('minigame-overlay').classList.remove('show');
       beerParticipants = [];
@@ -5291,6 +5643,9 @@
         pokerTimerInterval = null;
       }
 
+      // 播放遊戲結束音效
+      SoundFX.gameEnd();
+
       setTimeout(() => {
         document.getElementById('minigame-overlay').classList.remove('show');
         pokerBetsData = { big: [], small: [] };
@@ -5311,6 +5666,9 @@
     };
 
     function handleSongGuessGameStarted() {
+      // 播放遊戲開始音效
+      SoundFX.gameStart();
+
       songGuessState.players.clear();
       songGuessState.correctAnswer = null;
       songGuessState.currentRound = 0;
@@ -5342,6 +5700,9 @@
     }
 
     function handleSongGuessRoundStarted(data) {
+      // 播放新一局開始音效
+      SoundFX.songRoundStart();
+
       songGuessState.allPlayers = data.allPlayers || [];
       songGuessState.players.clear();
       songGuessState.correctAnswer = null;
@@ -5373,6 +5734,9 @@
     }
 
     function handleSongGuessPlayerSubmitted(data) {
+      // 播放提交答案音效
+      SoundFX.answerSubmit();
+
       songGuessState.players.set(data.playerId, {
         name: data.playerName,
         submitted: true,
@@ -5383,6 +5747,9 @@
     }
 
     function handleSongGuessRoundEnded(data) {
+      // 播放答案揭曉音效
+      SoundFX.answerReveal();
+
       songGuessState.correctAnswer = data.correctAnswer;
 
       // 更新玩家結果
@@ -5394,6 +5761,15 @@
           isCorrect: result.isCorrect
         });
       });
+
+      // 如果有人答對，播放掌聲
+      const hasCorrect = data.results.some(r => r.isCorrect);
+      if (hasCorrect) {
+        setTimeout(() => SoundFX.applause(), 600);
+      } else {
+        // 全錯播放失敗音效
+        setTimeout(() => SoundFX.wrong(), 600);
+      }
 
       // 更新顯示
       const overlay = document.getElementById('minigame-overlay');

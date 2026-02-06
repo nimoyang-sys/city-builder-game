@@ -181,6 +181,24 @@ function initSocket() {
   socket.on('minigame:songGuessGameEnded', handleSongGuessGameEnded);
   socket.on('player:songAnswerResult', handleSongAnswerResult);
 
+  // 強制結束小遊戲事件
+  socket.on('minigame:quizForceEnded', () => {
+    closeQuizResultModal();
+  });
+
+  socket.on('minigame:beerForceEnded', () => {
+    closeBeerJoinModal();
+  });
+
+  socket.on('minigame:pokerForceEnded', () => {
+    closePokerBetModal();
+  });
+
+  socket.on('minigame:songGuessForceEnded', () => {
+    closeSongGuessModal();
+    closeSongResult();
+  });
+
   // 抽獎事件
   socket.on('award:reveal', handleAwardReveal);
 }

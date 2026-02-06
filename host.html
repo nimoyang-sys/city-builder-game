@@ -1020,7 +1020,7 @@
 
         <div id="interactive-event-info" style="margin-bottom: 15px; padding: 15px; background: var(--bg); border-radius: 8px; border-left: 4px solid var(--primary);">
           <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-            <span id="interactive-event-icon" style="font-size: 2rem;">🎮</span>
+            <span id="interactive-event-icon" style="font-size: 2rem;">��</span>
             <div style="flex: 1;">
               <div id="interactive-event-title" style="font-weight: bold; font-size: 1.1rem; margin-bottom: 4px;">事件名稱</div>
               <div id="interactive-event-desc" style="font-size: 0.9rem; color: var(--text-muted);">事件說明</div>
@@ -1719,6 +1719,35 @@
         addLog('猜歌曲前奏遊戲結束', 'success');
       });
 
+      // 強制結束遊戲事件
+      socket.on('minigame:quizForceEnded', () => {
+        document.getElementById('btn-quiz-start').style.display = 'block';
+        document.getElementById('quiz-game-control').style.display = 'none';
+        addLog('快問快答已被強制結束', 'warning');
+      });
+
+      socket.on('minigame:beerForceEnded', () => {
+        document.getElementById('btn-beer-waiting').style.display = 'block';
+        document.getElementById('beer-game-control').style.display = 'none';
+        document.getElementById('beer-ranking-control').style.display = 'none';
+        addLog('喝啤酒比賽已被強制結束', 'warning');
+      });
+
+      socket.on('minigame:pokerForceEnded', () => {
+        document.getElementById('btn-poker-start').style.display = 'block';
+        document.getElementById('poker-game-control').style.display = 'none';
+        addLog('比大小已被強制結束', 'warning');
+      });
+
+      socket.on('minigame:songGuessForceEnded', () => {
+        document.getElementById('btn-song-start').style.display = 'block';
+        document.getElementById('song-game-control').style.display = 'none';
+        addLog('猜歌曲前奏已被強制結束', 'warning');
+      });
+
+      // 活動遊戲狀態回應
+      socket.on('host:activeGamesStatus', handleActiveGamesCheck);
+
       // 檢查是否有保存的密碼，自動登入
       const savedPassword = localStorage.getItem('host-password');
       if (savedPassword) {
@@ -1856,7 +1885,7 @@
       document.getElementById('preview-title').textContent = `${event.emoji || ''} ${event.title}`;
       document.getElementById('preview-desc').textContent = event.description;
 
-      const effectsHtml = event.effects.map(effect => {
+      const effectsHtml = (event.effects || []).map(effect => {
         if (effect.building) {
           const multiplier = effect.multiplier;
           const isPositive = multiplier > 1;
@@ -1925,7 +1954,7 @@
       document.getElementById('btn-trigger-event').disabled = !isPlaying || !document.getElementById('event-select').value;
 
       // 禁用小遊戲按鈕（遊戲未開始或已結束時）
-      document.getElementById('btn-quiz').disabled = !isPlaying;
+      document.getElementById('btn-quiz-start').disabled = !isPlaying;
       document.getElementById('btn-beer-waiting').disabled = !isPlaying;
       document.getElementById('btn-poker-start').disabled = !isPlaying;
       document.getElementById('btn-song-start').disabled = !isPlaying;
@@ -3099,12 +3128,54 @@
 
     // ========== 小遊戲控制 ==========
 
+    // 檢查是否有活動遊戲的回調
+    let pendingGameStart = null;
+
+    function handleActiveGamesCheck(data) {
+      if (!pendingGameStart) return;
+
+      if (data.hasActiveGames) {
+        const gameNames = data.activeGames.map(g => g.name).join('、');
+        const message = `目前有「${gameNames}」正在進行中\n\n是否要結束這些遊戲並開始新遊戲？`;
+
+        if (confirm(message)) {
+          // 強制結束所有遊戲
+          socket.emit('host:forceEndAllGames');
+          addLog('正在結束進行中的遊戲...', 'warning');
+
+          // 等待一下讓強制結束完成，然後開始新遊戲
+          setTimeout(() => {
+            if (pendingGameStart) {
+              pendingGameStart();
+              pendingGameStart = null;
+            }
+          }, 500);
+        } else {
+          addLog('已取消開始新遊戲', 'info');
+          pendingGameStart = null;
+        }
+      } else {
+        // 沒有活動遊戲，直接開始
+        if (pendingGameStart) {
+          pendingGameStart();
+          pendingGameStart = null;
+        }
+      }
+    }
+
+    function checkAndStartGame(gameStartCallback) {
+      pendingGameStart = gameStartCallback;
+      socket.emit('host:checkActiveGames');
+    }
+
     // 快問快答
     function startQuizGame() {
-      if (confirm('確定要開始快問快答嗎？')) {
-        socket.emit('host:startQuiz');
-        addLog('開始快問快答', 'success');
-      }
+      checkAndStartGame(() => {
+        if (confirm('確定要開始快問快答嗎？')) {
+          socket.emit('host:startQuiz');
+          addLog('開始快問快答', 'success');
+        }
+      });
     }
 
     function nextQuizGame() {
@@ -3127,12 +3198,14 @@
 
     // 喝啤酒比賽 - 開始等待
     function startBeerGame() {
-      if (confirm('確定要開始喝啤酒比賽嗎？將開始等待玩家加入')) {
-        socket.emit('host:startBeerWaiting');
-        document.getElementById('btn-beer-waiting').style.display = 'none';
-        document.getElementById('beer-game-control').style.display = 'block';
-        addLog('喝啤酒比賽等待玩家加入', 'success');
-      }
+      checkAndStartGame(() => {
+        if (confirm('確定要開始喝啤酒比賽嗎？將開始等待玩家加入')) {
+          socket.emit('host:startBeerWaiting');
+          document.getElementById('btn-beer-waiting').style.display = 'none';
+          document.getElementById('beer-game-control').style.display = 'block';
+          addLog('喝啤酒比賽等待玩家加入', 'success');
+        }
+      });
     }
 
     // 喝啤酒比賽 - 開始比賽
@@ -3211,14 +3284,16 @@
 
     // 比大小 - 開始遊戲
     function startPokerGame() {
-      if (confirm('確定要開始比大小嗎？')) {
-        socket.emit('host:startPoker');
-        document.getElementById('btn-poker-start').style.display = 'none';
-        document.getElementById('poker-game-control').style.display = 'block';
-        document.getElementById('poker-betting-control').style.display = 'block';
-        document.getElementById('poker-result-control').style.display = 'none';
-        addLog('比大小遊戲開始', 'success');
-      }
+      checkAndStartGame(() => {
+        if (confirm('確定要開始比大小嗎？')) {
+          socket.emit('host:startPoker');
+          document.getElementById('btn-poker-start').style.display = 'none';
+          document.getElementById('poker-game-control').style.display = 'block';
+          document.getElementById('poker-betting-control').style.display = 'block';
+          document.getElementById('poker-result-control').style.display = 'none';
+          addLog('比大小遊戲開始', 'success');
+        }
+      });
     }
 
     // 比大小 - 下一局
@@ -3247,18 +3322,20 @@
 
     // 猜歌曲前奏 - 開始遊戲
     function startSongGuessGame() {
-      if (confirm('確定要開始猜歌曲前奏遊戲嗎？')) {
-        socket.emit('host:startSongGuessGame');
-        document.getElementById('btn-song-start').style.display = 'none';
-        document.getElementById('song-game-control').style.display = 'block';
-        document.getElementById('song-current-round').textContent = '0';
-        document.getElementById('song-answered-count').textContent = '0';
-        // 確保初始狀態正確：顯示開始新一局按鈕，隱藏其他控制項
-        document.getElementById('btn-start-song-round').style.display = 'block';
-        document.getElementById('btn-end-song-round').style.display = 'none';
-        document.getElementById('song-answer-select').style.display = 'none';
-        addLog('猜歌曲前奏遊戲開始', 'success');
-      }
+      checkAndStartGame(() => {
+        if (confirm('確定要開始猜歌曲前奏遊戲嗎？')) {
+          socket.emit('host:startSongGuessGame');
+          document.getElementById('btn-song-start').style.display = 'none';
+          document.getElementById('song-game-control').style.display = 'block';
+          document.getElementById('song-current-round').textContent = '0';
+          document.getElementById('song-answered-count').textContent = '0';
+          // 確保初始狀態正確：顯示開始新一局按鈕，隱藏其他控制項
+          document.getElementById('btn-start-song-round').style.display = 'block';
+          document.getElementById('btn-end-song-round').style.display = 'none';
+          document.getElementById('song-answer-select').style.display = 'none';
+          addLog('猜歌曲前奏遊戲開始', 'success');
+        }
+      });
     }
 
     // 猜歌曲前奏 - 開始新一局
