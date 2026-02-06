@@ -1870,10 +1870,97 @@
         populateEventSelect();
         populateBuildingSelect();
         refreshGameState();
+
+        // 還原小遊戲介面狀態
+        if (data.miniGameStates) {
+          restoreMiniGameUI(data.miniGameStates);
+        }
       } else {
         alert(data.error || '登入失敗');
         // 如果自動登入失敗，清除保存的密碼
         localStorage.removeItem('host-password');
+      }
+    }
+
+    // 還原小遊戲介面狀態
+    function restoreMiniGameUI(states) {
+      // 還原快問快答狀態
+      if (states.quiz && states.quiz.active) {
+        addLog('🔄 還原快問快答遊戲狀態', 'info');
+        document.getElementById('btn-quiz-start').style.display = 'none';
+        document.getElementById('quiz-game-control').style.display = 'block';
+        document.getElementById('btn-quiz-next').style.display = 'block';
+        document.getElementById('btn-quiz-end').style.display = 'block';
+      }
+
+      // 還原喝啤酒狀態
+      if (states.beer) {
+        if (states.beer.waiting) {
+          addLog('🔄 還原喝啤酒等待狀態', 'info');
+          document.getElementById('btn-beer-waiting').style.display = 'none';
+          document.getElementById('beer-game-control').style.display = 'block';
+          document.getElementById('beer-participants-count').textContent = states.beer.participantCount || 0;
+          beerParticipants = states.beer.participants || [];
+          document.getElementById('beer-participants-list').innerHTML = beerParticipants.map(p => p.playerName).join(', ');
+          document.getElementById('btn-beer-start').disabled = !states.beer.canStart;
+        } else if (states.beer.active) {
+          addLog('🔄 還原喝啤酒進行狀態', 'info');
+          document.getElementById('btn-beer-waiting').style.display = 'none';
+          document.getElementById('beer-game-control').style.display = 'block';
+          document.getElementById('btn-beer-start').style.display = 'none';
+          document.getElementById('beer-ranking-control').style.display = 'block';
+          beerParticipants = states.beer.participants || [];
+        }
+      }
+
+      // 還原比大小狀態
+      if (states.poker && states.poker.active) {
+        addLog('🔄 還原比大小遊戲狀態', 'info');
+        document.getElementById('btn-poker-start').style.display = 'none';
+        document.getElementById('poker-game-control').style.display = 'block';
+        document.getElementById('poker-round-number').textContent = states.poker.roundNumber || 0;
+        if (states.poker.roundActive) {
+          // 正在下注中
+          document.getElementById('poker-betting-control').style.display = 'block';
+          document.getElementById('poker-result-control').style.display = 'none';
+        } else if (states.poker.hasResult) {
+          // 顯示上一局結果
+          document.getElementById('poker-betting-control').style.display = 'none';
+          document.getElementById('poker-result-control').style.display = 'block';
+          document.getElementById('poker-result-round').textContent = states.poker.roundNumber || 1;
+        }
+      }
+
+      // 還原猜歌遊戲狀態
+      if (states.songGuess && states.songGuess.active) {
+        addLog('🔄 還原猜歌遊戲狀態', 'info');
+        document.getElementById('btn-song-start').style.display = 'none';
+        document.getElementById('song-game-control').style.display = 'block';
+        document.getElementById('song-current-round').textContent = states.songGuess.currentRound || 0;
+        document.getElementById('song-answered-count').textContent = states.songGuess.totalSubmitted || 0;
+        if (states.songGuess.roundActive) {
+          document.getElementById('btn-start-song-round').style.display = 'none';
+          document.getElementById('btn-end-song-round').style.display = 'block';
+        }
+      }
+
+      // 還原 AI 是真是假狀態
+      if (states.aiGame && states.aiGame.active) {
+        addLog('🔄 還原 AI是真是假 遊戲狀態', 'info');
+        document.getElementById('btn-ai-start').style.display = 'none';
+        document.getElementById('ai-game-control').style.display = 'block';
+        document.getElementById('ai-current-question').textContent = (states.aiGame.currentQuestion || 0) + 1;
+        document.getElementById('ai-survivor-count').textContent = states.aiGame.survivors ? states.aiGame.survivors.length : 0;
+        document.getElementById('ai-total-survivors').textContent = states.aiGame.survivors ? states.aiGame.survivors.length : 0;
+        document.getElementById('ai-answered-count').textContent = states.aiGame.answeredCount || 0;
+
+        if (states.aiGame.revealed) {
+          document.getElementById('btn-reveal-ai').style.display = 'none';
+          document.getElementById('btn-next-ai').style.display = 'block';
+        } else {
+          document.getElementById('btn-reveal-ai').style.display = 'block';
+          document.getElementById('btn-next-ai').style.display = 'none';
+        }
       }
     }
 

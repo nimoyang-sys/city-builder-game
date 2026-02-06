@@ -711,6 +711,35 @@ export class MiniGameManager extends EventEmitter {
     };
   }
 
+  getSongGuessState() {
+    const allPlayers = this.gameEngine && this.gameEngine.players
+      ? Array.from(this.gameEngine.players.values()).map(p => ({ id: p.id, name: p.name }))
+      : [];
+    const submittedPlayers = Array.from(this.songGuessState.playerAnswers.keys());
+
+    return {
+      active: this.songGuessState.active,
+      roundActive: this.songGuessState.roundActive,
+      currentRound: this.songGuessState.currentRound,
+      allPlayers,
+      submittedPlayers,
+      totalSubmitted: this.songGuessState.playerAnswers.size
+    };
+  }
+
+  /**
+   * 獲取所有小遊戲狀態（主持人重連時使用）
+   */
+  getAllMiniGameStates() {
+    return {
+      quiz: this.getQuizState(),
+      beer: this.getBeerState(),
+      poker: this.getPokerState(),
+      songGuess: this.getSongGuessState(),
+      aiGame: this.getAIGameState()
+    };
+  }
+
   /**
    * 獲取當前進行中的小遊戲狀態（用於新玩家加入）
    */
@@ -1045,11 +1074,22 @@ export class MiniGameManager extends EventEmitter {
       return { success: false, error: 'AI是真是假遊戲已在進行中' };
     }
 
+    // 檢查 gameEngine 是否存在
+    if (!this.gameEngine || !this.gameEngine.players) {
+      console.error('[AIGame] gameEngine 或 players 不存在');
+      return { success: false, error: '遊戲引擎未初始化' };
+    }
+
     // 獲取所有玩家作為初始存活者
     const allPlayers = Array.from(this.gameEngine.players.values()).map(p => ({
       playerId: p.id,
       playerName: p.name
     }));
+
+    // 檢查是否有玩家
+    if (allPlayers.length === 0) {
+      return { success: false, error: '目前沒有玩家，無法開始遊戲' };
+    }
 
     // 建立遊戲紀錄
     const gameResult = new AIGameResult();

@@ -4219,7 +4219,7 @@
       socket.on('minigame:aiAnswerRevealed', handleAIAnswerRevealed);
       socket.on('minigame:aiGameEnded', handleAIGameEnded);
       socket.on('minigame:aiGameForceEnded', () => {
-        document.getElementById('ai-game-overlay').style.display = 'none';
+        document.getElementById('minigame-overlay').classList.remove('show');
       });
 
       // 抽獎事件監聽

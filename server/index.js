@@ -447,7 +447,9 @@ io.on('connection', (socket) => {
       hostSocketId = socket.id;
       socket.emit('host:registered', {
         success: true,
-        events: gameEngine.getAllEventsForHost()
+        events: gameEngine.getAllEventsForHost(),
+        gameState: gameEngine.getGameState(),
+        miniGameStates: miniGameManager.getAllMiniGameStates()
       });
       socket.join('host');
       console.log('Host registered:', socket.id);
