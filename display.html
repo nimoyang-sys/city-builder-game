@@ -4235,11 +4235,14 @@
       });
       socket.on('minigame:aiGameEnded', (data) => {
         console.log('[Display] 收到 minigame:aiGameEnded 事件', data);
-        handleAIGameEnded(data);
+        // 立即關閉 overlay
+        document.getElementById('minigame-overlay').classList.remove('show');
+        aiGameState.active = false;
       });
       socket.on('minigame:aiGameForceEnded', () => {
         console.log('[Display] 收到 minigame:aiGameForceEnded 事件');
         document.getElementById('minigame-overlay').classList.remove('show');
+        aiGameState.active = false;
       });
 
       // 抽獎事件監聽
@@ -5006,6 +5009,10 @@
     let currentEventData = null;  // 保存當前事件數據
 
     function handleEventTriggered(data) {
+      console.log('=== display handleEventTriggered ===');
+      console.log('Event:', data.event?.title, 'Type:', data.event?.type);
+      console.log('Participants:', data.participants);
+
       currentEventData = data;  // 保存事件數據供結算明細使用
 
       // 先更新狀態和排行榜
@@ -5017,6 +5024,7 @@
 
       // 延遲顯示事件彈窗，確保不會被 fetchGameState 的狀態更新干擾
       setTimeout(() => {
+        console.log('Calling showEvent with participants:', data.participants);
         showEvent(data.event, data.participants);
       }, 200);
     }
@@ -5946,8 +5954,10 @@
 
       songGuessState.correctAnswer = data.correctAnswer;
 
-      // 更新玩家結果
+      // 建立回答玩家的 Map（用於快速查找）
+      const answeredPlayers = new Map();
       data.results.forEach(result => {
+        answeredPlayers.set(result.playerId, result);
         songGuessState.players.set(result.playerId, {
           name: result.playerName,
           submitted: true,
@@ -5956,8 +5966,24 @@
         });
       });
 
+      // 建立完整的玩家結果列表（包含沒回答的玩家）
+      const allPlayerResults = songGuessState.allPlayers.map(player => {
+        const answered = answeredPlayers.get(player.id);
+        if (answered) {
+          return answered;
+        } else {
+          // 沒回答的玩家算答錯
+          return {
+            playerId: player.id,
+            playerName: player.name,
+            answer: '',  // 空白
+            isCorrect: false
+          };
+        }
+      });
+
       // 如果有人答對，播放掌聲
-      const hasCorrect = data.results.some(r => r.isCorrect);
+      const hasCorrect = allPlayerResults.some(r => r.isCorrect);
       if (hasCorrect) {
         setTimeout(() => SoundFX.applause(), 600);
       } else {
@@ -5967,8 +5993,8 @@
 
       // 更新顯示
       const overlay = document.getElementById('minigame-overlay');
-      const correctCount = data.results.filter(r => r.isCorrect).length;
-      const wrongCount = data.results.length - correctCount;
+      const correctCount = allPlayerResults.filter(r => r.isCorrect).length;
+      const wrongCount = allPlayerResults.length - correctCount;
 
       overlay.innerHTML = `
         <div class="minigame-content">
@@ -5989,11 +6015,11 @@
             <div class="song-players-section">
               <div class="song-players-title">🎤 答題結果</div>
               <div class="song-players-grid">
-                ${data.results.map(r => `
+                ${allPlayerResults.map(r => `
                   <div class="song-player-item ${r.isCorrect ? 'correct' : 'wrong'}">
                     <div style="flex: 1;">
                       <div class="song-player-name">${r.playerName}</div>
-                      <div class="song-player-answer">"${r.answer}"</div>
+                      <div class="song-player-answer">${r.answer ? `"${r.answer}"` : '（未作答）'}</div>
                     </div>
                     <div class="song-player-status">
                       ${r.isCorrect ? '✓' : '✗'}
@@ -6290,11 +6316,20 @@
         </div>
       `;
 
-      // 5秒後關閉
+      // 顯示結果5秒後關閉
       setTimeout(() => {
         overlay.classList.remove('show');
         aiGameState.active = false;
-      }, 8000);
+      }, 5000);
+    }
+
+    // 強制關閉 AI 遊戲 overlay（主持人手動結束時立即關閉）
+    function closeAIGameOverlay() {
+      const overlay = document.getElementById('minigame-overlay');
+      if (overlay) {
+        overlay.classList.remove('show');
+      }
+      aiGameState.active = false;
     }
 
     // ========== 抽獎系統 ==========

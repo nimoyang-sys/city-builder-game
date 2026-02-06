@@ -2458,6 +2458,10 @@
     }
 
     function handleEventTriggered(data) {
+      console.log('=== handleEventTriggered ===');
+      console.log('Event:', data.event?.title, 'Type:', data.event?.type);
+      console.log('Participants:', data.participants);
+
       // 檢查是否為互動事件
       if (data.event.type === 'INTERACTIVE' || data.event.interactive) {
         // 互動事件需要手動結算

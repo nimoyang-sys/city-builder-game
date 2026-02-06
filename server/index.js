@@ -1079,6 +1079,8 @@ gameEngine.on('buildingPurchased', (data) => {
 });
 
 gameEngine.on('eventTriggered', (data) => {
+  console.log('📢 Event triggered:', data.event?.title);
+  console.log('📋 Participants:', data.participants?.map(p => p.name));
   io.emit('game:eventTriggered', data);
 
   // 更新每位玩家狀態（使用 socketId 來發送）
@@ -1447,7 +1449,10 @@ miniGameManager.on('aiGame:answerRevealed', (data) => {
   // 發送給所有人（包含投影和主持人）
   io.emit('minigame:aiAnswerRevealed', data);
 
-  // 個別通知答對/答錯的玩家
+  // 收集復活玩家的 ID，避免重複發送
+  const revivedPlayerIds = new Set(data.revivedPlayers.map(p => p.playerId));
+
+  // 個別通知答對的玩家
   for (const player of data.correctPlayers) {
     const p = gameEngine.getPlayer(player.playerId);
     if (p && p.socketId) {
@@ -1458,7 +1463,12 @@ miniGameManager.on('aiGame:answerRevealed', (data) => {
     }
   }
 
+  // 通知答錯且未復活的玩家（被淘汰）
   for (const player of data.wrongPlayers) {
+    // 如果這個玩家有復活，就不發送淘汰訊息
+    if (revivedPlayerIds.has(player.playerId)) {
+      continue;
+    }
     const p = gameEngine.getPlayer(player.playerId);
     if (p && p.socketId) {
       io.to(p.socketId).emit('minigame:aiPlayerResult', {

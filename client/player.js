@@ -1591,6 +1591,13 @@ function handleSongGuessGameStarted() {
 
 function handleSongGuessRoundStarted(data) {
   if (!isPlayerLoggedIn()) return; // 未登入時不處理
+
+  // 先關閉可能還在顯示的結果彈窗（直接關閉，不觸發等待狀態）
+  const resultModal = document.getElementById('song-result-modal');
+  if (resultModal) {
+    resultModal.classList.remove('show');
+  }
+
   songGuessState = {
     active: true,
     submitted: false

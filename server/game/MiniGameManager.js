@@ -1222,11 +1222,19 @@ export class MiniGameManager extends EventEmitter {
 
     // 檢查是否全軍覆沒
     let revivedPlayers = [];
-    if (correctPlayers.length === 0 && state.previousLosers.length > 0) {
-      // 全軍覆沒，前一題敗部復活
-      revivedPlayers = [...state.previousLosers];
-      state.survivors = revivedPlayers;
-      console.log(`[AIGame] All eliminated! Reviving ${revivedPlayers.length} players from previous round`);
+    if (correctPlayers.length === 0) {
+      // 全軍覆沒
+      if (state.previousLosers.length > 0) {
+        // 有前一題敗部，讓他們復活
+        revivedPlayers = [...state.previousLosers];
+        state.survivors = revivedPlayers;
+        console.log(`[AIGame] All eliminated! Reviving ${revivedPlayers.length} players from previous round`);
+      } else {
+        // 第一題就全軍覆沒，讓所有答錯的人復活（重來）
+        revivedPlayers = [...wrongPlayers];
+        state.survivors = revivedPlayers;
+        console.log(`[AIGame] First question all eliminated! Reviving all ${revivedPlayers.length} players to retry`);
+      }
     } else {
       // 更新存活者
       state.survivors = correctPlayers;
