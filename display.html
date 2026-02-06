@@ -6190,17 +6190,11 @@
       SoundFX.answerReveal();
 
       const correctCount = data.correctPlayers.length;
+      const wrongCount = data.wrongPlayers.length;
+      const playerAnswerDetails = data.playerAnswerDetails || [];
 
-      // 計算真正被淘汰的人（排除復活的人）
-      const revivedIds = new Set(data.revivedPlayers.map(p => p.playerId));
-      const actuallyEliminated = data.wrongPlayers.filter(p => !revivedIds.has(p.playerId));
-      const eliminatedCount = actuallyEliminated.length;
-
-      // 如果有人答對，播放掌聲；如果全軍覆沒復活，播放特殊音效；否則播放失敗音效
+      // 如果有人答對，播放掌聲；否則播放失敗音效
       if (correctCount > 0) {
-        setTimeout(() => SoundFX.applause(), 600);
-      } else if (data.revivedPlayers.length > 0) {
-        // 全軍覆沒但有復活
         setTimeout(() => SoundFX.applause(), 600);
       } else {
         setTimeout(() => SoundFX.wrong(), 600);
@@ -6217,66 +6211,27 @@
               <div class="song-answer-display" style="background: var(--success); color: white; padding: 20px 40px; border-radius: 15px; margin: 20px 0; font-size: 1.8rem;">
                 正確答案: ${data.correctAnswerText}
               </div>
-              ${data.allEliminated ? `
-                <div style="margin: 20px 0; padding: 15px 30px; background: var(--warning); color: black; border-radius: 10px; font-size: 1.3rem; animation: pulse 1s infinite;">
-                  🔄 全軍覆沒！敗部復活！
-                </div>
-              ` : ''}
               <div style="margin-top: 20px; font-size: 1.3rem;">
                 <span style="color: var(--success);">✓ ${correctCount}人答對</span>
                 <span style="margin: 0 15px; color: var(--text-muted);">|</span>
-                <span style="color: var(--danger);">✗ ${eliminatedCount}人淘汰</span>
-                ${data.revivedPlayers.length > 0 ? `
-                  <span style="margin: 0 15px; color: var(--text-muted);">|</span>
-                  <span style="color: var(--warning);">🔄 ${data.revivedPlayers.length}人復活</span>
-                ` : ''}
-              </div>
-              <div style="margin-top: 15px; font-size: 1.1rem; color: var(--info);">
-                剩餘存活: ${data.remainingSurvivors} 人
+                <span style="color: var(--danger);">✗ ${wrongCount}人答錯</span>
               </div>
             </div>
             <div class="song-players-section">
-              <div class="song-players-title">📊 本題結果</div>
-              ${data.revivedPlayers.length > 0 ? `
-                <!-- 全軍覆沒復活的情況：只顯示復活區 -->
-                <div style="text-align: center;">
-                  <div style="color: var(--warning); font-weight: bold; margin-bottom: 15px; font-size: 1.2rem;">🔄 敗部復活！繼續挑戰！</div>
-                  <div class="song-players-grid" style="justify-content: center;">
-                    ${data.revivedPlayers.map(p => `
-                      <div class="song-player-item" style="border-color: var(--warning); background: rgba(255, 217, 61, 0.1);">
-                        <div class="song-player-name">${p.playerName}</div>
-                        <div class="song-player-status">🔄</div>
-                      </div>
-                    `).join('')}
-                  </div>
-                </div>
-              ` : `
-                <!-- 正常情況：顯示答對和淘汰 -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                  <div>
-                    <div style="color: var(--success); font-weight: bold; margin-bottom: 10px;">🎉 答對 (${correctCount}人)</div>
-                    <div class="song-players-grid">
-                      ${data.correctPlayers.map(p => `
-                        <div class="song-player-item correct">
-                          <div class="song-player-name">${p.playerName}</div>
-                          <div class="song-player-status">✓</div>
-                        </div>
-                      `).join('') || '<div style="color: var(--text-muted); padding: 10px;">無</div>'}
+              <div class="song-players-title">📊 每位玩家的答案</div>
+              <div class="song-players-grid" style="justify-content: center;">
+                ${playerAnswerDetails.map(p => `
+                  <div class="song-player-item ${p.isCorrect ? 'correct' : 'wrong'}" style="min-width: 150px;">
+                    <div class="song-player-name">${p.playerName}</div>
+                    <div class="song-player-status" style="font-size: 0.9rem; margin-top: 5px;">
+                      選: ${p.answerText}
+                    </div>
+                    <div style="font-size: 1.2rem; margin-top: 5px;">
+                      ${p.isCorrect ? '✓' : '✗'}
                     </div>
                   </div>
-                  <div>
-                    <div style="color: var(--danger); font-weight: bold; margin-bottom: 10px;">😢 淘汰 (${eliminatedCount}人)</div>
-                    <div class="song-players-grid">
-                      ${actuallyEliminated.map(p => `
-                        <div class="song-player-item wrong">
-                          <div class="song-player-name">${p.playerName}</div>
-                          <div class="song-player-status">✗</div>
-                        </div>
-                      `).join('') || '<div style="color: var(--text-muted); padding: 10px;">無</div>'}
-                    </div>
-                  </div>
-                </div>
-              `}
+                `).join('') || '<div style="color: var(--text-muted); padding: 10px;">無玩家作答</div>'}
+              </div>
             </div>
           </div>
         </div>

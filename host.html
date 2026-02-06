@@ -1311,7 +1311,7 @@
           <div id="ai-game-control" style="display: none;">
             <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
               <p style="font-size: 0.9rem; font-weight: bold; margin-bottom: 10px;">
-                第 <span id="ai-current-question">1</span> / 6 題 | 存活：<span id="ai-survivor-count">0</span> 人
+                第 <span id="ai-current-question">1</span> / 6 題 | 參與：<span id="ai-survivor-count">0</span> 人
               </p>
               <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 10px;">
                 已作答：<span id="ai-answered-count">0</span> / <span id="ai-total-survivors">0</span> 人
@@ -1319,6 +1319,19 @@
               <button class="btn btn-warning btn-block btn-sm" onclick="revealAIAnswer()" id="btn-reveal-ai">
                 📢 公布答案
               </button>
+
+              <!-- 下一題參與者勾選 -->
+              <div id="ai-next-question-section" style="display: none; margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.5); border-radius: 8px;">
+                <p style="font-size: 0.85rem; font-weight: bold; margin-bottom: 8px;">📋 選擇下一題參與者：</p>
+                <div style="margin-bottom: 8px;">
+                  <button class="btn btn-sm" style="font-size: 0.75rem; padding: 3px 8px; margin-right: 5px;" onclick="selectAllAIPlayers()">全選</button>
+                  <button class="btn btn-sm" style="font-size: 0.75rem; padding: 3px 8px;" onclick="selectNoneAIPlayers()">取消全選</button>
+                </div>
+                <div id="ai-players-checklist" style="max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+                  <!-- 動態生成玩家勾選列表 -->
+                </div>
+              </div>
+
               <button class="btn btn-primary btn-block btn-sm" onclick="nextAIQuestion()" id="btn-next-ai" style="margin-top: 10px; display: none;">
                 ➡️ 下一題
               </button>
@@ -1328,7 +1341,7 @@
             </div>
           </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
-            6題淘汰賽，答錯淘汰，全滅則敗部復活
+            6題淘汰賽，主持人可選擇下一題參與者
           </p>
         </div>
       </div>
@@ -1802,19 +1815,45 @@
       });
 
       socket.on('minigame:aiAnswerRevealed', (data) => {
-        document.getElementById('ai-survivor-count').textContent = data.remainingSurvivors;
         document.getElementById('btn-reveal-ai').style.display = 'none';
 
-        let msg = `第${data.questionIndex + 1}題答案: ${data.correctAnswerText}，答對${data.correctPlayers.length}人`;
-        if (data.allEliminated) {
-          msg += ' (全軍覆沒！敗部復活)';
+        // 顯示每個玩家的答案
+        let playerResults = '';
+        if (data.playerAnswerDetails) {
+          playerResults = data.playerAnswerDetails.map(p =>
+            `${p.playerName}:${p.answerText}${p.isCorrect ? '✓' : '✗'}`
+          ).join(', ');
         }
-        addLog(msg, data.allEliminated ? 'warning' : 'info');
 
-        // 如果不是最後一題，顯示下一題按鈕
+        let msg = `第${data.questionIndex + 1}題答案: ${data.correctAnswerText}，答對${data.correctPlayers.length}人`;
+        addLog(msg, 'info');
+        if (playerResults) {
+          addLog(`玩家答案: ${playerResults}`, 'info');
+        }
+
+        // 如果不是最後一題，顯示下一題區域和玩家勾選
         if (data.questionIndex < 5) {
           document.getElementById('btn-next-ai').style.display = 'block';
+          document.getElementById('ai-next-question-section').style.display = 'block';
+
+          // 請求所有玩家列表以供勾選
+          socket.emit('host:getAIGamePlayers');
         }
+      });
+
+      // 收到玩家列表，更新勾選清單
+      socket.on('host:aiGamePlayers', (data) => {
+        const checklist = document.getElementById('ai-players-checklist');
+        if (!checklist) return;
+
+        checklist.innerHTML = data.players.map(p => `
+          <label style="display: block; padding: 4px 0; cursor: pointer;">
+            <input type="checkbox" class="ai-player-checkbox" value="${p.playerId}" checked style="margin-right: 8px;">
+            ${p.playerName}
+          </label>
+        `).join('');
+
+        document.getElementById('ai-survivor-count').textContent = data.players.length;
       });
 
       socket.on('minigame:aiGameEnded', (data) => {
@@ -3621,13 +3660,36 @@
 
     // AI是真是假 - 下一題
     function nextAIQuestion() {
-      socket.emit('host:nextAIQuestion');
+      // 收集勾選的玩家
+      const checkboxes = document.querySelectorAll('.ai-player-checkbox:checked');
+      const selectedPlayerIds = Array.from(checkboxes).map(cb => cb.value);
+
+      if (selectedPlayerIds.length === 0) {
+        alert('請至少選擇一位參與者！');
+        return;
+      }
+
+      socket.emit('host:nextAIQuestion', { selectedPlayerIds });
+
+      // 隱藏勾選區域
+      document.getElementById('ai-next-question-section').style.display = 'none';
+    }
+
+    // AI是真是假 - 全選玩家
+    function selectAllAIPlayers() {
+      document.querySelectorAll('.ai-player-checkbox').forEach(cb => cb.checked = true);
+    }
+
+    // AI是真是假 - 取消全選
+    function selectNoneAIPlayers() {
+      document.querySelectorAll('.ai-player-checkbox').forEach(cb => cb.checked = false);
     }
 
     // AI是真是假 - 結束遊戲
     function endAIGame() {
       if (confirm('確定要結束「AI是真是假」遊戲嗎？')) {
         socket.emit('host:endAIGame');
+        document.getElementById('ai-next-question-section').style.display = 'none';
       }
     }
 

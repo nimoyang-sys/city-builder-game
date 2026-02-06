@@ -1212,13 +1212,26 @@ export class MiniGameManager extends EventEmitter {
     const question = state.questions[state.currentQuestion];
     const correctAnswer = question.correctAnswer;
 
-    // 分類答對和答錯的玩家
+    // 收集每個玩家的答案詳情
+    const playerAnswerDetails = [];
     const correctPlayers = [];
     const wrongPlayers = [];
 
     for (const survivor of state.survivors) {
       const answer = state.playerAnswers.get(survivor.playerId);
-      if (answer && answer.answerIndex === correctAnswer) {
+      const answerIndex = answer ? answer.answerIndex : -1;
+      const answerText = answerIndex >= 0 ? question.options[answerIndex] : '未作答';
+      const isCorrect = answerIndex === correctAnswer;
+
+      playerAnswerDetails.push({
+        playerId: survivor.playerId,
+        playerName: survivor.playerName,
+        answerIndex,
+        answerText,
+        isCorrect
+      });
+
+      if (isCorrect) {
         correctPlayers.push(survivor);
       } else {
         wrongPlayers.push(survivor);
@@ -1227,33 +1240,12 @@ export class MiniGameManager extends EventEmitter {
 
     console.log(`[AIGame] Question ${state.currentQuestion + 1} revealed: ${correctPlayers.length} correct, ${wrongPlayers.length} wrong`);
 
-    // 檢查是否全軍覆沒
-    let revivedPlayers = [];
-    if (correctPlayers.length === 0) {
-      // 全軍覆沒
-      if (state.previousLosers.length > 0) {
-        // 有前一題敗部，讓他們復活
-        revivedPlayers = [...state.previousLosers];
-        state.survivors = revivedPlayers;
-        console.log(`[AIGame] All eliminated! Reviving ${revivedPlayers.length} players from previous round`);
-      } else {
-        // 第一題就全軍覆沒，讓所有答錯的人復活（重來）
-        revivedPlayers = [...wrongPlayers];
-        state.survivors = revivedPlayers;
-        console.log(`[AIGame] First question all eliminated! Reviving all ${revivedPlayers.length} players to retry`);
-      }
-    } else {
-      // 更新存活者
-      state.survivors = correctPlayers;
-      state.previousLosers = wrongPlayers;
-    }
-
     // 記錄到 gameResult
     state.gameResult.addRoundResult(
       state.currentQuestion,
       correctPlayers,
       wrongPlayers,
-      revivedPlayers
+      []
     );
 
     // 記錄這一題的結果
@@ -1263,8 +1255,7 @@ export class MiniGameManager extends EventEmitter {
       correctAnswerText: question.options[correctAnswer],
       correctPlayers,
       wrongPlayers,
-      revivedPlayers,
-      allEliminated: correctPlayers.length === 0
+      playerAnswerDetails
     });
 
     this.emit('aiGame:answerRevealed', {
@@ -1273,24 +1264,63 @@ export class MiniGameManager extends EventEmitter {
       correctAnswerText: question.options[correctAnswer],
       correctPlayers,
       wrongPlayers,
-      revivedPlayers,
-      allEliminated: correctPlayers.length === 0,
-      remainingSurvivors: state.survivors.length
+      playerAnswerDetails,  // 每個玩家的答案詳情
+      options: question.options  // 所有選項
     });
 
     return {
       success: true,
       correctPlayers,
-      wrongPlayers,
-      revivedPlayers,
-      allEliminated: correctPlayers.length === 0
+      wrongPlayers
     };
   }
 
   /**
    * 進入下一題
    */
-  nextAIQuestion() {
+  /**
+   * 設定下一題的參與者（主持人勾選）
+   */
+  setAIGameParticipants(playerIds) {
+    const state = this.aiGameState;
+
+    if (!state.active) {
+      return { success: false, error: '遊戲未進行中' };
+    }
+
+    // 從 gameEngine 獲取玩家資料
+    const participants = [];
+    for (const playerId of playerIds) {
+      const player = this.gameEngine.getPlayer(playerId);
+      if (player) {
+        participants.push({
+          playerId: player.id,
+          playerName: player.name
+        });
+      }
+    }
+
+    state.survivors = participants;
+    console.log(`[AIGame] Participants set: ${participants.map(p => p.playerName).join(', ')}`);
+
+    return { success: true, participants };
+  }
+
+  /**
+   * 獲取所有玩家列表（供主持人勾選）
+   */
+  getAllPlayersForAIGame() {
+    if (!this.gameEngine || !this.gameEngine.players) {
+      return [];
+    }
+
+    return Array.from(this.gameEngine.players.values()).map(p => ({
+      playerId: p.id,
+      playerName: p.name
+    }));
+  }
+
+  nextAIQuestion(selectedPlayerIds = null) {
     const state = this.aiGameState;
 
     if (!state.active) {
@@ -1304,6 +1334,22 @@ export class MiniGameManager extends EventEmitter {
     // 檢查是否還有下一題
     if (state.currentQuestion >= 5) {
       return { success: false, error: '已經是最後一題' };
+    }
+
+    // 如果有指定參與者，更新 survivors
+    if (selectedPlayerIds && selectedPlayerIds.length > 0) {
+      const participants = [];
+      for (const playerId of selectedPlayerIds) {
+        const player = this.gameEngine.getPlayer(playerId);
+        if (player) {
+          participants.push({
+            playerId: player.id,
+            playerName: player.name
+          });
+        }
+      }
+      state.survivors = participants;
+      console.log(`[AIGame] Next question participants: ${participants.map(p => p.playerName).join(', ')}`);
     }
 
     // 進入下一題

@@ -994,13 +994,23 @@ io.on('connection', (socket) => {
   });
 
   // AI是真是假 - 主持人進入下一題
-  socket.on('host:nextAIQuestion', () => {
+  socket.on('host:nextAIQuestion', ({ selectedPlayerIds } = {}) => {
     if (socket.id !== hostSocketId) {
       socket.emit('host:error', { error: '無權限' });
       return;
     }
-    const result = miniGameManager.nextAIQuestion();
+    const result = miniGameManager.nextAIQuestion(selectedPlayerIds);
     socket.emit('host:result', result);
+  });
+
+  // AI是真是假 - 取得所有玩家列表（供勾選）
+  socket.on('host:getAIGamePlayers', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const players = miniGameManager.getAllPlayersForAIGame();
+    socket.emit('host:aiGamePlayers', { players });
   });
 
   // AI是真是假 - 主持人結束遊戲
@@ -1444,13 +1454,11 @@ miniGameManager.on('aiGame:playerAnswered', (data) => {
 
 miniGameManager.on('aiGame:answerRevealed', (data) => {
   console.log(`[Server] AI是真是假 第${data.questionIndex + 1}題公布答案: ${data.correctAnswerText}`);
-  console.log(`[Server] 答對: ${data.correctPlayers.length}, 答錯: ${data.wrongPlayers.length}, 復活: ${data.revivedPlayers.length}`);
+  console.log(`[Server] 答對: ${data.correctPlayers.length}, 答錯: ${data.wrongPlayers.length}`);
+  console.log(`[Server] 玩家答案詳情:`, data.playerAnswerDetails);
 
   // 發送給所有人（包含投影和主持人）
   io.emit('minigame:aiAnswerRevealed', data);
-
-  // 收集復活玩家的 ID，避免重複發送
-  const revivedPlayerIds = new Set(data.revivedPlayers.map(p => p.playerId));
 
   // 個別通知答對的玩家
   for (const player of data.correctPlayers) {
@@ -1458,36 +1466,18 @@ miniGameManager.on('aiGame:answerRevealed', (data) => {
     if (p && p.socketId) {
       io.to(p.socketId).emit('minigame:aiPlayerResult', {
         correct: true,
-        message: '恭喜往前一步，喝一杯吧~'
+        message: '恭喜答對！'
       });
     }
   }
 
-  // 通知答錯且未復活的玩家（被淘汰）
+  // 通知答錯的玩家
   for (const player of data.wrongPlayers) {
-    // 如果這個玩家有復活，就不發送淘汰訊息
-    if (revivedPlayerIds.has(player.playerId)) {
-      continue;
-    }
     const p = gameEngine.getPlayer(player.playerId);
     if (p && p.socketId) {
       io.to(p.socketId).emit('minigame:aiPlayerResult', {
         correct: false,
-        eliminated: true,
-        message: '止步於此'
-      });
-    }
-  }
-
-  // 通知復活的玩家
-  for (const player of data.revivedPlayers) {
-    const p = gameEngine.getPlayer(player.playerId);
-    if (p && p.socketId) {
-      io.to(p.socketId).emit('minigame:aiPlayerResult', {
-        correct: false,
-        eliminated: false,
-        revived: true,
-        message: '敗部復活！'
+        message: '答錯了！'
       });
     }
   }
