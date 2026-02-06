@@ -3586,6 +3586,7 @@
       socket.on('minigame:quizStarted', handleQuizStarted);
       socket.on('minigame:quizQuestion', handleQuizQuestion);
       socket.on('minigame:quizEnded', handleQuizEnded);
+      socket.on('minigame:quizClosed', handleQuizClosed);
 
       socket.on('minigame:beerWaitingStart', handleBeerWaitingStart);
       socket.on('minigame:beerPlayerJoined', handleBeerPlayerJoined);
@@ -4635,6 +4636,12 @@
       document.getElementById('minigame-overlay').classList.remove('show');
     }
 
+    function handleQuizClosed() {
+      console.log('💡 快問快答遊戲結束，關閉介面');
+      // 立即關閉小遊戲介面，回到城市建築畫面
+      document.getElementById('minigame-overlay').classList.remove('show');
+    }
+
     // 喝啤酒比賽
     let beerParticipants = [];
 
@@ -4726,10 +4733,10 @@
     }
 
     function handleBeerEnded() {
-      setTimeout(() => {
-        document.getElementById('minigame-overlay').classList.remove('show');
-        beerParticipants = [];
-      }, 10000);
+      console.log('🍺 喝啤酒比賽結束，關閉介面');
+      // 立即關閉小遊戲介面，回到城市建築畫面
+      document.getElementById('minigame-overlay').classList.remove('show');
+      beerParticipants = [];
     }
 
     // 比大小 - 左右佈局版本

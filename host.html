@@ -1137,9 +1137,22 @@
 
         <!-- 快問快答 -->
         <div style="margin-bottom: 15px;">
-          <button class="btn btn-primary btn-block" onclick="startQuizGame()" id="btn-quiz">
+          <button class="btn btn-primary btn-block" onclick="startQuizGame()" id="btn-quiz-start">
             💡 快問快答
           </button>
+          <div id="quiz-game-control" style="display: none;">
+            <div style="background: var(--bg); padding: 10px; border-radius: 8px; margin-top: 10px;">
+              <p style="font-size: 0.85rem; margin-bottom: 5px; color: var(--success);">
+                遊戲進行中...
+              </p>
+              <button class="btn btn-primary btn-block btn-sm" onclick="nextQuizGame()" id="btn-quiz-next" style="display: none; margin-top: 10px;">
+                再開一局
+              </button>
+              <button class="btn btn-danger btn-block btn-sm" onclick="endQuizGame()" id="btn-quiz-end" style="display: none; margin-top: 5px;">
+                結束遊戲
+              </button>
+            </div>
+          </div>
           <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">
             玩家答題，10題隨機題目，每題3秒，答對+50元
           </p>
@@ -1158,6 +1171,9 @@
               <div id="beer-participants-list" style="font-size: 0.8rem; color: var(--text-muted);"></div>
               <button class="btn btn-success btn-block btn-sm" onclick="startBeerGamePlay()" id="btn-beer-start" disabled style="margin-top: 10px;">
                 開始比賽
+              </button>
+              <button class="btn btn-danger btn-block btn-sm" onclick="endBeerGameFinal()" style="margin-top: 5px;">
+                結束遊戲
               </button>
               <div id="beer-ranking-control" style="display: none; margin-top: 10px;">
                 <p style="font-size: 0.85rem; margin-bottom: 10px; font-weight: bold;">設定排名（拖曳排序）：</p>
@@ -1518,10 +1534,16 @@
       // 快問快答事件
       socket.on('minigame:quizStarted', (data) => {
         addLog(`快問快答開始，共 ${data.questionCount} 題`, 'success');
+        document.getElementById('btn-quiz-start').style.display = 'none';
+        document.getElementById('quiz-game-control').style.display = 'block';
+        document.getElementById('btn-quiz-next').style.display = 'none';
+        document.getElementById('btn-quiz-end').style.display = 'none';
       });
 
       socket.on('minigame:quizEnded', (data) => {
         addLog(`快問快答結束，${data.results.length} 位玩家參與`, 'success');
+        document.getElementById('btn-quiz-next').style.display = 'block';
+        document.getElementById('btn-quiz-end').style.display = 'block';
       });
 
       // 喝啤酒比賽事件
@@ -3080,6 +3102,24 @@
       if (confirm('確定要開始快問快答嗎？')) {
         socket.emit('host:startQuiz');
         addLog('開始快問快答', 'success');
+      }
+    }
+
+    function nextQuizGame() {
+      if (confirm('確定要再開一局快問快答嗎？')) {
+        socket.emit('host:startQuiz');
+        addLog('再開一局快問快答', 'success');
+        document.getElementById('btn-quiz-next').style.display = 'none';
+        document.getElementById('btn-quiz-end').style.display = 'none';
+      }
+    }
+
+    function endQuizGame() {
+      if (confirm('確定要結束快問快答嗎？')) {
+        socket.emit('host:endQuiz');
+        document.getElementById('btn-quiz-start').style.display = 'block';
+        document.getElementById('quiz-game-control').style.display = 'none';
+        addLog('快問快答遊戲結束', 'warning');
       }
     }
 

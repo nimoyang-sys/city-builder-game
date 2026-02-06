@@ -767,6 +767,16 @@ io.on('connection', (socket) => {
     socket.emit('host:result', result);
   });
 
+  // 快問快答 - 主持人結束遊戲
+  socket.on('host:endQuiz', () => {
+    if (socket.id !== hostSocketId) {
+      socket.emit('host:error', { error: '無權限' });
+      return;
+    }
+    const result = miniGameManager.closeQuizGame();
+    socket.emit('host:result', result);
+  });
+
   // 快問快答 - 玩家提交答案
   socket.on('player:submitQuizAnswer', ({ answerIndex }) => {
     const player = gameEngine.getPlayerBySocketId(socket.id);
@@ -1210,6 +1220,11 @@ miniGameManager.on('quiz:ended', (data) => {
 
   console.log('[Server] Broadcasting minigame:quizEnded to all clients');
   io.emit('minigame:quizEnded', data);
+});
+
+miniGameManager.on('quiz:closed', () => {
+  console.log('[Server] Quiz closed event received, broadcasting to close display');
+  io.emit('minigame:quizClosed');
 });
 
 // 喝啤酒比賽事件

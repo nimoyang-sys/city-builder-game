@@ -238,7 +238,35 @@ export class MiniGameManager extends EventEmitter {
       questions: this.quizState.questions // 包含所有題目和正確答案
     });
 
+    // 重置狀態以供下一局使用
+    this.quizState.playerAnswers.clear();
+
     return { success: true, results };
+  }
+
+  // 關閉快問快答遊戲（主持人手動結束）
+  closeQuizGame() {
+    console.log('[Quiz] closeQuizGame called');
+
+    if (this.quizState.timer) {
+      clearTimeout(this.quizState.timer);
+      this.quizState.timer = null;
+    }
+
+    // 完全重置狀態
+    this.quizState = {
+      active: false,
+      questions: [],
+      currentQuestionIndex: 0,
+      currentQuestion: null,
+      playerAnswers: new Map(),
+      timer: null
+    };
+
+    console.log('[Quiz] Emitting quiz:closed event to close display overlay');
+    this.emit('quiz:closed');
+
+    return { success: true };
   }
 
   // ========== 喝啤酒比賽 ==========
