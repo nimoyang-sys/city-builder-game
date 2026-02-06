@@ -2552,87 +2552,102 @@ function handleAIGameEnded(data) {
 }
 
 function showAIGameModal(data) {
-  let modal = document.getElementById('ai-game-modal');
-
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'ai-game-modal';
-    modal.className = 'modal-overlay';
-    document.body.appendChild(modal);
-  }
+  const modal = document.getElementById('ai-game-modal');
+  if (!modal) return;
 
   const question = data.question;
   const options = data.options;
 
-  modal.innerHTML = `
-    <div class="modal ai-game-modal">
-      <div class="modal-header">
-        <div class="modal-emoji">🤖</div>
-        <div class="modal-title">AI是真是假？</div>
-        <div class="modal-subtitle">第 ${data.questionIndex + 1} / ${data.totalQuestions} 題</div>
-      </div>
-      <div class="modal-body">
-        <div class="ai-question-text">${question}</div>
-        <div class="ai-options" id="ai-options">
-          ${options.map((opt, idx) => `
-            <button class="ai-option-btn" onclick="submitAIAnswer(${idx})">
-              ${opt}
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    </div>
-  `;
+  // 更新進度
+  document.getElementById('ai-game-progress').textContent = `第 ${data.questionIndex + 1} / ${data.totalQuestions} 題`;
+
+  // 更新問題
+  document.getElementById('ai-question-text').textContent = question;
+
+  // 生成選項按鈕
+  const optionsContainer = document.getElementById('ai-options');
+  optionsContainer.innerHTML = options.map((opt, idx) => `
+    <button
+      class="modal-btn"
+      style="
+        background: linear-gradient(135deg, var(--info) 0%, var(--purple) 100%);
+        color: white;
+        padding: 14px 10px;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(77, 150, 255, 0.3);
+        transition: all 0.2s ease;
+      "
+      onclick="submitAIAnswer(${idx})"
+      onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(77, 150, 255, 0.4)';"
+      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(77, 150, 255, 0.3)';"
+    >
+      ${opt}
+    </button>
+  `).join('');
+
+  // 顯示選項區，隱藏等待區
+  optionsContainer.style.display = 'grid';
+  document.getElementById('ai-waiting-area').style.display = 'none';
 
   modal.classList.add('show');
 }
 
 function showAIGameWaiting() {
   const optionsContainer = document.getElementById('ai-options');
+  const waitingArea = document.getElementById('ai-waiting-area');
+
   if (optionsContainer) {
-    optionsContainer.innerHTML = `
-      <div class="ai-waiting">
-        <div class="ai-waiting-icon">⏳</div>
-        <div class="ai-waiting-text">已作答，等待公布結果...</div>
-      </div>
-    `;
+    optionsContainer.style.display = 'none';
+  }
+  if (waitingArea) {
+    waitingArea.style.display = 'block';
   }
 }
 
 function showAIGameResultPopup(type, message) {
-  const modal = document.getElementById('ai-game-modal');
-  if (!modal) return;
+  // 關閉遊戲 modal
+  const gameModal = document.getElementById('ai-game-modal');
+  if (gameModal) {
+    gameModal.classList.remove('show');
+  }
 
-  const modalContent = modal.querySelector('.modal');
-  if (!modalContent) return;
+  // 顯示結果 modal
+  const resultModal = document.getElementById('ai-result-modal');
+  if (!resultModal) return;
 
-  let emoji, bgColor;
+  let emoji, borderColor;
   switch (type) {
     case 'correct':
       emoji = '🎉';
-      bgColor = 'var(--success)';
+      borderColor = 'var(--success)';
       break;
     case 'revived':
       emoji = '🔄';
-      bgColor = 'var(--warning)';
+      borderColor = 'var(--warning)';
       break;
     case 'eliminated':
       emoji = '😢';
-      bgColor = 'var(--danger)';
+      borderColor = 'var(--danger)';
       break;
   }
 
-  modalContent.innerHTML = `
-    <div class="modal-header" style="background: ${bgColor}">
-      <div class="modal-emoji" style="font-size: 4rem;">${emoji}</div>
-      <div class="modal-title" style="font-size: 1.5rem; margin-top: 1rem;">${message}</div>
-    </div>
-  `;
+  document.getElementById('ai-result-emoji').textContent = emoji;
+  document.getElementById('ai-result-message').textContent = message;
+
+  // 設置 modal 邊框顏色
+  const modalContent = resultModal.querySelector('.modal');
+  if (modalContent) {
+    modalContent.style.border = `4px solid ${borderColor}`;
+  }
+
+  resultModal.classList.add('show');
 
   // 如果是淘汰，幾秒後關閉
   if (type === 'eliminated') {
     setTimeout(() => {
-      closeAIGameModal();
+      resultModal.classList.remove('show');
     }, 3000);
   }
 }
@@ -2652,10 +2667,14 @@ function submitAIAnswer(answerIndex) {
 }
 
 function closeAIGameModal() {
-  const modal = document.getElementById('ai-game-modal');
-  if (modal) {
-    modal.classList.remove('show');
-    setTimeout(() => modal.remove(), 300);
+  const gameModal = document.getElementById('ai-game-modal');
+  const resultModal = document.getElementById('ai-result-modal');
+
+  if (gameModal) {
+    gameModal.classList.remove('show');
+  }
+  if (resultModal) {
+    resultModal.classList.remove('show');
   }
 }
 

@@ -2603,6 +2603,36 @@
     </div>
   </div>
 
+  <!-- AI是真是假 Modal -->
+  <div class="modal-overlay" id="ai-game-modal">
+    <div class="modal" style="max-width: 450px;">
+      <div class="modal-emoji" style="font-size: 4rem; margin-bottom: 10px;">🤖</div>
+      <div class="modal-title" style="font-size: 1.8rem; margin-bottom: 5px;">AI是真是假？</div>
+      <div id="ai-game-progress" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">第 1 / 6 題</div>
+      <div class="modal-info" style="text-align: center; padding: 15px; margin-bottom: 15px;">
+        <p id="ai-question-text" style="font-size: 1.1rem; font-weight: bold; color: var(--text); line-height: 1.5;">問題載入中...</p>
+      </div>
+      <div id="ai-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <!-- 動態生成選項 -->
+      </div>
+      <div id="ai-waiting-area" style="display: none; text-align: center; padding: 25px; background: rgba(255, 217, 61, 0.1); border-radius: 12px; border: 2px dashed var(--warning);">
+        <div style="font-size: 2rem; margin-bottom: 10px;">⏳</div>
+        <div style="font-size: 1.1rem; color: var(--warning); font-weight: bold;">已作答，等待公布結果...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI是真是假 結果 Modal -->
+  <div class="modal-overlay" id="ai-result-modal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-emoji" id="ai-result-emoji" style="font-size: 5rem; margin-bottom: 15px;">🎉</div>
+      <div class="modal-title" id="ai-result-title" style="font-size: 1.8rem; margin-bottom: 15px;">結果</div>
+      <div class="modal-info" style="text-align: center; padding: 20px;">
+        <p id="ai-result-message" style="font-size: 1.3rem; font-weight: bold;"></p>
+      </div>
+    </div>
+  </div>
+
   <!-- Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
   <script src="./client/player.js"></script>
