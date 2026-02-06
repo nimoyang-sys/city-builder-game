@@ -4148,8 +4148,12 @@
       socket = io();
 
       socket.on('connect', () => {
-        console.log('Display connected');
+        console.log('[Display] Socket 已連接, socket.id:', socket.id);
         fetchGameState();
+      });
+
+      socket.on('disconnect', () => {
+        console.log('[Display] Socket 已斷線');
       });
 
       // 遊戲事件
@@ -4213,12 +4217,28 @@
       });
 
       // AI是真是假事件監聽
-      socket.on('minigame:aiGameStarted', handleAIGameStarted);
-      socket.on('minigame:aiQuestionDisplay', handleAIQuestionDisplay);
-      socket.on('minigame:aiPlayerAnswered', handleAIPlayerAnswered);
-      socket.on('minigame:aiAnswerRevealed', handleAIAnswerRevealed);
-      socket.on('minigame:aiGameEnded', handleAIGameEnded);
+      socket.on('minigame:aiGameStarted', (data) => {
+        console.log('[Display] 收到 minigame:aiGameStarted 事件', data);
+        handleAIGameStarted(data);
+      });
+      socket.on('minigame:aiQuestionDisplay', (data) => {
+        console.log('[Display] 收到 minigame:aiQuestionDisplay 事件', data);
+        handleAIQuestionDisplay(data);
+      });
+      socket.on('minigame:aiPlayerAnswered', (data) => {
+        console.log('[Display] 收到 minigame:aiPlayerAnswered 事件', data);
+        handleAIPlayerAnswered(data);
+      });
+      socket.on('minigame:aiAnswerRevealed', (data) => {
+        console.log('[Display] 收到 minigame:aiAnswerRevealed 事件', data);
+        handleAIAnswerRevealed(data);
+      });
+      socket.on('minigame:aiGameEnded', (data) => {
+        console.log('[Display] 收到 minigame:aiGameEnded 事件', data);
+        handleAIGameEnded(data);
+      });
       socket.on('minigame:aiGameForceEnded', () => {
+        console.log('[Display] 收到 minigame:aiGameForceEnded 事件');
         document.getElementById('minigame-overlay').classList.remove('show');
       });
 
